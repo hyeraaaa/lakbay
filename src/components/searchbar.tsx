@@ -350,7 +350,11 @@ const Searchbar = ({ className }: SearchbarProps) => {
             onClick={handleSearch}
             className="rounded-md text-white px-6 h-[52px] w-full sm:w-auto"
           >
-            <Search className="w-4 h-4" />
+            <div className="flex items-center gap-2 sm:hidden">
+              <Search className="w-4 h-4" />
+              <span>Search</span>
+            </div>
+            <Search className="w-4 h-4 hidden sm:block" />
           </Button>
         </div>
       </div>

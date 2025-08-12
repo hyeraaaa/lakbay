@@ -1,8 +1,20 @@
+"use client";
 import { Container } from "@/components/container";
 import { Carousel } from "@/components/ui/apple-cards-carousel";
 import Image from "next/image";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 
-const carDeals = [
+interface CarDeal {
+  src: string;
+  title: string;
+  category: string;
+  price: string;
+  location: string;
+}
+
+// Fallback data in case API fails
+const fallbackCarDeals: CarDeal[] = [
   {
     src: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=300&fit=crop&crop=center",
     title: "Toyota Vios",
@@ -38,11 +50,91 @@ const carDeals = [
     price: "₱4,200/day",
     location: "Iloilo",
   },
+  {
+    src: "https://images.unsplash.com/photo-1582639510494-c80b5de9f148?w=400&h=300&fit=crop&crop=center",
+    title: "Nissan Almera",
+    category: "Sedan",
+    price: "₱4,200/day",
+    location: "Iloilo",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=300&fit=crop&crop=center",
+    title: "Mitsubishi Mirage",
+    category: "Hatchback",
+    price: "₱3,200/day",
+    location: "Davao",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=400&h=300&fit=crop&crop=center",
+    title: "Suzuki Swift",
+    category: "Hatchback",
+    price: "₱3,500/day",
+    location: "Baguio",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1582639510494-c80b5de9f148?w=400&h=300&fit=crop&crop=center",
+    title: "Nissan Almera",
+    category: "Sedan",
+    price: "₱4,200/day",
+    location: "Iloilo",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1582639510494-c80b5de9f148?w=400&h=300&fit=crop&crop=center",
+    title: "Nissan Almera",
+    category: "Sedan",
+    price: "₱4,200/day",
+    location: "Iloilo",
+  },
 ];
 
-const SimpleCard = ({ deal }: { deal: (typeof carDeals)[0] }) => {
+// Mock API function - replace with your actual API endpoint
+const fetchCarDeals = async (page: number, limit: number = 5): Promise<CarDeal[]> => {
+  try {
+    // Simulate API call with delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // For demo purposes, return paginated data from fallback
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedData = fallbackCarDeals.slice(startIndex, endIndex);
+    
+    // Replace this with your actual API call:
+    // const response = await fetch(`/api/car-deals?page=${page}&limit=${limit}`);
+    // const data = await response.json();
+    // return data;
+    
+    return paginatedData;
+  } catch (error) {
+    console.error('Failed to fetch car deals:', error);
+    return [];
+  }
+};
+
+const SkeletonCard = () => {
   return (
-    <div className="relative flex h-64 w-48 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-80 md:w-72 dark:bg-neutral-900">
+    <div className="relative flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-200 animate-pulse md:h-96 md:w-64 dark:bg-neutral-800">
+      <div className="relative z-40 p-6 flex flex-col h-full justify-between">
+        <div>
+          <div className="h-3 w-16 bg-gray-300 rounded mb-2 dark:bg-neutral-700"></div>
+          <div className="h-6 w-24 bg-gray-300 rounded mb-1 dark:bg-neutral-700"></div>
+        </div>  
+        <div>
+          <div className="h-6 w-20 bg-gray-300 rounded mb-1 dark:bg-neutral-700"></div>
+          <div className="h-3 w-24 bg-gray-300 rounded dark:bg-neutral-700"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SimpleCard = ({ deal }: { deal: CarDeal }) => {
+  return (
+    <motion.div 
+      className="relative flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-96 md:w-64 dark:bg-neutral-900"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-gradient-to-b from-black/50 via-transparent to-transparent" />
       <div className="relative z-40 p-6 flex flex-col h-full justify-between">
         <div>
@@ -53,7 +145,6 @@ const SimpleCard = ({ deal }: { deal: (typeof carDeals)[0] }) => {
             {deal.title}
           </p>
         </div>  
-
         <div className="text-white">
           <p className="text-lg font-bold text-white md:text-xl">
             {deal.price}
@@ -61,20 +152,83 @@ const SimpleCard = ({ deal }: { deal: (typeof carDeals)[0] }) => {
           <p className="text-xs text-gray-200">Pickup in {deal.location}</p>
         </div>
       </div>
-
       <Image
         src={deal.src}
         alt={deal.title}
         fill
-        sizes="(max-width: 768px) 192px, 288px"
+        sizes="(max-width: 768px) 224px, 256px"
         className="absolute inset-0 z-10 object-cover"
-        priority={false}
+        priority={true}
+        loading="eager"
       />
-    </div>
+    </motion.div>
   );
 };
 
 const CarDeals = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [carDeals, setCarDeals] = useState<CarDeal[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  useEffect(() => {
+    const loadInitialCarDeals = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const deals = await fetchCarDeals(1, 5);
+        setCarDeals(deals);
+        setHasMore(deals.length === 5); // If we get less than 5, we've reached the end
+      } catch (err) {
+        setError('Failed to load car deals');
+        console.error('Error loading car deals:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialCarDeals();
+  }, []);
+
+  const loadMoreDeals = async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    try {
+      setIsLoadingMore(true);
+      const nextPage = currentPage + 1;
+      const newDeals = await fetchCarDeals(nextPage, 5);
+      
+      if (newDeals.length > 0) {
+        setCarDeals(prev => [...prev, ...newDeals]);
+        setCurrentPage(nextPage);
+        setHasMore(newDeals.length === 5); // If we get less than 5, we've reached the end
+      } else {
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.error('Error loading more car deals:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  const renderCarouselItems = () => {
+    const items = carDeals.map((deal, index) => (
+      <SimpleCard key={index} deal={deal} />
+    ));
+
+    // Add skeleton cards while loading more (show 5 skeletons to match page size)
+    if (isLoadingMore) {
+      for (let i = 0; i < 5; i++) {
+        items.push(<SkeletonCard key={`skeleton-${i}`} />);
+      }
+    }
+
+    return items;
+  };
+
   return (
     <Container>
       <div>
@@ -86,11 +240,52 @@ const CarDeals = () => {
           vehicles are well-maintained and come with comprehensive insurance.
         </p>
 
-        <Carousel
-          items={carDeals.map((deal, index) => (
-            <SimpleCard key={index} deal={deal} />
-          ))}
-        />
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div
+              key="skeleton"
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Carousel
+                items={Array.from({ length: 5 }, (_, index) => (
+                  <SkeletonCard key={`skeleton-${index}`} />
+                ))}
+              />
+            </motion.div>
+          ) : error ? (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="text-center py-8"
+            >
+              <p className="text-red-500 dark:text-red-400">{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Try Again
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="loaded"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Carousel
+                items={renderCarouselItems()}
+                onLoadMore={loadMoreDeals}
+                hasMore={hasMore}
+                isLoadingMore={isLoadingMore}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </Container>
   );

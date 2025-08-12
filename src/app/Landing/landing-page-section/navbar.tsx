@@ -24,6 +24,7 @@ const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
   return (
     <header
       className={`sticky top-0 z-50 w-full bg-white py-3 px-5 ${
@@ -64,26 +65,43 @@ const Navbar = () => {
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden p-2"
+          className="md:hidden p-2 transition-transform duration-200 hover:scale-105"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           aria-label="Toggle menu"
         >
-          {isMenuOpen ? (
-            <X className="h-6 w-6 hover:scale-110" />
-          ) : (
-            <Menu className="h-6 w-6 hover:scale-110" />
-          )}
+          <div className="relative w-6 h-6">
+            <Menu 
+              className={`absolute inset-0 h-6 w-6 transition-all duration-300 ease-in-out ${
+                isMenuOpen 
+                  ? "opacity-0 rotate-90 scale-75" 
+                  : "opacity-100 rotate-0 scale-100"
+              }`} 
+            />
+            <X 
+              className={`absolute inset-0 h-6 w-6 transition-all duration-300 ease-in-out ${
+                isMenuOpen 
+                  ? "opacity-100 rotate-0 scale-100" 
+                  : "opacity-0 -rotate-90 scale-75"
+              }`} 
+            />
+          </div>
         </button>
       </div>
 
       {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden py-4 space-y-2">
+      <div
+        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          isMenuOpen
+            ? "max-h-48 opacity-100 translate-y-0"
+            : "max-h-0 opacity-0 -translate-y-2"
+        }`}
+      >
+        <div className="py-4 space-y-2">
           <Link href="/login">
             <Button
               variant={"ghost"}
               size={"default"}
-              className="w-full justify-center"
+              className="w-full justify-center transition-all duration-200 hover:bg-gray-100"
             >
               Sign in
             </Button>
@@ -91,12 +109,12 @@ const Navbar = () => {
           <Button
             variant={"default"}
             size="default"
-            className="w-full justify-center"
+            className="w-full justify-center transition-all duration-200 hover:scale-105"
           >
             Become a Host
           </Button>
         </div>
-      )}
+      </div>
     </header>
   );
 };

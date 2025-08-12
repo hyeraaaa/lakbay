@@ -3,21 +3,21 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useGoogleLogin } from "@react-oauth/google";
-import { useRouter } from "next/navigation";
 
-const Login = () => {
-  const router = useRouter();
+const Register = () => {
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string }>({});
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -29,7 +29,11 @@ const Login = () => {
   };
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string } = {};
+    const newErrors: { name?: string; email?: string; password?: string; confirmPassword?: string } = {};
+
+    if (!formData.name) {
+      newErrors.name = "Name is required";
+    }
 
     if (!formData.email) {
       newErrors.email = "Email is required";
@@ -41,6 +45,12 @@ const Login = () => {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     setErrors(newErrors);
@@ -58,109 +68,14 @@ const Login = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Handle successful login here
-      console.log("Login successful", formData);
-      
-      // Simulate user data from backend
-      // In a real app, this would come from your authentication API
-      const userData = {
-        email: formData.email,
-        userType: determineUserType({ email: formData.email }),
-        // Add other user properties as needed
-      };
-      
-      // Redirect based on user type
-      redirectBasedOnUserType(userData);
+      // Handle successful registration here
+      console.log("Registration successful", formData);
       
     } catch (error) {
-      console.error("Login failed", error);
+      console.error("Registration failed", error);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Google Login Handler
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (response) => {
-      try {
-        setIsLoading(true);
-        
-        // Get user info from Google
-        const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: { Authorization: `Bearer ${response.access_token}` },
-        }).then(res => res.json());
-
-        console.log("Google login successful", userInfo);
-        
-        // Here you would typically:
-        // 1. Send the user info to your backend
-        // 2. Create or update user in your database
-        // 3. Set authentication tokens/cookies
-        // 4. Redirect to dashboard or home page
-        
-        // For now, we'll just log the user info
-        console.log("User info:", userInfo);
-        
-        // Simulate backend response with user data
-        // In a real app, you would send userInfo to your backend and get back user data with role
-        const userData = {
-          ...userInfo,
-          userType: determineUserType(userInfo),
-          // Add other user properties as needed
-        };
-        
-        // Redirect based on user type
-        redirectBasedOnUserType(userData);
-        
-      } catch (error) {
-        console.error("Google login failed", error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    onError: (error) => {
-      console.error("Google login error:", error);
-      setIsLoading(false);
-    }
-  });
-
-  const handleGoogleLogin = () => {
-    googleLogin();
-  };
-
-  // Function to determine user type and redirect accordingly
-  const redirectBasedOnUserType = (userData: any) => {
-    // This is where you would typically check the user's role from your backend
-    // For now, I'll implement a simple logic based on email domain or user data
-    
-    // Example logic - you can modify this based on your actual user data structure
-    const userType = userData?.userType || userData?.role || determineUserType(userData);
-    
-    switch (userType) {
-      case 'owner':
-        router.push('/dashboard/owner');
-        break;
-      case 'admin':
-        router.push('/dashboard/admin');
-        break;
-      case 'user':
-      default:
-        router.push('/dashboard/user');
-        break;
-    }
-  };
-
-  // Helper function to determine user type
-  // You can modify this logic based on your actual requirements
-  const determineUserType = (userData: any) => {
-    // Example logic - check email domain, user properties, etc.
-    if (userData?.email?.includes('admin')) {
-      return 'admin';
-    }
-    if (userData?.email?.includes('owner') || userData?.isOwner) {
-      return 'owner';
-    }
-    return 'user';
   };
 
   return (
@@ -178,13 +93,39 @@ const Login = () => {
             />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Sign in to Lakbay
+            Join Lakbay
           </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Create your account to start your journey
+          </p>
         </div>
 
-        {/* Login Form */}
+        {/* Register Form */}
         <div className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Name Field */}
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Full Name
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className={`pl-10 ${errors.name ? 'border-red-500 focus-visible:ring-red-500/50' : ''}`}
+                  disabled={isLoading}
+                />
+              </div>
+              {errors.name && (
+                <p className="text-sm text-red-600 dark:text-red-400">{errors.name}</p>
+              )}
+            </div>
+
             {/* Email Field */}
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -219,7 +160,7 @@ const Login = () => {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                   value={formData.password}
                   onChange={handleInputChange}
                   className={`pl-10 pr-10 ${errors.password ? 'border-red-500 focus-visible:ring-red-500/50' : ''}`}
@@ -243,14 +184,39 @@ const Login = () => {
               )}
             </div>
 
-            {/* Forgot Password Link */}
-            <div className="flex items-center justify-end">
-              <Link
-                href="/forgot-password"
-                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-              >
-                Forgot your password?
-              </Link>
+            {/* Confirm Password Field */}
+            <div className="space-y-2">
+              <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm your password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className={`pl-10 pr-10 ${errors.confirmPassword ? 'border-red-500 focus-visible:ring-red-500/50' : ''}`}
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  disabled={isLoading}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="text-sm text-red-600 dark:text-red-400">{errors.confirmPassword}</p>
+              )}
             </div>
 
             {/* Submit Button */}
@@ -262,11 +228,11 @@ const Login = () => {
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Signing in to Lakbay...
+                  Creating account...
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  Sign in to Lakbay
+                  Create Account
                   <ArrowRight className="h-4 w-4" />
                 </div>
               )}
@@ -286,7 +252,6 @@ const Login = () => {
               variant="outline"
               className="w-full h-9"
               disabled={isLoading}
-              onClick={handleGoogleLogin}
             >
               <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                 <path
@@ -310,15 +275,15 @@ const Login = () => {
             </Button>
           </div>
 
-          {/* Sign Up Link */}
+          {/* Sign In Link */}
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              New to Lakbay?{" "}
+              Already have an account?{" "}
               <Link
-                href="/register"
+                href="/login"
                 className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
               >
-                Sign up for Lakbay
+                Sign in to Lakbay
               </Link>
             </p>
           </div>
@@ -328,4 +293,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register; 
