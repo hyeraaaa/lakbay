@@ -7,7 +7,7 @@ import { CameraCapture } from "@/components/account-verification/camera-capture"
 import { VerificationReview } from "@/components/account-verification/verification-review"
 import { VerificationProgress } from "@/components/account-verification/verification-progress"
 import { VerificationStatus } from "@/components/account-verification/verification-status"
-import { UserRoute } from "@/components/auth/ProtectedRoute"
+import { AuthenticatedRoute } from "@/components/auth/ProtectedRoute"
 
 const AccountVerification = () => {
   const {
@@ -21,6 +21,8 @@ const AccountVerification = () => {
     isLoadingStatus,
     captureImageForStep,
     retakePhoto,
+    beginResubmission,
+    isResubmitting,
     handleSubmit,
     getStepStatus,
     mapServerToClientIdType,
@@ -29,21 +31,25 @@ const AccountVerification = () => {
   // Show loading state while checking verification status
   if (isLoadingStatus) {
     return (
-      <UserRoute>
+      <AuthenticatedRoute>
         <div className="container mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mx-auto mb-4"></div>
             <p className="text-muted-foreground">Checking verification status...</p>
           </div>
         </div>
-      </UserRoute>
+      </AuthenticatedRoute>
     )
   }
 
-  // If user already has verification, show status
-  if (verificationStatus?.hasVerification) {
+  // If user has a pending verification OR is already verified, show status and prevent resubmission
+  const latestStatus = verificationStatus?.verification?.status
+  const isVerified = verificationStatus?.userStatus?.isVerified
+  const shouldShowStatusPage = (latestStatus === "pending" || latestStatus === "rejected" || isVerified) && !isResubmitting
+
+  if (shouldShowStatusPage) {
     return (
-      <UserRoute>
+      <AuthenticatedRoute>
         <div className="container mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
@@ -54,16 +60,21 @@ const AccountVerification = () => {
           </div>
           
           <VerificationStatus 
-            selectedIdType={mapServerToClientIdType(verificationStatus.verification?.docType || "driver_license")} 
-            verificationStatus={verificationStatus}
+            selectedIdType={mapServerToClientIdType(verificationStatus?.verification?.docType || "driver_license")} 
+            verificationStatus={verificationStatus || undefined}
+            onResubmit={
+              latestStatus === 'rejected' && !isVerified
+                ? beginResubmission
+                : undefined
+            }
           />
         </div>
-      </UserRoute>
+      </AuthenticatedRoute>
     )
   }
 
   return (
-    <UserRoute>
+    <AuthenticatedRoute>
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
@@ -114,7 +125,7 @@ const AccountVerification = () => {
           </>
         )}
       </div>
-    </UserRoute>
+    </AuthenticatedRoute>
   )
 }
 

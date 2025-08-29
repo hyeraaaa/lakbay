@@ -1,43 +1,38 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, CheckCircle, XCircle } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import Image from "next/image"
-import { getAccessToken } from "@/lib/jwt"
-
-interface VerificationRequest {
-  verification_id: string
-  user_id: string
-  doc_type: "driver_license" | "passport" | "id_card" | "business_license"
-  doc_url: string
-  doc_urls?: string[]
-  status: "pending" | "approved" | "rejected"
-  submitted_at: string
-  reviewed_at?: string
-  reviewed_by?: string
-  reviewed_by_name?: string
-  notes?: string
-  user?: {
-    name: string
-    email: string
-    profile_picture?: string | null
-  }
-}
+import { useVerificationRequest, type VerificationRequest } from "@/hooks/account-verification/useReviewVerification"
 
 const getTypeBadge = (docType: VerificationRequest["doc_type"]) => {
   switch (docType) {
     case "driver_license":
-      return <Badge variant="secondary" className="bg-blue-100 text-blue-700">Driver License</Badge>
+      return (
+        <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+          Driver License
+        </Badge>
+      )
     case "passport":
-      return <Badge variant="secondary" className="bg-purple-100 text-purple-700">Passport</Badge>
+      return (
+        <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+          Passport
+        </Badge>
+      )
     case "id_card":
-      return <Badge variant="secondary" className="bg-orange-100 text-orange-700">National ID</Badge>
+      return (
+        <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+          National ID
+        </Badge>
+      )
     case "business_license":
-      return <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Business License</Badge>
+      return (
+        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+          Business License
+        </Badge>
+      )
     default:
       return null
   }
@@ -45,156 +40,33 @@ const getTypeBadge = (docType: VerificationRequest["doc_type"]) => {
 
 export default function RequestDetailPage() {
   const params = useParams()
-  const [request, setRequest] = useState<VerificationRequest | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000'
-
-  useEffect(() => {
-    if (params.id) {
-      fetchRequest(params.id as string)
-    }
-  }, [params.id])
-
-  const getImageSrc = (path?: string | null) => {
-    if (!path) return "/placeholder.svg"
-    if (/^https?:\/\//i.test(path)) return path
-    const normalized = path.startsWith('/') ? path.slice(1) : path
-    return `${API_BASE_URL}/${normalized}`
-  }
-
-  const fetchRequest = async (id: string) => {
-    try {
-      setLoading(true)
-      const response = await fetch(`${API_BASE_URL}/api/verification`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
-        },
-      })
-      if (!response.ok) throw new Error("Failed to fetch")
-      const data = await response.json()
-      const list = (data?.verifications || []) as any[]
-      const v = list.find((x) => String(x.verification_id) === String(id))
-      if (!v) {
-        setRequest(null)
-      } else {
-        const userInfo = v?.users_verification_user_idTousers
-        const reviewerInfo = v?.users_verification_reviewed_byTousers
-        const name = userInfo ? `${userInfo.first_name || ""} ${userInfo.last_name || ""}`.trim() : ""
-        // Parse doc_url which may be a JSON array or a single string
-        let parsedDocUrls: string[] = []
-        if (typeof v.doc_url === 'string') {
-          try {
-            const maybeArray = JSON.parse(v.doc_url)
-            if (Array.isArray(maybeArray)) {
-              parsedDocUrls = maybeArray.filter(Boolean)
-            } else if (typeof maybeArray === 'string' && maybeArray.length > 0) {
-              parsedDocUrls = [maybeArray]
-            } else if (v.doc_url.length > 0) {
-              parsedDocUrls = [v.doc_url]
-            }
-          } catch {
-            // not JSON, treat as raw single URL
-            if (v.doc_url.length > 0) parsedDocUrls = [v.doc_url]
-          }
-        }
-
-        const mapped: VerificationRequest = {
-          verification_id: v.verification_id,
-          user_id: v.user_id,
-          doc_type: v.doc_type,
-          doc_url: v.doc_url,
-          doc_urls: parsedDocUrls,
-          status: v.status,
-          submitted_at: v.submitted_at,
-          reviewed_at: v.reviewed_at,
-          reviewed_by: v.reviewed_by,
-          reviewed_by_name: reviewerInfo ? `${reviewerInfo.first_name || ""} ${reviewerInfo.last_name || ""}`.trim() : undefined,
-          notes: v.notes,
-          user: userInfo ? { name, email: userInfo.email } : undefined,
-        }
-
-        // Try to fetch profile to get profile_picture
-        try {
-          const profileRes = await fetch(`${API_BASE_URL}/api/users/${v.user_id}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
-            },
-          })
-          if (profileRes.ok) {
-            const profile = await profileRes.json()
-            mapped.user = {
-              ...(mapped.user || { name: name, email: userInfo?.email }),
-              profile_picture: profile?.profile_picture || null,
-            }
-          }
-        } catch {}
-
-        setRequest(mapped)
-      }
-    } catch (e) {
-      console.error("Error fetching request:", e)
-      setRequest(null)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const {
+    request,
+    loading,
+    refetch,
+    approveRequest,
+    rejectRequest,
+    selectedImage,
+    openImage,
+    closeImage,
+    getImageSrc,
+  } = useVerificationRequest(params.id as string)
 
   const handleApprove = async () => {
-    if (!request) return;
-  
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/verification/${request.verification_id}/review`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
-        },
-        body: JSON.stringify({
-          status: "approved",
-          notes:
-            "Verification request has been approved. All submitted documents meet the required standards and have been successfully verified.",
-        }),
-      });
-  
-      if (response.ok) {
-        // Refresh the request to reflect latest server state
-        await fetchRequest(request.verification_id as string)
-      }
-    } catch (error) {
-      console.error("Error approving request:", error);
+    if (!request) return
+    const success = await approveRequest(request.verification_id)
+    if (success) {
+      refetch()
     }
-  };
-  
+  }
+
   const handleReject = async () => {
-    if (!request) return;
-  
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/verification/${request.verification_id}/review`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
-        },
-        body: JSON.stringify({
-          status: "rejected",
-          notes:
-            "Verification request has been rejected. The submitted documents do not meet the required standards or are incomplete. Please resubmit with valid documentation.",
-        }),
-      });
-  
-      if (response.ok) {
-        await fetchRequest(request.verification_id as string)
-      }
-    } catch (error) {
-      console.error("Error rejecting request:", error);
+    if (!request) return
+    const success = await rejectRequest(request.verification_id)
+    if (success) {
+      refetch()
     }
-  };
-  
+  }
 
   if (loading) {
     return (
@@ -225,7 +97,7 @@ export default function RequestDetailPage() {
           <div className="flex items-center gap-3">
             {request.user?.profile_picture ? (
               <img
-                src={getImageSrc(request.user.profile_picture)}
+                src={getImageSrc(request.user.profile_picture) || "/placeholder.svg"}
                 alt={request.user?.name || "User"}
                 className="w-8 h-8 rounded-full object-cover"
               />
@@ -245,28 +117,32 @@ export default function RequestDetailPage() {
 
       <div className="max-w-4xl mx-auto px-6 py-6">
         <div className="space-y-4">
-          <div className="text-sm text-gray-600">{(request.doc_urls?.length || (request.doc_url ? 1 : 0))} attachments • {getTypeBadge(request.doc_type)}</div>
+          <div className="text-sm text-gray-600">
+            {request.doc_urls?.length || (request.doc_url ? 1 : 0)} attachments • {getTypeBadge(request.doc_type)}
+          </div>
 
           <div className="flex gap-4">
-            {(request.doc_urls && request.doc_urls.length > 0 ? request.doc_urls : [request.doc_url]).filter(Boolean).map((u, idx) => (
-              <div
-                key={`${u}-${idx}`}
-                className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => setSelectedImage(u)}
-              >
-                <div className="w-16 h-16 relative mb-2">
-                  <img
-                    src={getImageSrc(u)}
-                    alt={`Document ${idx + 1}`}
-                    className="object-cover rounded w-16 h-16"
-                  />
+            {(request.doc_urls && request.doc_urls.length > 0 ? request.doc_urls : [request.doc_url])
+              .filter(Boolean)
+              .map((u, idx) => (
+                <div
+                  key={`${u}-${idx}`}
+                  className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => openImage(u)}
+                >
+                  <div className="w-16 h-16 relative mb-2">
+                    <img
+                      src={getImageSrc(u) || "/placeholder.svg"}
+                      alt={`Document ${idx + 1}`}
+                      className="object-cover rounded w-16 h-16 scale-x-[-1]"
+                    />
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    <div className="font-medium">{`document_${idx + 1}.jpg`}</div>
+                    <div></div>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-600">
-                  <div className="font-medium">{`document_${idx + 1}.jpg`}</div>
-                  <div></div>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
 
           {request.status === "pending" && (
@@ -280,7 +156,7 @@ export default function RequestDetailPage() {
                 onClick={handleReject}
                 className="text-gray-700 border-gray-300 hover:bg-gray-50 rounded-full px-6 bg-transparent"
               >
-                <XCircle className="h-4 w-4 mr-2" />  
+                <XCircle className="h-4 w-4 mr-2" />
                 Reject
               </Button>
             </div>
@@ -292,7 +168,8 @@ export default function RequestDetailPage() {
               <p className="text-sm text-gray-700">{request.notes}</p>
               {request.reviewed_at && (
                 <p className="text-xs text-gray-500 mt-2">
-                  Reviewed on {new Date(request.reviewed_at).toLocaleDateString()} by {request.reviewed_by_name || request.reviewed_by}
+                  Reviewed on {new Date(request.reviewed_at).toLocaleDateString()} by{" "}
+                  {request.reviewed_by_name || request.reviewed_by}
                 </p>
               )}
             </div>
@@ -303,19 +180,19 @@ export default function RequestDetailPage() {
       {selectedImage && (
         <div
           className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-          onClick={() => setSelectedImage(null)}
+          onClick={closeImage}
         >
           <div className="relative max-w-4xl max-h-full">
             <img
-              src={getImageSrc(selectedImage)}
+              src={getImageSrc(selectedImage) || "/placeholder.svg"}
               alt="Document"
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full object-contain scale-x-[-1]"
             />
             <Button
               variant="ghost"
               size="sm"
               className="absolute top-4 right-4 text-white hover:bg-white/20"
-              onClick={() => setSelectedImage(null)}
+              onClick={closeImage}
             >
               ✕
             </Button>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
-import { getAccessToken } from "@/lib/jwt"
+import { verificationService } from "@/services/verificationServices"
 
 export type IDType = "drivers-license" | "passport" | "national-id" | "state-id"
 export type CaptureStep = "front" | "back" | "complete"
@@ -38,29 +38,20 @@ export const useVerification = () => {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null)
   const [isLoadingStatus, setIsLoadingStatus] = useState(true)
+  const [isResubmitting, setIsResubmitting] = useState(false)
 
-  // Check verification status on component mount
+  // Check verification status
   useEffect(() => {
-    const checkVerificationStatus = async () => {
+    const fetchStatus = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/verification/status", {
-          headers: {
-            'Authorization': `Bearer ${getAccessToken()}`
-          }
-        })
+        const status = await verificationService.getStatus()
+        setVerificationStatus(status)
 
-        if (response.ok) {
-          const status = await response.json()
-          setVerificationStatus(status)
-          
-          // If user already has verification, set appropriate state
-          if (status.hasVerification) {
-            if (status.verification?.status === 'pending') {
-              setIsInReview(true)
-            } else if (status.verification?.status === 'approved') {
-              setIsInReview(true)
-            }
-          }
+        // Only treat as "in review" when there is a pending submission.
+        // Allow resubmission when last verification was approved but the user's current
+        // profile is no longer verified, or when the last verification was rejected.
+        if (status.hasVerification && status.verification?.status === "pending") {
+          setIsInReview(true)
         }
       } catch (error) {
         console.error("Error checking verification status:", error)
@@ -68,111 +59,78 @@ export const useVerification = () => {
         setIsLoadingStatus(false)
       }
     }
-
-    checkVerificationStatus()
+    fetchStatus()
   }, [])
 
   const captureImageForStep = useCallback(
     (imageData: string) => {
       setCapturedImages((prev) => ({
         ...prev,
-        [currentStep]: imageData,
+        [currentStep]: imageData
       }))
 
-      if (currentStep === "front") {
-        setCurrentStep("back")
-      } else {
-        setCurrentStep("complete")
-      }
+      if (currentStep === "front") setCurrentStep("back")
+      else setCurrentStep("complete")
     },
-    [currentStep],
+    [currentStep]
   )
 
   const retakePhoto = useCallback((side: "front" | "back") => {
     setCapturedImages((prev) => ({
       ...prev,
-      [side]: undefined,
+      [side]: undefined
     }))
     setCurrentStep(side)
   }, [])
 
+  const beginResubmission = useCallback(() => {
+    setIsInReview(false)
+    setIsResubmitting(true)
+    setSelectedIdType("")
+    setCapturedImages({})
+    setCurrentStep("front")
+  }, [])
+
   const base64ToFile = useCallback((base64String: string, filename: string): File => {
-    // Remove data URL prefix if present
-    const base64Data = base64String.replace(/^data:image\/[a-z]+;base64,/, '')
+    const base64Data = base64String.replace(/^data:image\/[a-z]+;base64,/, "")
     const byteCharacters = atob(base64Data)
     const byteNumbers = new Array(byteCharacters.length)
-    
     for (let i = 0; i < byteCharacters.length; i++) {
       byteNumbers[i] = byteCharacters.charCodeAt(i)
     }
-    
     const byteArray = new Uint8Array(byteNumbers)
-    const blob = new Blob([byteArray], { type: 'image/jpeg' })
-    
-    return new File([blob], filename, { type: 'image/jpeg' })
-  }, [])
-
-  const compressImage = useCallback((base64String: string, quality: number = 0.7): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d')!
-        
-        // Calculate new dimensions (maintain aspect ratio)
-        const maxWidth = 800
-        const maxHeight = 600
-        let { width, height } = img
-        
-        if (width > height) {
-          if (width > maxWidth) {
-            height = (height * maxWidth) / width
-            width = maxWidth
-          }
-        } else {
-          if (height > maxHeight) {
-            width = (width * maxHeight) / height
-            height = maxHeight
-          }
-        }
-        
-        canvas.width = width
-        canvas.height = height
-        
-        ctx.drawImage(img, 0, 0, width, height)
-        
-        // Convert to compressed base64
-        const compressedBase64 = canvas.toDataURL('image/jpeg', quality)
-        resolve(compressedBase64)
-      }
-      img.src = base64String
-    })
+    const blob = new Blob([byteArray], { type: "image/jpeg" })
+    return new File([blob], filename, { type: "image/jpeg" })
   }, [])
 
   const mapIdTypeToServer = useCallback((clientIdType: IDType): string => {
     const typeMap: Record<IDType, string> = {
-      'drivers-license': 'driver_license',
-      'passport': 'passport',
-      'national-id': 'id_card',
-      'state-id': 'id_card'
+      "drivers-license": "driver_license",
+      passport: "passport",
+      "national-id": "id_card",
+      "state-id": "id_card"
     }
     return typeMap[clientIdType]
   }, [])
 
   const mapServerToClientIdType = useCallback((serverDocType: string): IDType => {
     const reverseTypeMap: Record<string, IDType> = {
-      'driver_license': 'drivers-license',
-      'passport': 'passport',
-      'id_card': 'national-id', // Default to national-id for id_card
-      'business_license': 'national-id' // Default to national-id for business_license
+      driver_license: "drivers-license",
+      passport: "passport",
+      id_card: "national-id",
+      business_license: "national-id"
     }
-    return reverseTypeMap[serverDocType] || 'drivers-license' // Default fallback
+    return reverseTypeMap[serverDocType] || "drivers-license"
   }, [])
 
   const handleSubmit = useCallback(async () => {
-    // Prevent submission if verification already exists
-    if (verificationStatus?.hasVerification) {
+    // Block if there is an active pending verification or the user is already verified.
+    if (verificationStatus?.verification?.status === "pending") {
       alert("You have already submitted verification documents. Please wait for review.")
+      return
+    }
+    if (verificationStatus?.userStatus?.isVerified) {
+      alert("Your account is already verified. No further submission is required.")
       return
     }
 
@@ -185,45 +143,17 @@ export const useVerification = () => {
     setSubmitError(null)
 
     try {
-      // Convert base64 images to File objects
-      const frontFile = base64ToFile(capturedImages.front!, 'front-id.jpg')
-      const backFile = base64ToFile(capturedImages.back!, 'back-id.jpg')
+      const frontFile = base64ToFile(capturedImages.front!, "front-id.jpg")
+      const backFile = base64ToFile(capturedImages.back!, "back-id.jpg")
 
-      // Use FormData instead of JSON to handle large files
-      const formData = new FormData()
-      formData.append('documentType', mapIdTypeToServer(selectedIdType as IDType))
-      formData.append('documentFront', frontFile)
-      formData.append('documentBack', backFile)
-
-      const response = await fetch("http://localhost:3000/api/verification/submit", {
-        method: "POST",
-        headers: {
-          'Authorization': `Bearer ${getAccessToken()}`
-        },
-        body: formData, 
-      })
-
-      if (!response.ok) {
-        throw new Error(`Verification submission failed: ${response.statusText}`)
-      }
-
-      const result = await response.json()
-      console.log("Verification submitted successfully:", result)
+      await verificationService.submit(mapIdTypeToServer(selectedIdType as IDType), frontFile, backFile)
 
       setIsInReview(true)
       alert("Verification submitted successfully! We will review your documents within 24-48 hours.")
-      
-      // Refresh verification status after successful submission
-      const statusResponse = await fetch("http://localhost:3000/api/verification/status", {
-        headers: {
-          'Authorization': `Bearer ${getAccessToken()}`
-        }
-      })
-      
-      if (statusResponse.ok) {
-        const status = await statusResponse.json()
-        setVerificationStatus(status)
-      }
+
+      // Refresh verification status
+      const status = await verificationService.getStatus()
+      setVerificationStatus(status)
     } catch (error) {
       console.error("Error submitting verification:", error)
       setSubmitError(error instanceof Error ? error.message : "Failed to submit verification")
@@ -240,7 +170,7 @@ export const useVerification = () => {
       if (step === 3) return capturedImages.back ? "complete" : capturedImages.front ? "current" : "pending"
       return "pending"
     },
-    [selectedIdType, capturedImages],
+    [selectedIdType, capturedImages]
   )
 
   return {
@@ -256,8 +186,10 @@ export const useVerification = () => {
     isLoadingStatus,
     captureImageForStep,
     retakePhoto,
+    beginResubmission,
+    isResubmitting,
     handleSubmit,
     getStepStatus,
-    mapServerToClientIdType,
+    mapServerToClientIdType
   }
 }

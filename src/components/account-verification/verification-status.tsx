@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Clock, Shield, CheckCircle, XCircle } from "lucide-react"
 import type { IDType } from "@/hooks/account-verification/useVerification"
 import { ID_TYPES } from "./id-type-selector"
@@ -22,9 +23,10 @@ interface VerificationStatusProps {
       isPhoneVerified: boolean
     }
   }
+  onResubmit?: () => void
 }
 
-export const VerificationStatus = ({ selectedIdType, verificationStatus }: VerificationStatusProps) => {
+export const VerificationStatus = ({ selectedIdType, verificationStatus, onResubmit }: VerificationStatusProps) => {
   const getStatusIcon = () => {
     if (!verificationStatus?.verification) return <Clock className="h-5 w-5 mr-2" />
     
@@ -107,6 +109,14 @@ export const VerificationStatus = ({ selectedIdType, verificationStatus }: Verif
                 <p className="text-muted-foreground">
                   We will review your documents within 24-48 hours and notify you of the verification status.
                 </p>
+              )}
+
+              {verificationStatus?.verification?.status === 'rejected' && (
+                <div className="pt-2">
+                  <Button onClick={onResubmit}>
+                    Resubmit Verification
+                  </Button>
+                </div>
               )}
             </div>
           </div>
