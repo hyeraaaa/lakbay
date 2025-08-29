@@ -9,7 +9,6 @@ interface City {
   city?: boolean;
 }
 
-// Province code to full name mapping
 const provinceMap: { [key: string]: string } = {
   MM: "Metro Manila",
   ABR: "Abra",

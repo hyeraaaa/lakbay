@@ -7,19 +7,22 @@ const showcaseItems = [
     icon: Car,
     title: "Wide Vehicle Selection",
     description: "Choose from our extensive fleet of vehicles for every need",
-    color: "blue",
+    bgColor: "bg-blue-500/10",
+    textColor: "text-blue-500",
   },
   {
     icon: Calendar,
     title: "Flexible Booking",
     description: "Book your rental with flexible dates and easy modifications",
-    color: "orange",
+    bgColor: "bg-orange-500/10",
+    textColor: "text-orange-500",
   },
   {
     icon: CreditCard,
     title: "Secure Payments",
     description: "Safe and secure payment options with transparent pricing",
-    color: "green",
+    bgColor: "bg-green-500/10",
+    textColor: "text-green-500",
   },
 ];
 
@@ -35,10 +38,10 @@ const Showcase = () => {
                 <CardItem translateZ="50px" className="w-full h-full">
                   <div className="flex flex-col items-center text-center h-full">
                     <div
-                      className={`p-4 rounded-full bg-${item.color}-500/10 mb-4`}
+                      className={`p-4 rounded-full ${item.bgColor} mb-4`}
                     >
                       <IconComponent
-                        className={`w-8 h-8 text-${item.color}-500`}
+                        className={`w-8 h-8 ${item.textColor}`}
                       />
                     </div>
                     <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
