@@ -20,7 +20,7 @@ export const useApi = () => {
     }
   }, [logout]);
 
-  const post = useCallback(async (url: string, data: any, options: RequestInit = {}) => {
+  const post = useCallback(async (url: string, data: unknown, options: RequestInit = {}) => {
     try {
       const response = await apiRequest(url, {
         ...options,
@@ -40,7 +40,7 @@ export const useApi = () => {
     }
   }, [logout]);
 
-  const put = useCallback(async (url: string, data: any, options: RequestInit = {}) => {
+  const put = useCallback(async (url: string, data: unknown, options: RequestInit = {}) => {
     try {
       const response = await apiRequest(url, {
         ...options,
@@ -75,7 +75,7 @@ export const useApi = () => {
     }
   }, [logout]);
 
-  const patch = useCallback(async (url: string, data: any, options: RequestInit = {}) => {
+  const patch = useCallback(async (url: string, data: unknown, options: RequestInit = {}) => {
     try {
       const response = await apiRequest(url, {
         ...options,

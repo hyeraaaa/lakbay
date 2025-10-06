@@ -110,17 +110,16 @@ export const VerificationStatus = ({ selectedIdType, verificationStatus, onResub
                   We will review your documents within 24-48 hours and notify you of the verification status.
                 </p>
               )}
-
-              {verificationStatus?.verification?.status === 'rejected' && (
-                <div className="pt-2">
-                  <Button onClick={onResubmit}>
+            </div>
+          </div>
+        </div>
+        {verificationStatus?.verification?.status === 'rejected' && (
+                <div className="pt-5 w-full">
+                  <Button onClick={onResubmit} className="w-full">
                     Resubmit Verification
                   </Button>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
       </CardContent>
     </Card>
   )

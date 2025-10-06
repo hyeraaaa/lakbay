@@ -9,7 +9,6 @@ export interface JWTPayload {
 
 export interface AuthTokens {
   accessToken: string;
-  refreshToken: string;
 }
 
 export interface User {
@@ -22,12 +21,12 @@ export interface User {
   last_name: string;
   phone?: string;
   profile_picture?: string;
+  two_fa_enabled?: boolean;
   created_at?: string;
 }
 
 // Token storage keys
 const ACCESS_TOKEN_KEY = 'accessToken';
-const REFRESH_TOKEN_KEY = 'refreshToken';
 const USER_KEY = 'user';
 
 // API base URL
@@ -39,21 +38,19 @@ export const getAccessToken = (): string | null => {
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 };
 
-export const getRefreshToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
+export const hasClientAccessToken = (): boolean => {
+  return !!getAccessToken();
 };
+
 
 export const setTokens = (tokens: AuthTokens): void => {
   if (typeof window === 'undefined') return;
   localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
 };
 
 export const clearTokens = (): void => {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
 };
 
@@ -89,8 +86,13 @@ export const isTokenExpiringSoon = (token: string, thresholdMinutes: number = 2)
     const decoded = jwtDecode<JWTPayload>(token);
     const currentTime = Date.now() / 1000;
     const thresholdSeconds = thresholdMinutes * 60;
-    return decoded.exp - currentTime < thresholdSeconds;
-  } catch {
+    const timeUntilExpiry = decoded.exp - currentTime;
+    
+    console.log(`Token expiry check: ${timeUntilExpiry}s until expiry, threshold: ${thresholdSeconds}s`);
+    
+    return timeUntilExpiry < thresholdSeconds;
+  } catch (error) {
+    console.error('Error checking token expiry:', error);
     return true;
   }
 };
@@ -108,30 +110,27 @@ export const getTokenExpiry = (token: string): Date | null => {
 export const refreshAccessToken = async (): Promise<AuthTokens | null> => {
   try {
     console.log('Starting client-side token refresh');
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) {
-      console.log('No refresh token available');
-      throw new Error('No refresh token available');
-    }
-    console.log('Refresh token found, calling server');
-
+    console.log('API Base URL:', API_BASE_URL);
+    console.log('Refresh endpoint:', `${API_BASE_URL}/api/auth/refresh-token`);
+    
+    // Server reads the httpOnly refresh token cookie
     const response = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken }),
+      credentials: 'include',
     });
 
     console.log('Server response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    
     if (!response.ok) {
       const errorText = await response.text();
       console.log('Server error response:', errorText);
-      throw new Error('Token refresh failed');
+      throw new Error(`Token refresh failed: ${response.status} - ${errorText}`);
     }
 
-    const tokens: AuthTokens = await response.json();
-    console.log('New tokens received, updating storage');
+    const data = await response.json();
+    const tokens: AuthTokens = { accessToken: data.accessToken };
+    console.log('New access token received, updating storage');
     setTokens(tokens);
     return tokens;
   } catch (error) {
@@ -252,18 +251,15 @@ export const apiRequest = async (
 // Logout function
 export const logout = async (): Promise<void> => {
   try {
-    const refreshToken = getRefreshToken();
-    if (refreshToken) {
-      // Call logout endpoint to invalidate refresh token
-      await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getAccessToken()}`,
-        },
-        body: JSON.stringify({ refreshToken }),
-      });
-    }
+    // Invalidate refresh token cookie server-side
+    await fetch(`${API_BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`,
+      },
+      credentials: 'include',
+    });
   } catch (error) {
     console.error('Logout error:', error);
   } finally {

@@ -85,7 +85,12 @@ export const useLoginForm = () => {
         console.log("Google login successful", userInfo);
         
         // Use the auth hook for Google login
-        await googleLogin(response.access_token, userInfo);
+        const result = await googleLogin(response.access_token, userInfo);
+        
+        if (result?.isNewUser) {
+          console.log('Welcome! Your account has been created automatically.');
+          // You could show a toast notification here
+        }
         
       } catch (error) {
         console.error("Google login failed", error);
@@ -101,6 +106,8 @@ export const useLoginForm = () => {
   const handleGoogleLogin = () => {
     googleLoginHandler();
   };
+
+  // No UI-based resend flow; handled automatically in useAuth
 
   return {
     formData,

@@ -1,5 +1,5 @@
 import { Container } from "@/components/container";
-import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
+// Removed 3D card components in favor of standard elements
 import { Car, Calendar, CreditCard } from "lucide-react";
 
 const showcaseItems = [
@@ -33,9 +33,9 @@ const Showcase = () => {
         {showcaseItems.map((item, index) => {
           const IconComponent = item.icon;
           return (
-            <CardContainer key={index} className="h-full">
-              <CardBody className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.25)] transition-shadow duration-300 h-full">
-                <CardItem translateZ="50px" className="w-full h-full">
+            <div key={index} className="h-full">
+              <div className="bg-white/5 rounded-lg p-6 border border-border h-full">
+                <div className="w-full h-full">
                   <div className="flex flex-col items-center text-center h-full">
                     <div
                       className={`p-4 rounded-full ${item.bgColor} mb-4`}
@@ -47,9 +47,9 @@ const Showcase = () => {
                     <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
                     <p className="text-gray-400">{item.description}</p>
                   </div>
-                </CardItem>
-              </CardBody>
-            </CardContainer>
+                </div>
+              </div>
+            </div>
           );
         })}
       </div>

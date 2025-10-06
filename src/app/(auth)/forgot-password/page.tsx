@@ -8,7 +8,6 @@ import BackToLogin from "@/components/auth/forgot-password/BackToLogin";
 import SuccessHeader from "@/components/auth/forgot-password/SuccessHeader";
 import SuccessMessage from "@/components/auth/forgot-password/SuccessMessage";
 import { useForgotPasswordForm } from "@/hooks/forgot-password/useForgotPasswordForm";
-import { RedirectIfAuthenticated } from "@/components/auth/RedirectIfAuthenticated";
 
 const ForgotPassword = () => {
   const {
@@ -26,7 +25,6 @@ const ForgotPassword = () => {
 
   if (isSubmitted) {
     return (
-      <RedirectIfAuthenticated>
         <div className="min-h-screen flex items-start justify-center bg-whitesmoke dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-20">
           <div className="w-full max-w-md">
             <SuccessHeader email={formData.email} />
@@ -39,12 +37,10 @@ const ForgotPassword = () => {
             />
           </div>
         </div>
-      </RedirectIfAuthenticated>
     );
   }
 
   return (
-    <RedirectIfAuthenticated>
       <div className="min-h-screen flex items-start justify-center bg-whitesmoke dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 pt-20">
         <div className="w-full max-w-md">
           <FormHeader 
@@ -69,7 +65,6 @@ const ForgotPassword = () => {
           </div>
         </div>
       </div>
-    </RedirectIfAuthenticated>
   );
 };
 

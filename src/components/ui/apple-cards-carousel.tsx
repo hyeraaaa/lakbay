@@ -40,6 +40,11 @@ export const CarouselContext = createContext<{
   currentIndex: 0,
 });
 
+type ReactElementType = React.ElementType & {
+  name?: string;
+  displayName?: string;
+};
+
 export const Carousel = ({ items, initialScroll = 0, onLoadMore, hasMore = false, isLoadingMore = false }: CarouselProps) => {
   const carouselRef = React.useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
@@ -200,7 +205,7 @@ export const Carousel = ({ items, initialScroll = 0, onLoadMore, hasMore = false
               // Determine if this is a SkeletonCard
               let isSkeleton = false;
               if (item && item.type) {
-                const type = item.type as any;
+                const type = item.type as ReactElementType;
                 isSkeleton = type.name === 'SkeletonCard' || type.displayName === 'SkeletonCard';
               }
               return (
@@ -276,7 +281,7 @@ export const Card = ({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, [open, handleClose]);
 
   useOutsideClick(containerRef as React.RefObject<HTMLDivElement>, () =>
     handleClose()
@@ -286,10 +291,10 @@ export const Card = ({
     setOpen(true);
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setOpen(false);
     onCardClose(index);
-  };
+  }, [setOpen, onCardClose, index]);
 
   return (
     <>

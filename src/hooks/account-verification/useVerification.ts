@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useEffect } from "react"
 import { verificationService } from "@/services/verificationServices"
+import { useJWT } from "@/contexts/JWTContext"
+import { useNotification } from "@/components/NotificationProvider"
 
 export type IDType = "drivers-license" | "passport" | "national-id" | "state-id"
 export type CaptureStep = "front" | "back" | "complete"
@@ -39,6 +41,8 @@ export const useVerification = () => {
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null)
   const [isLoadingStatus, setIsLoadingStatus] = useState(true)
   const [isResubmitting, setIsResubmitting] = useState(false)
+  const { user, updateUser } = useJWT()
+  const { success: notifySuccess, error: notifyError, info: notifyInfo } = useNotification()
 
   // Check verification status
   useEffect(() => {
@@ -53,6 +57,13 @@ export const useVerification = () => {
         if (status.hasVerification && status.verification?.status === "pending") {
           setIsInReview(true)
         }
+
+        // Keep JWT user state in sync so role-based routes unlock once approved
+        if (typeof status?.userStatus?.isVerified === "boolean") {
+          if (user?.is_verified !== status.userStatus.isVerified) {
+            updateUser({ is_verified: status.userStatus.isVerified })
+          }
+        }
       } catch (error) {
         console.error("Error checking verification status:", error)
       } finally {
@@ -60,17 +71,23 @@ export const useVerification = () => {
       }
     }
     fetchStatus()
-  }, [])
+  }, [updateUser, user?.is_verified])
 
   const captureImageForStep = useCallback(
     (imageData: string) => {
+      console.log("[v0] captureImageForStep called with currentStep:", currentStep)
       setCapturedImages((prev) => ({
         ...prev,
         [currentStep]: imageData
       }))
 
-      if (currentStep === "front") setCurrentStep("back")
-      else setCurrentStep("complete")
+      if (currentStep === "front") {
+        console.log("[v0] Advancing from front to back")
+        setCurrentStep("back")
+      } else {
+        console.log("[v0] Advancing from back to complete")
+        setCurrentStep("complete")
+      }
     },
     [currentStep]
   )
@@ -126,16 +143,16 @@ export const useVerification = () => {
   const handleSubmit = useCallback(async () => {
     // Block if there is an active pending verification or the user is already verified.
     if (verificationStatus?.verification?.status === "pending") {
-      alert("You have already submitted verification documents. Please wait for review.")
+      notifyInfo("You have already submitted verification documents. Please wait for review.")
       return
     }
     if (verificationStatus?.userStatus?.isVerified) {
-      alert("Your account is already verified. No further submission is required.")
+      notifyInfo("Your account is already verified. No further submission is required.")
       return
     }
 
     if (!selectedIdType || !capturedImages.front || !capturedImages.back) {
-      alert("Please complete all steps before submitting.")
+      notifyInfo("Please complete all steps before submitting.")
       return
     }
 
@@ -149,19 +166,26 @@ export const useVerification = () => {
       await verificationService.submit(mapIdTypeToServer(selectedIdType as IDType), frontFile, backFile)
 
       setIsInReview(true)
-      alert("Verification submitted successfully! We will review your documents within 24-48 hours.")
+      notifySuccess("Verification submitted successfully! We will review your documents within 24-48 hours.")
 
       // Refresh verification status
       const status = await verificationService.getStatus()
       setVerificationStatus(status)
+
+      // Sync JWT user state with latest server verified status
+      if (typeof status?.userStatus?.isVerified === "boolean") {
+        if (user?.is_verified !== status.userStatus.isVerified) {
+          updateUser({ is_verified: status.userStatus.isVerified })
+        }
+      }
     } catch (error) {
       console.error("Error submitting verification:", error)
       setSubmitError(error instanceof Error ? error.message : "Failed to submit verification")
-      alert("Failed to submit verification. Please try again.")
+      notifyError("Failed to submit verification. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
-  }, [selectedIdType, capturedImages, base64ToFile, mapIdTypeToServer, verificationStatus])
+  }, [selectedIdType, capturedImages, base64ToFile, mapIdTypeToServer, verificationStatus, updateUser, user?.is_verified, notifySuccess, notifyError, notifyInfo])
 
   const getStepStatus = useCallback(
     (step: number) => {

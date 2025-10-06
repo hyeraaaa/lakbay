@@ -1,17 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import FormHeader from "@/components/auth/FormHeader";
 import ResetPasswordFormSection from "@/components/auth/reset-password/ResetPasswordFormSection";
 import FormActions from "@/components/auth/reset-password/FormActions";
 import SuccessMessage from "@/components/auth/reset-password/SuccessMessage";
 import { useResetPasswordForm } from "@/hooks/reset-password/useResetPasswordForm";
-import AnimatedAlert from "@/components/ui/AnimatedAlert";
+import { useNotification } from "@/components/NotificationProvider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { RedirectIfAuthenticated } from "@/components/auth/RedirectIfAuthenticated";
 
 const ResetPassword = () => {
+  const { error } = useNotification();
   const {
     formData,
     showNewPassword,
@@ -28,10 +28,16 @@ const ResetPassword = () => {
     handleRedirectToLogin,
   } = useResetPasswordForm();
 
+  // Show error notification when serverError changes
+  useEffect(() => {
+    if (serverError) {
+      error(serverError);
+    }
+  }, [serverError, error]);
+
   // Show error if no token is provided
   if (!token) {
     return (
-      <RedirectIfAuthenticated>
         <div className="min-h-screen flex items-start justify-center bg-whitesmoke dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-20">
           <div className="w-full max-w-md">
             <FormHeader 
@@ -41,19 +47,17 @@ const ResetPassword = () => {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                The password reset link you're trying to use is invalid or has expired. 
+                The password reset link you&apos;re trying to use is invalid or has expired. 
                 Please request a new password reset from the login page.
               </AlertDescription>
             </Alert>
           </div>
         </div>
-      </RedirectIfAuthenticated>
     );
   }
 
   if (isSuccess) {
     return (
-      <RedirectIfAuthenticated>
         <div className="min-h-screen flex items-start justify-center bg-whitesmoke dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-20">
           <div className="w-full max-w-md">
             <FormHeader 
@@ -62,12 +66,10 @@ const ResetPassword = () => {
             <SuccessMessage onRedirectToLogin={handleRedirectToLogin} />
           </div>
         </div>
-      </RedirectIfAuthenticated>
     );
   }
 
   return (
-    <RedirectIfAuthenticated>
       <div className="min-h-screen flex items-start justify-center bg-whitesmoke dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-20">
         <div className="w-full max-w-md">
           <FormHeader 
@@ -93,17 +95,7 @@ const ResetPassword = () => {
             </form>
           </div>
         </div>
-
-        {/* API Error Alert */}
-        <AnimatedAlert 
-          message={serverError || ""}
-          variant="destructive"
-          position="bottom-right"
-          autoClose={true}
-          autoCloseDelay={2500}
-        />
       </div>
-    </RedirectIfAuthenticated>
   );
 };
 

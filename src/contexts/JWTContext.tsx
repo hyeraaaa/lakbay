@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   User,
   AuthTokens,
@@ -15,12 +15,16 @@ import {
   refreshAccessToken,
   isTokenExpiringSoon,
   getAccessToken,
+  getUser,
+  hasClientAccessToken,
 } from '@/lib/jwt';
+import { profileService } from '@/services/profileServices';
 
 interface JWTContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isLoggingOut: boolean;
   login: (tokens: AuthTokens, user: User) => void;
   logout: () => Promise<void>;
   refreshToken: () => Promise<boolean>;
@@ -36,7 +40,12 @@ interface JWTProviderProps {
 export const JWTProvider: React.FC<JWTProviderProps> = ({ children }) => {
   const [user, setUserState] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isVerifyingRoute, setIsVerifyingRoute] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  const lastVerifiedPathRef = React.useRef<string | null>(null);
 
   // Initialize authentication state
   useEffect(() => {
@@ -47,24 +56,73 @@ export const JWTProvider: React.FC<JWTProviderProps> = ({ children }) => {
           if (currentUser) {
             setUserState(currentUser);
           } else {
-            // User data is missing, clear everything and redirect
+            // User data is missing, clear everything
             clearTokens();
             clearUser();
-            router.replace('/login');
           }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
         clearTokens();
         clearUser();
-        router.replace('/login');
       } finally {
         setIsLoading(false);
+        setIsInitialized(true);
       }
     };
 
-    initializeAuth();
+    // Only initialize once
+    if (!isInitialized) {
+      initializeAuth();
+    }
+  }, [isInitialized]);
+
+  const login = useCallback((tokens: AuthTokens, userData: User) => {
+    setTokens(tokens);
+    setUser(userData);
+    setUserState(userData);
+    setIsLoading(false); // Ensure loading state is cleared after login
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      setIsLoggingOut(true);
+      await logoutUtil();
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if server call fails, proceed to client-side cleanup
+    } finally {
+      // Perform client-side cleanup and then navigate
+      clearTokens();
+      clearUser();
+      setUserState(null);
+      router.replace('/login');
+      setIsLoggingOut(false);
+      // Keep isLoggingOut true until navigation happens; optionally reset later
+    }
   }, [router]);
+
+  const refreshToken = useCallback(async (): Promise<boolean> => {
+    try {
+      console.log('JWT Context: Starting token refresh...');
+      const newTokens = await refreshAccessToken();
+      if (newTokens) {
+        console.log('JWT Context: Token refresh successful');
+        // Update user state if needed
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+          setUserState(currentUser);
+        }
+        return true;
+      }
+      console.log('JWT Context: Token refresh returned null');
+      return false;
+    } catch (error) {
+      console.error('JWT Context: Token refresh failed:', error);
+      await logout();
+      return false;
+    }
+  }, [logout]);
 
   // Set up token refresh interval
   useEffect(() => {
@@ -82,69 +140,38 @@ export const JWTProvider: React.FC<JWTProviderProps> = ({ children }) => {
     const interval = setInterval(checkTokenExpiry, 60000);
     
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, refreshToken]);
 
-  const login = (tokens: AuthTokens, userData: User) => {
-    setTokens(tokens);
-    setUser(userData);
-    setUserState(userData);
-  };
-
-  const logout = async () => {
-    try {
-      await logoutUtil();
-      setUserState(null);
-      router.push('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Force logout even if server call fails
-      clearTokens();
-      clearUser();
-      setUserState(null);
-      router.push('/login');
-    }
-  };
-
-  const updateUser = (updates: Partial<User>) => {
+  const updateUser = useCallback((updates: Partial<User>) => {
     setUserState(prev => {
       if (!prev) return prev;
       const merged = { ...prev, ...updates } as User;
       setUser(merged);
       return merged;
     });
-  };
+  }, []);
 
-  const refreshToken = async (): Promise<boolean> => {
-    try {
-      const newTokens = await refreshAccessToken();
-      if (newTokens) {
-        // Update user state if needed
-        const currentUser = getCurrentUser();
-        if (currentUser) {
-          setUserState(currentUser);
-        }
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      await logout();
-      return false;
-    }
-  };
-
-  const value: JWTContextType = {
+  const memoizedValue = React.useMemo(() => ({
     user,
     isAuthenticated: !!user,
     isLoading,
+    isLoggingOut,
     login,
     logout,
     refreshToken,
     updateUser,
-  };
+  }), [
+    user,
+    isLoading,
+    isLoggingOut,
+    login,
+    logout,
+    refreshToken,
+    updateUser,
+  ]);
 
   return (
-    <JWTContext.Provider value={value}>
+    <JWTContext.Provider value={memoizedValue}>
       {children}
     </JWTContext.Provider>
   );

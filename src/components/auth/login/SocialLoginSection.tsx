@@ -16,28 +16,28 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
   return (
     <>
       {/* Divider */}
-      <div className="flex items-center my-4">
+      <div className="flex items-center my-3 sm:my-4">
         <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
-        <span className="px-4 text-gray-500 dark:text-gray-400 text-sm">or</span>
+        <span className="px-3 sm:px-4 text-gray-500 dark:text-gray-400 text-xs sm:text-sm">or</span>
         <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
       </div>
 
       {/* Social Login Buttons */}
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         <Button
           variant="outline"
-          className="w-full h-9"
+          className="w-full h-9 sm:h-10 text-xs sm:text-sm"
           disabled={isGoogleLoading || isLoading}
           onClick={onGoogleLogin}
         >
           {isGoogleLoading ? (
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-              Signing in with Google...
+              <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs sm:text-sm">Signing in with Google...</span>
             </div>
           ) : (
             <>
-              <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -55,15 +55,15 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Continue with Google
+              <span className="text-xs sm:text-sm">Continue with Google</span>
             </>
           )}
         </Button>
       </div>
 
       {/* Sign Up Link */}
-      <div className="text-center mt-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+      <div className="text-center mt-3 sm:mt-4">
+        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
           New to Lakbay?{" "}
           <Link
             href="/register"

@@ -1,18 +1,26 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
-import AnimatedAlert from "@/components/ui/AnimatedAlert";
+import { useNotification } from "@/components/NotificationProvider";
 import { useVerifyEmail } from '@/hooks/email-verification/useEmailVerification';
 
 const VerifyEmail = () => {
+  const { error } = useNotification()
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
   const { status, errorMessage } = useVerifyEmail(token);
   const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Show error notification when status is error
+  useEffect(() => {
+    if (status === 'error' && errorMessage) {
+      error(errorMessage);
+    }
+  }, [status, errorMessage, error]);
 
   const handleRedirectToLogin = () => {
     setIsRedirecting(true);
@@ -82,16 +90,6 @@ const VerifyEmail = () => {
           </div>
         )}
       </div>
-
-      {status === 'error' && (
-        <AnimatedAlert 
-          message={errorMessage}
-          variant="destructive"
-          position="bottom-right"
-          autoClose
-          autoCloseDelay={5000}
-        />
-      )}
     </div>
   );
 };

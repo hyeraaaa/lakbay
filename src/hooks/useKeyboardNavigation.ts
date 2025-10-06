@@ -3,17 +3,17 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { KeyboardEvent } from "react";
 
-interface UseKeyboardNavigationProps {
-  suggestions: any[];
-  onSelect: (item: any) => void;
+interface UseKeyboardNavigationProps<T> {
+  suggestions: T[];
+  onSelect: (item: T) => void;
   onClose: () => void;
 }
 
-export const useKeyboardNavigation = ({
+export const useKeyboardNavigation = <T>({
   suggestions,
   onSelect,
   onClose,
-}: UseKeyboardNavigationProps) => {
+}: UseKeyboardNavigationProps<T>) => {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const selectedItemRef = useRef<HTMLDivElement>(null);
 

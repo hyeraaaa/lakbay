@@ -7,6 +7,7 @@ import { Camera, RotateCcw } from "lucide-react"
 import { useCamera } from "@/hooks/account-verification/useCamera"
 import type { CaptureStep, IDType } from "@/hooks/account-verification/useVerification"
 import { ID_TYPES } from "@/components/account-verification/id-type-selector"
+import Image from "next/image"
 
 interface CameraCaptureProps {
   selectedIdType: IDType
@@ -25,12 +26,22 @@ export const CameraCapture = ({
   onRetakePhoto,
   onContinue,
 }: CameraCaptureProps) => {
-  const { stream, isCapturing, videoRef, canvasRef, startCamera, stopCamera, captureImage } = useCamera()
+  const handleCaptureComplete = () => {
+    // This will be called immediately after image capture
+    // The stepper will advance automatically
+    console.log("[v0] Capture complete, stepper should advance")
+  }
+
+  const { stream, isCapturing, videoRef, canvasRef, startCamera, stopCamera, captureImage } = useCamera(handleCaptureComplete)
 
   const handleCapture = () => {
+    console.log("[v0] Starting capture process...")
     const imageData = captureImage()
     if (imageData) {
+      console.log("[v0] Image captured, calling onImageCaptured")
       onImageCaptured(imageData)
+    } else {
+      console.log("[v0] No image data captured")
     }
   }
 
@@ -41,7 +52,7 @@ export const CameraCapture = ({
         console.error("[v0] Error auto-playing video:", err)
       })
     }
-  }, [stream])
+  }, [stream]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (currentStep === "complete") return null
 
@@ -86,7 +97,7 @@ export const CameraCapture = ({
                   className="w-full rounded-lg border-2 border-foreground transform"
                   style={{ transform: "scaleX(-1)" }}
                 />
-                <div className="absolute inset-4 border-2 border-foreground border-dashed rounded-lg pointer-events-none" />
+                <div className="absolute inset-4" />
                 <div className="flex justify-center mt-4 space-x-4">
                   <Button onClick={handleCapture} size="lg">
                     <Camera className="h-5 w-5 mr-2" />
@@ -101,12 +112,16 @@ export const CameraCapture = ({
 
             {capturedImage && (
               <div className="text-center">
-                <img
-                  src={capturedImage || "/placeholder.svg"}
-                  alt={`${currentStep} of ID`}
-                  className="w-full max-w-md mx-auto rounded-lg border-2 border-foreground mb-4"
-                  style={{ transform: "scaleX(-1)" }}
-                />
+                <div className="relative w-full max-w-md mx-auto h-72 mb-4">
+                  <Image
+                    src={capturedImage || "/placeholder.svg"}
+                    alt={`${currentStep} of ID`}
+                    fill
+                    className="object-contain rounded-lg border-2 border-foreground"
+                    style={{ transform: "scaleX(-1)" }}
+                    unoptimized
+                  />
+                </div>
                 <div className="flex justify-center space-x-4">
                   <Button onClick={() => onRetakePhoto(currentStep)} variant="outline">
                     <RotateCcw className="h-4 w-4 mr-2" />

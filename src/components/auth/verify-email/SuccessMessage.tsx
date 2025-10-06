@@ -27,7 +27,7 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
         
         <div className="space-y-3">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Didn't receive the email? Check your spam folder or{" "}
+            Didn&apos;t receive the email? Check your spam folder or{" "}
             <button
               onClick={onResend}
               disabled={resendTimer > 0 || isResending}

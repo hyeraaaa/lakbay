@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useJWT } from "@/contexts/JWTContext"
 import { getAccessToken } from "@/lib/jwt"
 import { profileService } from "@/services/profileServices"
@@ -36,6 +36,17 @@ export interface ProfileFormData {
   country: string
 }
 
+export interface SubmittableProfileData {
+  username: string
+  phone: string
+  address_line1: string
+  address_line2: string
+  city: string
+  state: string
+  postal_code: string
+  country: string
+}
+
 const initialFormData: ProfileFormData = {
   first_name: "",
   last_name: "",
@@ -61,45 +72,87 @@ export function useUserProfile() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [previewUrl, setPreviewUrl] = useState<string>("")
   const [isEditMode, setIsEditMode] = useState(false)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const API_BASE_URL = useMemo(() => process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000', [])
 
   const shouldShowSkeleton = authLoading || isLoading
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user?.id) return
-      setIsLoading(true)
-      setError("")
-      try {
-        const { ok, data } = await profileService.getProfile(user.id)
-        
-        if (!ok) {
-          throw new Error("Failed to load profile")
-        }
-
-        setProfileData(data)
-        setFormData({
-          first_name: data.first_name || "",
-          last_name: data.last_name || "",
-          username: data.username || "",
-          phone: data.phone || "",
-          address_line1: data.address_line1 || "",
-          address_line2: data.address_line2 || "",
-          city: data.city || "",
-          state: data.state || "",
-          postal_code: data.postal_code || "",
-          country: data.country || "",
-        })
-      } catch (err: any) {
-        setError(err?.message || "Failed to load profile")
-      } finally {
-        setIsLoading(false)
+  const fetchProfile = useCallback(async () => {
+    if (!user?.id) return
+    setIsLoading(true)
+    setError("")
+    try {
+      const { ok, data } = await profileService.getProfile(user.id)
+      
+      if (!ok) {
+        throw new Error("Failed to load profile")
       }
+
+      setProfileData(data)
+      setFormData({
+        first_name: data.first_name || "",
+        last_name: data.last_name || "",
+        username: data.username || "",
+        phone: data.phone || "",
+        address_line1: data.address_line1 || "",
+        address_line2: data.address_line2 || "",
+        city: data.city || "",
+        state: data.state || "",
+        postal_code: data.postal_code || "",
+        country: data.country || "",
+      })
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load profile"
+      setError(errorMessage)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user?.id])
+
+  // Initial profile fetch
+  useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
+
+  // Polling for verification status updates
+  useEffect(() => {
+    if (!user?.id || !profileData) return
+
+    // Clear any existing interval
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
     }
 
-    fetchProfile()
-  }, [user?.id])
+    // Only start polling if user is not verified
+    if (!profileData.is_verified) {
+      pollingIntervalRef.current = setInterval(async () => {
+        try {
+          const { ok, data } = await profileService.getProfile(user.id)
+          if (ok && data) {
+            setProfileData(data)
+            // If user is now verified, stop polling
+            if (data.is_verified) {
+              if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current)
+                pollingIntervalRef.current = null
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Polling error:', error)
+        }
+      }, 5000) // Poll every 5 seconds
+    }
+
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
+    }
+  }, [user?.id, profileData])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -115,8 +168,11 @@ export function useUserProfile() {
     setSuccess("")
 
     try {
+      // Exclude first_name and last_name from submission as they're restricted on server
+      const { first_name, last_name, ...submittableData }: ProfileFormData = formData
+      
       // Use the service instead of direct API call
-      const { ok, data } = await profileService.updateProfile(user.id, formData)
+      const { ok, data } = await profileService.updateProfile(user.id, submittableData)
 
       if (!ok) {
         throw new Error(data?.message || "Failed to update profile")
@@ -129,8 +185,7 @@ export function useUserProfile() {
         // Use the service instead of direct fetch
         const { ok: uploadOk, data: uploadData } = await profileService.uploadProfilePicture(
           user.id, 
-          selectedFile, 
-          accessToken
+          selectedFile
         )
 
         if (!uploadOk) {
@@ -153,10 +208,12 @@ export function useUserProfile() {
           is_verified: refreshedData.is_verified,
           email: refreshedData.email,
           id: String(refreshedData.user_id),
+          profile_picture: refreshedData.profile_picture || undefined,
         })
       }
-    } catch (err: any) {
-      setError(err?.message || "Failed to update profile")
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update profile"
+      setError(errorMessage)
     } finally {
       setIsSaving(false)
     }
@@ -175,12 +232,31 @@ export function useUserProfile() {
   }, [previewUrl])
 
   const computedAvatarSrc = useMemo(() => {
-    if (!profileData?.profile_picture) return ""
+    console.log("Profile Page - Computing avatar src")
+    console.log("Profile Page - profileData:", profileData)
+    console.log("Profile Page - profile_picture:", profileData?.profile_picture)
+    console.log("Profile Page - API_BASE_URL:", API_BASE_URL)
+    
+    if (!profileData?.profile_picture) {
+      console.log("Profile Page - No profile picture, returning empty string")
+      return ""
+    }
+    
     const raw = profileData.profile_picture
-    if (/^https?:\/\//i.test(raw)) return raw
+    console.log("Profile Page - Raw profile picture:", raw)
+    console.log("Profile Page - Is HTTP URL:", /^https?:\/\//i.test(raw))
+    
+    if (/^https?:\/\//i.test(raw)) {
+      console.log("Profile Page - Returning HTTP URL as-is:", raw)
+      return raw
+    }
+    
     const normalized = raw.startsWith('/') ? raw.slice(1) : raw
-    return `${API_BASE_URL}/${normalized}`.replace(/\\/g, "/")
-  }, [API_BASE_URL, profileData?.profile_picture])
+    const finalUrl = `${API_BASE_URL}/${normalized}`.replace(/\\/g, "/")
+    console.log("Profile Page - Normalized:", normalized)
+    console.log("Profile Page - Final URL:", finalUrl)
+    return finalUrl
+  }, [API_BASE_URL, profileData])
 
   const handleCancelEdit = () => {
     setIsEditMode(false)

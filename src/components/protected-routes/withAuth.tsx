@@ -1,0 +1,122 @@
+'use client';
+
+import React, { ComponentType, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useJWT } from '@/contexts/JWTContext';
+
+export interface WithAuthOptions {
+  redirectTo?: string;
+  requireAuth?: boolean;
+  allowedUserTypes?: string[];
+  requireEmailVerification?: boolean;
+  requireAccountVerification?: boolean;
+}
+
+export interface WithAuthProps {
+  user: {
+    user_type: string;
+    is_email_verified: boolean;
+    is_verified: boolean;
+  } | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
+
+/**
+ * Higher Order Component for protecting routes
+ * @param WrappedComponent - The component to protect
+ * @param options - Configuration options for the protection
+ */
+export function withAuth<P extends object>(
+  WrappedComponent: ComponentType<P & WithAuthProps>,
+  options: WithAuthOptions = {}
+) {
+  const {
+    redirectTo = '/login',
+    requireAuth = true,
+    allowedUserTypes = [],
+    requireEmailVerification = false,
+    requireAccountVerification = false,
+  } = options;
+
+  const AuthenticatedComponent = (props: P) => {
+    const { user, isAuthenticated, isLoading } = useJWT();
+    const router = useRouter();
+
+    useEffect(() => {
+      // Don't redirect while loading
+      if (isLoading) return;
+
+      // If authentication is required but user is not authenticated
+      if (requireAuth && !isAuthenticated) {
+        router.replace(redirectTo);
+        return;
+      }
+
+      // If user is authenticated but doesn't have required user type
+      if (isAuthenticated && allowedUserTypes.length > 0 && user) {
+        if (!allowedUserTypes.includes(user.user_type)) {
+          router.replace('/unauthorized');
+          return;
+        }
+      }
+
+      // If email verification is required but user's email is not verified
+      if (isAuthenticated && requireEmailVerification && user) {
+        if (!user.is_email_verified) {
+          router.replace('/verify-email');
+          return;
+        }
+      }
+
+      // If account verification is required but user's account is not verified
+      if (isAuthenticated && requireAccountVerification && user) {
+        if (!user.is_verified) {
+          router.replace('/account-verification');
+          return;
+        }
+      }
+    }, [isAuthenticated, isLoading, user, router]);
+
+    // Don't render anything while loading
+    if (isLoading) {
+      return null;
+    }
+
+    // If authentication is required but user is not authenticated, don't render
+    if (requireAuth && !isAuthenticated) {
+      return null;
+    }
+
+    // If user type restrictions exist and user doesn't meet them, don't render
+    if (isAuthenticated && allowedUserTypes.length > 0 && user) {
+      if (!allowedUserTypes.includes(user.user_type)) {
+        return null;
+      }
+    }
+
+    // If email verification is required but not met, don't render
+    if (isAuthenticated && requireEmailVerification && user) {
+      if (!user.is_email_verified) {
+        return null;
+      }
+    }
+
+    // If account verification is required but not met, don't render
+    if (isAuthenticated && requireAccountVerification && user) {
+      if (!user.is_verified) {
+        return null;
+      }
+    }
+
+    // Render the wrapped component with auth props
+    return <WrappedComponent {...props} user={user} isAuthenticated={isAuthenticated} isLoading={isLoading} />;
+  };
+
+  // Set display name for debugging
+  AuthenticatedComponent.displayName = `withAuth(${WrappedComponent.displayName || WrappedComponent.name})`;
+
+  return AuthenticatedComponent;
+}
+
+export default withAuth;

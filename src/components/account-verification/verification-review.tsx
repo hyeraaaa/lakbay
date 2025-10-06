@@ -3,9 +3,11 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Check, FileText, Shield, RotateCcw } from "lucide-react"
+import { Check, FileText, Shield, RotateCcw, Loader2 } from "lucide-react"
 import type { IDType } from "@/hooks/account-verification/useVerification"
 import { ID_TYPES } from "./id-type-selector"
+import Image from "next/image"
+import { useState } from "react"
 
 interface VerificationReviewProps {
   selectedIdType: IDType
@@ -14,6 +16,7 @@ interface VerificationReviewProps {
   onSelectIdType: (value: IDType) => void
   onRetakePhoto: (side: "front" | "back") => void
   onSubmit: () => void
+  isSubmitting?: boolean
 }
 
 export const VerificationReview = ({
@@ -23,7 +26,9 @@ export const VerificationReview = ({
   onSelectIdType,
   onRetakePhoto,
   onSubmit,
+  isSubmitting = false,
 }: VerificationReviewProps) => {
+  const [internalState] = useState(false)
   return (
     <Card>
       <CardHeader>
@@ -67,12 +72,16 @@ export const VerificationReview = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
             <h4 className="font-medium mb-2">Front of ID</h4>
-            <img
-              src={frontImage || "/placeholder.svg"}
-              alt="Front of ID"
-              className="w-full rounded-lg border"
-              style={{ transform: "scaleX(-1)" }}
-            />
+            <div className="relative w-full h-64 md:h-72">
+              <Image
+                src={frontImage || "/placeholder.svg"}
+                alt="Front of ID"
+                fill
+                className="object-contain rounded-lg border"
+                style={{ transform: "scaleX(-1)" }}
+                unoptimized
+              />
+            </div>
             <Button onClick={() => onRetakePhoto("front")} variant="outline" size="sm" className="mt-2 w-full">
               <RotateCcw className="h-4 w-4 mr-2" />
               Retake Front
@@ -80,12 +89,16 @@ export const VerificationReview = ({
           </div>
           <div>
             <h4 className="font-medium mb-2">Back of ID</h4>
-            <img
-              src={backImage || "/placeholder.svg"}
-              alt="Back of ID"
-              className="w-full rounded-lg border"
-              style={{ transform: "scaleX(-1)" }}
-            />
+            <div className="relative w-full h-64 md:h-72">
+              <Image
+                src={backImage || "/placeholder.svg"}
+                alt="Back of ID"
+                fill
+                className="object-contain rounded-lg border"
+                style={{ transform: "scaleX(-1)" }}
+                unoptimized
+              />
+            </div>
             <Button onClick={() => onRetakePhoto("back")} variant="outline" size="sm" className="mt-2 w-full">
               <RotateCcw className="h-4 w-4 mr-2" />
               Retake Back
@@ -105,10 +118,17 @@ export const VerificationReview = ({
             </div>
           </div>
         </div>
-
-        <Button onClick={onSubmit} className="w-full" size="lg">
-          <Check className="h-5 w-5 mr-2" />
-          Submit for Verification
+        <Button onClick={onSubmit} className="w-full" size="lg" disabled={isSubmitting} aria-busy={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            <>
+              Submit for Verification
+            </>
+          )}
         </Button>
       </CardContent>
     </Card>

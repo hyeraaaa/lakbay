@@ -2,14 +2,14 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FileText, CreditCard, Dessert as Passport } from "lucide-react"
+import { FileText, CreditCard, IdCard } from "lucide-react"
 import type { IDType } from "@/hooks/account-verification/useVerification"
 
 const ID_TYPES = [
-  { value: "drivers-license", label: "Driver's License", icon: CreditCard },
-  { value: "passport", label: "Passport", icon: Passport },
-  { value: "national-id", label: "National ID", icon: FileText },
-  { value: "state-id", label: "State ID", icon: CreditCard },
+  { value: "drivers-license", label: "Driver's License", icon: IdCard },
+  { value: "passport", label: "Passport", icon: IdCard },
+  { value: "national-id", label: "National ID", icon: IdCard },
+  { value: "state-id", label: "State ID", icon: IdCard },
 ] as const
 
 interface IDTypeSelectorProps {
@@ -22,10 +22,10 @@ export const IDTypeSelector = ({ selectedIdType, onSelectIdType }: IDTypeSelecto
     <Card className="mb-6">
       <CardHeader>
         <CardTitle className="flex items-center">
-          <FileText className="h-5 w-5 mr-2" />
+          <IdCard className="h-5 w-5 mr-2" />
           Step 1: Select ID Type
         </CardTitle>
-        <CardDescription>Choose the type of identification document you'll be uploading</CardDescription>
+        <CardDescription>Choose the type of identification document you&apos;ll be uploading</CardDescription>
       </CardHeader>
       <CardContent>
         <Select value={selectedIdType} onValueChange={(value: IDType) => onSelectIdType(value)}>

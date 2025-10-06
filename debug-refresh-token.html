@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refresh Token Debug Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Refresh Token Debug Tool</h1>
+    
+    <div class="section info">
+        <h3>Instructions</h3>
+        <p>1. First login to your app normally</p>
+        <p>2. Then use the buttons below to test the refresh token functionality</p>
+        <p>3. Check the browser console for detailed logs</p>
+    </div>
+
+    <div class="section">
+        <h3>Test Actions</h3>
+        <button onclick="testRefreshToken()">Test Refresh Token</button>
+        <button onclick="checkCookies()">Check Cookies</button>
+        <button onclick="checkLocalStorage()">Check Local Storage</button>
+        <button onclick="clearAll()">Clear All Data</button>
+    </div>
+
+    <div id="results" class="section">
+        <h3>Results</h3>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000'; // Update this to match your API URL
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            output.appendChild(div);
+            console.log(message);
+        }
+
+        async function testRefreshToken() {
+            log('Testing refresh token...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
+                    method: 'POST',
+                    credentials: 'include',
+                });
+
+                log(`Response status: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Success! New access token received: ${data.accessToken ? 'Yes' : 'No'}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`Error: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                log(`Network error: ${error.message}`, 'error');
+            }
+        }
+
+        function checkCookies() {
+            log('Checking cookies...', 'info');
+            const cookies = document.cookie;
+            log(`All cookies: ${cookies || 'None'}`, cookies ? 'success' : 'error');
+            
+            if (cookies.includes('refreshToken')) {
+                log('Refresh token cookie found!', 'success');
+            } else {
+                log('Refresh token cookie NOT found!', 'error');
+            }
+        }
+
+        function checkLocalStorage() {
+            log('Checking localStorage...', 'info');
+            const accessToken = localStorage.getItem('accessToken');
+            const user = localStorage.getItem('user');
+            
+            log(`Access token: ${accessToken ? 'Present' : 'Missing'}`, accessToken ? 'success' : 'error');
+            log(`User data: ${user ? 'Present' : 'Missing'}`, user ? 'success' : 'error');
+            
+            if (accessToken) {
+                try {
+                    const payload = JSON.parse(atob(accessToken.split('.')[1]));
+                    const expiry = new Date(payload.exp * 1000);
+                    const now = new Date();
+                    const timeLeft = Math.round((expiry - now) / 1000);
+                    
+                    log(`Token expires in: ${timeLeft} seconds`, timeLeft > 0 ? 'success' : 'error');
+                } catch (e) {
+                    log('Error parsing token: ' + e.message, 'error');
+                }
+            }
+        }
+
+        function clearAll() {
+            log('Clearing all data...', 'info');
+            localStorage.clear();
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            log('All data cleared', 'success');
+        }
+
+        // Auto-check on load
+        window.onload = function() {
+            log('Debug tool loaded. Please login first, then test refresh token.', 'info');
+            checkCookies();
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>

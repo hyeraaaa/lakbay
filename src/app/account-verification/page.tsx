@@ -1,15 +1,16 @@
 "use client"
 
 import { Shield } from "lucide-react"
+import { useState } from "react"
 import { useVerification } from "@/hooks/account-verification/useVerification"
 import { IDTypeSelector } from "@/components/account-verification/id-type-selector"
 import { CameraCapture } from "@/components/account-verification/camera-capture"
 import { VerificationReview } from "@/components/account-verification/verification-review"
 import { VerificationProgress } from "@/components/account-verification/verification-progress"
 import { VerificationStatus } from "@/components/account-verification/verification-status"
-import { AuthenticatedRoute } from "@/components/auth/ProtectedRoute"
-
+import { ConfirmationDialog } from "@/components/confirmation-dialog/confimationDialog"
 const AccountVerification = () => {
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const {
     selectedIdType,
     setSelectedIdType,
@@ -17,6 +18,7 @@ const AccountVerification = () => {
     setCurrentStep,
     capturedImages,
     isInReview,
+    isSubmitting,
     verificationStatus,
     isLoadingStatus,
     captureImageForStep,
@@ -31,14 +33,12 @@ const AccountVerification = () => {
   // Show loading state while checking verification status
   if (isLoadingStatus) {
     return (
-      <AuthenticatedRoute>
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mx-auto mb-4"></div>
             <p className="text-muted-foreground">Checking verification status...</p>
           </div>
         </div>
-      </AuthenticatedRoute>
     )
   }
 
@@ -49,8 +49,7 @@ const AccountVerification = () => {
 
   if (shouldShowStatusPage) {
     return (
-      <AuthenticatedRoute>
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
               <Shield className="h-8 w-8 text-foreground mr-2" />
@@ -69,13 +68,11 @@ const AccountVerification = () => {
             }
           />
         </div>
-      </AuthenticatedRoute>
     )
   }
 
   return (
-    <AuthenticatedRoute>
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Shield className="h-8 w-8 text-foreground mr-2" />
@@ -119,13 +116,22 @@ const AccountVerification = () => {
                 backImage={capturedImages.back}
                 onSelectIdType={setSelectedIdType}
                 onRetakePhoto={retakePhoto}
-                onSubmit={handleSubmit}
+                onSubmit={() => setIsConfirmOpen(true)}
+                isSubmitting={isSubmitting}
               />
             )}
           </>
         )}
+        <ConfirmationDialog
+          open={isConfirmOpen}
+          onOpenChange={setIsConfirmOpen}
+          title="Submit verification?"
+          description="Please confirm you want to submit your ID photos for review. You won't be able to edit while it's being reviewed."
+          confirmText="Submit"
+          cancelText="Review again"
+          onConfirm={handleSubmit}
+        />
       </div>
-    </AuthenticatedRoute>
   )
 }
 

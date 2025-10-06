@@ -24,12 +24,12 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
       <div className="text-center space-y-4">
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
           <p className="text-green-800 dark:text-green-200 text-sm">
-            If an account with that email exists, you'll receive a password reset link shortly.
+            If an account with that email exists, you&apos;ll receive a password reset link shortly.
           </p>
         </div>
         
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Didn't receive the email? Check your spam folder or try again.
+          Didn&apos;t receive the email? Check your spam folder or try again.
         </p>
 
         {/* Resend Button with Timer */}

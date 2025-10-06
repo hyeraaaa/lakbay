@@ -15,7 +15,7 @@ const SuccessHeader: React.FC<SuccessHeaderProps> = ({ email }) => {
         Check your email
       </h1>
       <p className="text-gray-600 dark:text-gray-400">
-        We've sent a verification link to{" "}
+        We&apos;ve sent a verification link to{" "}
         <span className="font-medium text-gray-900 dark:text-white">{email}</span>
       </p>
     </div>
