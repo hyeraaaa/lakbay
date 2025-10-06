@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useNotification } from "@/components/NotificationProvider";
 import { useVerifyEmail } from '@/hooks/email-verification/useEmailVerification';
 
-const VerifyEmail = () => {
+const VerifyEmailInner = () => {
   const { error } = useNotification()
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -29,25 +29,17 @@ const VerifyEmail = () => {
 
   const handleResendVerification = () => router.push('/email-verification');
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-whitesmoke dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="w-full max-w-md text-center">
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-whitesmoke dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="w-full max-w-md text-center">
+        {status === 'loading' ? (
           <div className="flex flex-col items-center space-y-4">
             <Loader2 className="h-12 w-12 text-primary animate-spin" />
             <p className="text-gray-600 dark:text-gray-400">
               Verifying your email address...
             </p>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-whitesmoke dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="w-full max-w-md text-center">
-        {status === 'success' ? (
+        ) : status === 'success' ? (
           <div className="flex flex-col items-center space-y-6">
             <CheckCircle className="h-16 w-16 text-green-500" />
             <h2 className="text-xl font-semibold text-green-600 dark:text-green-400">
@@ -91,6 +83,27 @@ const VerifyEmail = () => {
         )}
       </div>
     </div>
+  );
+};
+
+const VerifyEmail = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-whitesmoke dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+          <div className="w-full max-w-md text-center">
+            <div className="flex flex-col items-center space-y-4">
+              <Loader2 className="h-12 w-12 text-primary animate-spin" />
+              <p className="text-gray-600 dark:text-gray-400">
+                Preparing verification page...
+              </p>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <VerifyEmailInner />
+    </Suspense>
   );
 };
 
