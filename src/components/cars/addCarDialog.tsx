@@ -40,6 +40,9 @@ interface AddCarDialogProps {
 }
 
 export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpenChange, initialFormData, mode = "create", hideTrigger, existingImageUrls }: AddCarDialogProps) {
+  // Local copy of existing image URLs for edit mode so user can remove selections visually
+  const [existingUrls, setExistingUrls] = React.useState<string[]>([])
+  const getExistingCount = React.useCallback(() => existingUrls.length, [existingUrls.length])
   const {
     open,
     setOpen,
@@ -50,7 +53,7 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
     updateField,
     handleFeatureChange,
     handleImageUpload,
-  } = useAddCarDialog({ onSubmit, onAlert, mode, getExistingImagesCount: () => existingUrls.length })
+  } = useAddCarDialog({ onSubmit, onAlert, mode, getExistingImagesCount: getExistingCount })
 
   // Support controlled open state when provided
   const dialogOpen = typeof externalOpen === 'boolean' ? externalOpen : open
@@ -78,8 +81,6 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
     appliedPrefillKeyRef.current = prefillKey
   }, [dialogOpen, prefillKey, initialFormData, updateField])
 
-  // Local copy of existing image URLs for edit mode so user can remove selections visually
-  const [existingUrls, setExistingUrls] = React.useState<string[]>([])
   React.useEffect(() => {
     if (!dialogOpen) return
     if (Array.isArray(existingImageUrls)) setExistingUrls(existingImageUrls)

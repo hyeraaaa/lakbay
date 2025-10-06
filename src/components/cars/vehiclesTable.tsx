@@ -84,7 +84,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
   const { id, data, pagination, setPagination, sorting, setSorting, isDeletingId, handleDelete, applyUpdate, refreshRow } = useVehiclesTable({ vehicles, onChange })
   const [uploadForId, setUploadForId] = useState<number | null>(null)
   const [trackingForId, setTrackingForId] = useState<number | null>(null)
-  const vehicleIds = data.map((r) => r.id)
+  const vehicleIds = useMemo(() => data.map((r) => r.id), [data])
   const { trackerMap, setTrackerMap } = useVehicleTrackers(vehicleIds)
   const { deviceMap } = useTrackingDetails(vehicleIds)
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)

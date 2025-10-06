@@ -22,13 +22,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en"> 
-      <body className={`${poppins.variable} antialiased`}>
-        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID as string}>
+      <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID as string}>
+        <body className={`${poppins.variable} antialiased`}>
           <ClientLayout>
             {children}
           </ClientLayout>
-        </GoogleOAuthProvider>
-      </body>
+        </body>
+      </GoogleOAuthProvider>
     </html>
   );
 }
