@@ -475,7 +475,7 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
                               Document Resubmission Required
                             </h3>
                             <div className="mt-2 text-sm text-amber-700">
-                              <p>You've changed critical vehicle information:</p>
+                              <p>You&apos;ve changed critical vehicle information:</p>
                               <ul className="mt-1 list-disc list-inside">
                                 {criticalChanges.map((field, index) => (
                                   <li key={index}>{field}</li>
