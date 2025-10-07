@@ -428,6 +428,21 @@ class VehicleService {
     }
   }
 
+  async deleteVehicleImage(imageId: number): Promise<void> {
+    try {
+      const response = await apiRequest(`${API_BASE_URL}/api/vehicle-images/${imageId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        return this.throwVehicleError(response, 'images', 'Failed to delete image');
+      }
+    } catch (error) {
+      console.error('Error deleting vehicle image:', error);
+      throw error;
+    }
+  }
+
   async updateVehicle(vehicleId: number, vehicleData: Partial<VehicleData>): Promise<VehicleResponse> {
     try {
       const response = await apiRequest(`${API_BASE_URL}/api/vehicles/${vehicleId}`, {

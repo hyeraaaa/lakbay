@@ -91,7 +91,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
   const { registrationMap, setRegistrationMap } = useRegistrationMap(vehicleIds)
   const [editOpen, setEditOpen] = useState<boolean>(false)
   const [editInitial, setEditInitial] = useState<Partial<import("@/hooks/cars/useAddCars").VehicleFormData> | null>(null)
-  const [editExistingImages, setEditExistingImages] = useState<string[]>([])
+  const [editExistingImages, setEditExistingImages] = useState<Array<{ vehicle_image_id: number; url: string }>>([])
   const [editLoading, setEditLoading] = useState<boolean>(false)
   const [editVehicleId, setEditVehicleId] = useState<number | null>(null)
   const { success, error } = useNotification()
@@ -228,7 +228,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
                   coding: v.coding || "",
                   images: [],
                 })
-                setEditExistingImages((v.vehicle_images || []).map(img => img.url))
+                setEditExistingImages(v.vehicle_images || [])
                 setEditOpen(true)
               } catch (e) {
                 console.error(e)
@@ -297,7 +297,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
       <AddCarDialog
         externalOpen={editOpen}
         onOpenChange={setEditOpen}
-        onSubmit={async (form) => {
+        onSubmit={async (form, imageOperations) => {
           if (!editVehicleId) return
           try {
             setEditLoading(true)
@@ -315,6 +315,20 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
               features: form.features,
               coding: (form.coding || undefined) as VehicleData["coding"],
             })
+
+            // Handle image operations if provided
+            if (imageOperations) {
+              // Delete removed images
+              for (const imageId of imageOperations.removedImageIds) {
+                await vehicleService.deleteVehicleImage(imageId)
+              }
+              
+              // Upload new images
+              if (imageOperations.newImages.length > 0) {
+                await vehicleService.uploadVehicleImages(editVehicleId, imageOperations.newImages)
+              }
+            }
+
             success("Vehicle updated successfully")
             applyUpdate(editVehicleId, {
               brand: form.brand,
@@ -341,7 +355,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
         isLoading={editLoading}
         onAlert={() => {}}
         initialFormData={editInitial ?? undefined}
-        existingImageUrls={editExistingImages}
+        existingImages={editExistingImages}
         mode="edit"
         hideTrigger
       />

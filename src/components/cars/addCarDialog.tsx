@@ -28,7 +28,7 @@ import {
 import { ConfirmationDialog } from "@/components/confirmation-dialog/confimationDialog"
 
 interface AddCarDialogProps {
-  onSubmit: (formData: VehicleFormData) => Promise<void>
+  onSubmit: (formData: VehicleFormData, imageOperations?: { removedImageIds: number[], newImages: File[] }) => Promise<void>
   isLoading: boolean
   onAlert?: (message: string, variant: "default" | "destructive" | "success" | "warning" | "info") => void
   externalOpen?: boolean
@@ -36,13 +36,13 @@ interface AddCarDialogProps {
   initialFormData?: Partial<VehicleFormData>
   mode?: "create" | "edit"
   hideTrigger?: boolean
-  existingImageUrls?: string[]
+  existingImages?: Array<{ vehicle_image_id: number; url: string }>
 }
 
-export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpenChange, initialFormData, mode = "create", hideTrigger, existingImageUrls }: AddCarDialogProps) {
-  // Local copy of existing image URLs for edit mode so user can remove selections visually
-  const [existingUrls, setExistingUrls] = React.useState<string[]>([])
-  const getExistingCount = React.useCallback(() => existingUrls.length, [existingUrls.length])
+export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpenChange, initialFormData, mode = "create", hideTrigger, existingImages }: AddCarDialogProps) {
+  // Local copy of existing images for edit mode so user can remove selections visually
+  const [existingImageObjects, setExistingImageObjects] = React.useState<Array<{ vehicle_image_id: number; url: string }>>([])
+  const getExistingCount = React.useCallback(() => existingImageObjects.length, [existingImageObjects.length])
   const {
     open,
     setOpen,
@@ -53,6 +53,8 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
     updateField,
     handleFeatureChange,
     handleImageUpload,
+    validateAll,
+    resetForm,
   } = useAddCarDialog({ onSubmit, onAlert, mode, getExistingImagesCount: getExistingCount })
 
   // Support controlled open state when provided
@@ -83,8 +85,8 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
 
   React.useEffect(() => {
     if (!dialogOpen) return
-    if (Array.isArray(existingImageUrls)) setExistingUrls(existingImageUrls)
-  }, [dialogOpen, existingImageUrls])
+    if (Array.isArray(existingImages)) setExistingImageObjects(existingImages)
+  }, [dialogOpen, existingImages])
 
   // Stable object URLs for newly selected images to avoid flashing on re-renders
   const [newImagePreviewUrls, setNewImagePreviewUrls] = React.useState<string[]>([])
@@ -116,9 +118,9 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
   const hasErrors = React.useMemo(() => Object.values(errors).some(Boolean), [errors])
 
   const doesNotMeetImageMinimum = React.useMemo(() => {
-    if (mode === "edit") return (existingUrls.length + formData.images.length) < 3
+    if (mode === "edit") return (existingImageObjects.length + formData.images.length) < 3
     return formData.images.length < 3
-  }, [mode, existingUrls.length, formData.images.length])
+  }, [mode, existingImageObjects.length, formData.images.length])
 
   const isSubmitDisabled = isLoading || hasEmptyRequiredFields || hasErrors || doesNotMeetImageMinimum
 
@@ -132,6 +134,38 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
   const [confirmOpen, setConfirmOpen] = React.useState(false)
   const formRef = React.useRef<HTMLFormElement | null>(null)
   const openConfirmAndStay = () => setConfirmOpen(true)
+
+  // Custom submit handler that includes image operations
+  const handleCustomSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      if (!validateAll()) {
+        onAlert?.("Please fix the highlighted errors.", "destructive")
+        return
+      }
+
+      // Calculate image operations for edit mode
+      let imageOperations: { removedImageIds: number[], newImages: File[] } | undefined
+      if (mode === 'edit' && existingImages) {
+        const removedImageIds = existingImages
+          .filter(original => !existingImageObjects.some(current => current.vehicle_image_id === original.vehicle_image_id))
+          .map(img => img.vehicle_image_id)
+        
+        imageOperations = {
+          removedImageIds,
+          newImages: formData.images
+        }
+      }
+
+      await onSubmit(formData, imageOperations)
+      setDialogOpen(false)
+      resetForm()
+      onAlert?.("Vehicle updated successfully", "success")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to update vehicle"
+      onAlert?.(message, "destructive")
+    }
+  }
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -150,7 +184,7 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
           </DialogDescription>
         </DialogHeader>
 
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+        <form ref={formRef} onSubmit={handleCustomSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="brand">Brand</Label>
@@ -329,15 +363,15 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
             </div>
             <p className="text-xs text-muted-foreground">JPG/PNG/GIF supported. Minimum 3 images required.</p>
             {mode === 'edit' && (
-              <p className="text-xs text-muted-foreground">Currently counting {existingUrls.length} existing + {formData.images.length} new.</p>
+              <p className="text-xs text-muted-foreground">Currently counting {existingImageObjects.length} existing + {formData.images.length} new.</p>
             )}
             {errors.images && <p className="text-xs text-destructive mt-1">{errors.images}</p>}
-            {(mode === 'edit' ? (existingUrls.length > 0 || formData.images.length > 0) : formData.images.length > 0) && (
+            {(mode === 'edit' ? (existingImageObjects.length > 0 || formData.images.length > 0) : formData.images.length > 0) && (
               <div className="grid grid-cols-3 gap-2 mt-3">
-                {mode === 'edit' && existingUrls.map((url, index) => (
-                  <div key={`existing-${index}`} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                {mode === 'edit' && existingImageObjects.map((imageObj, index) => (
+                  <div key={`existing-${imageObj.vehicle_image_id}`} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
                     <Image
-                      src={url || "/placeholder.svg"}
+                      src={imageObj.url || "/placeholder.svg"}
                       alt={`Existing car image ${index + 1}`}
                       fill
                       className="object-cover"
@@ -346,7 +380,7 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
                     <button
                       type="button"
                       className="absolute top-2 right-2 inline-flex items-center justify-center h-8 w-8 rounded-full bg-black/60 text-white"
-                      onClick={() => setExistingUrls((prev) => prev.filter((_, i) => i !== index))}
+                      onClick={() => setExistingImageObjects((prev) => prev.filter((_, i) => i !== index))}
                       aria-label="Remove image"
                     >
                       <Trash2 className="h-4 w-4" />
