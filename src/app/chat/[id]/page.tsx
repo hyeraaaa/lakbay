@@ -171,8 +171,9 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
             }}
             placeholder="Type a message..."
             rows={1}
-            className="flex-1 min-h-[36px] max-h-40 overflow-y-auto resize-none px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex-1 min-h-[36px] max-h-40 overflow-y-auto resize-none px-3 py-2 rounded-md border border-border bg-background text-foreground text-base focus:outline-none focus:ring-2 focus:ring-ring"
           />
+
 
           <Button
             type="submit"
