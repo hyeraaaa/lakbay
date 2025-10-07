@@ -5,7 +5,7 @@ import { registrationService } from "@/services/registrationService"
 
 type RegistrationEntry = { hasRegistration: boolean; status?: string }
 
-export function useRegistrationMap(vehicleIds: number[], vehicleAvailabilityMap?: Record<number, string>) {
+export function useRegistrationMap(vehicleIds: number[]) {
   const [registrationMap, setRegistrationMap] = useState<Record<number, RegistrationEntry>>({})
 
   useEffect(() => {
@@ -16,17 +16,7 @@ export function useRegistrationMap(vehicleIds: number[], vehicleAvailabilityMap?
           vehicleIds.map(async (id) => {
             try {
               const status = await registrationService.getRegistrationStatus(id)
-              
-              // If vehicle is pending_registration, treat as no registration regardless of existing records
-              // This handles the case where critical fields changed and old registration records exist
-              const vehicleAvailability = vehicleAvailabilityMap?.[id]
-              const isPendingRegistration = vehicleAvailability === 'pending_registration'
-              
-              return { 
-                id, 
-                hasRegistration: !isPendingRegistration && !!status.hasRegistration, 
-                status: !isPendingRegistration ? status.registration?.status : undefined 
-              }
+              return { id, hasRegistration: !!status.hasRegistration, status: status.registration?.status }
             } catch {
               return { id, hasRegistration: false, status: undefined }
             }
@@ -42,7 +32,7 @@ export function useRegistrationMap(vehicleIds: number[], vehicleAvailabilityMap?
     }
     run()
     return () => { active = false }
-  }, [vehicleIds, vehicleAvailabilityMap])
+  }, [vehicleIds])
 
   return { registrationMap, setRegistrationMap }
 }

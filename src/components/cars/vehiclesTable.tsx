@@ -88,16 +88,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
   const { trackerMap, setTrackerMap } = useVehicleTrackers(vehicleIds)
   const { deviceMap } = useTrackingDetails(vehicleIds)
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
-  // Create vehicle availability map for registration status logic
-  const vehicleAvailabilityMap = useMemo(() => {
-    const map: Record<number, string> = {}
-    data.forEach(vehicle => {
-      map[vehicle.id] = vehicle.availability
-    })
-    return map
-  }, [data])
-
-  const { registrationMap, setRegistrationMap } = useRegistrationMap(vehicleIds, vehicleAvailabilityMap)
+  const { registrationMap, setRegistrationMap } = useRegistrationMap(vehicleIds)
   const [editOpen, setEditOpen] = useState<boolean>(false)
   const [editInitial, setEditInitial] = useState<Partial<import("@/hooks/cars/useAddCars").VehicleFormData> | null>(null)
   const [editExistingImages, setEditExistingImages] = useState<Array<{ vehicle_image_id: number; url: string }>>([])
@@ -351,7 +342,6 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
               fuel_type: form.fuel_type,
               description: form.description,
             })
-            
             // Fetch latest canonical data from server to ensure all fields (e.g., availability) are up-to-date
             await refreshRow(editVehicleId)
             setEditOpen(false)
