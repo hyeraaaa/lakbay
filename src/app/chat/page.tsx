@@ -43,7 +43,7 @@ const ChatsPage = () => {
   }, [sessions, search])
 
   return (
-    <div className="flex min-h-[89vh] max-h-[89vh] flex-col bg-background max-w-xl mx-auto border border-border rounded-lg">
+    <div className="flex min-h-[80vh] max-h-[80vh] flex-col bg-background max-w-xl my-auto mx-auto border border-border rounded-lg">
       {/* Header */}
       <header className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
         <h1 className="text-2xl font-semibold text-foreground">Messages</h1>
