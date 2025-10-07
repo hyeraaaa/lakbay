@@ -102,53 +102,55 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto flex flex-col-reverse px-4 py-3 space-y-4-reverse">
-        {[...messages].reverse().map((m) => {
-          const isUser = m.user_id === Number(user?.id)
-          return (
-            <div key={m.message_id} className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
-              {!isUser && (
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={peer?.profile_picture || "/placeholder.svg"} alt={peer?.first_name} />
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {peer?.first_name?.[0]?.toUpperCase() || ""}
-                  </AvatarFallback>
-                </Avatar>
-              )}
+      <div className="flex-1 overflow-y-auto px-4 py-3">
+        <div className="flex flex-col-reverse space-y-4 space-y-reverse">
+          {[...messages].reverse().map((m) => {
+            const isUser = m.user_id === Number(user?.id)
+            return (
+              <div key={m.message_id} className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
+                {!isUser && (
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={peer?.profile_picture || "/placeholder.svg"} alt={peer?.first_name} />
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {peer?.first_name?.[0]?.toUpperCase() || ""}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
 
-              <div
-                className={`max-w-[60%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap break-words ${
-                  isUser
-                    ? "bg-primary text-primary-foreground ml-auto"
-                    : "bg-muted text-foreground mr-auto"
-                }`}
-              >
-                {m.message}
+                <div
+                  className={`max-w-[60%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap break-words ${
+                    isUser
+                      ? "bg-primary text-primary-foreground ml-auto"
+                      : "bg-muted text-foreground mr-auto"
+                  }`}
+                >
+                  {m.message}
+                </div>
+              </div>
+            )
+          })}
+
+          {isOtherTyping && (
+            <div className="flex justify-start items-end gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={peer?.profile_picture || "/placeholder.svg"} alt={peer?.first_name} />
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {peer?.first_name?.[0]?.toUpperCase() || ""}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="max-w-[75%] px-3 py-2 rounded-lg text-sm bg-muted text-foreground">
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                  <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                  <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                </div>
               </div>
             </div>
-          )
-        })}
+          )}
 
-        {isOtherTyping && (
-          <div className="flex justify-start items-end gap-2">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={peer?.profile_picture || "/placeholder.svg"} alt={peer?.first_name} />
-              <AvatarFallback className="bg-primary text-primary-foreground">
-                {peer?.first_name?.[0]?.toUpperCase() || ""}
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="max-w-[75%] px-3 py-2 rounded-lg text-sm bg-muted text-foreground">
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* Input */}
