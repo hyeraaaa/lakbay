@@ -65,16 +65,6 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
     inputValue,
   })
 
-  // Instantly jump to bottom when entering chat (no visible scroll)
-  useEffect(() => {
-    if (!messages.length) return
-    requestAnimationFrame(() => {
-      if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ block: "end", behavior: "auto" })
-      }
-    })
-  }, [numericId])
-
   // Smoothly scroll when new messages or typing indicator appear
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -112,12 +102,11 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col-reverse space-y-reverse space-y-4">
-        {messages.map((m) => {
+      <div className="flex-1 overflow-y-auto flex flex-col-reverse px-4 py-3 space-y-4-reverse">
+        {[...messages].reverse().map((m) => {
           const isUser = m.user_id === Number(user?.id)
           return (
             <div key={m.message_id} className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
-              {/* Avatar only for the other participant */}
               {!isUser && (
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={peer?.profile_picture || "/placeholder.svg"} alt={peer?.first_name} />
@@ -142,7 +131,6 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
 
         {isOtherTyping && (
           <div className="flex justify-start items-end gap-2">
-            {/* Typing avatar */}
             <Avatar className="h-8 w-8">
               <AvatarImage src={peer?.profile_picture || "/placeholder.svg"} alt={peer?.first_name} />
               <AvatarFallback className="bg-primary text-primary-foreground">
@@ -150,7 +138,6 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
               </AvatarFallback>
             </Avatar>
 
-            {/* Typing bubble */}
             <div className="max-w-[75%] px-3 py-2 rounded-lg text-sm bg-muted text-foreground">
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
