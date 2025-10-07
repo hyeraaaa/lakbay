@@ -135,6 +135,26 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
   const formRef = React.useRef<HTMLFormElement | null>(null)
   const openConfirmAndStay = () => setConfirmOpen(true)
 
+  // Detect critical field changes that require document resubmission
+  const getCriticalFieldChanges = React.useCallback(() => {
+    if (mode !== 'edit' || !initialFormData) return []
+    
+    const criticalFields: (keyof VehicleFormData)[] = [
+      'plate_number', 'brand', 'model', 'year', 'type', 'seats'
+    ]
+    
+    const changedFields: string[] = []
+    for (const field of criticalFields) {
+      const oldValue = initialFormData[field]
+      const newValue = formData[field]
+      if (oldValue !== undefined && String(oldValue).trim() !== String(newValue).trim()) {
+        changedFields.push(field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))
+      }
+    }
+    
+    return changedFields
+  }, [mode, initialFormData, formData])
+
   // Custom submit handler that includes image operations
   const handleCustomSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -435,7 +455,46 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
           open={confirmOpen}
           onOpenChange={setConfirmOpen}
           title={mode === 'edit' ? 'Confirm Save' : 'Confirm Add Car'}
-          description={mode === 'edit' ? 'Are you sure you want to save these changes?' : 'Are you sure you want to add this car to your fleet?'}
+          description={
+            mode === 'edit' ? (
+              (() => {
+                const criticalChanges = getCriticalFieldChanges()
+                if (criticalChanges.length > 0) {
+                  return (
+                    <div className="space-y-3">
+                      <p>Are you sure you want to save these changes?</p>
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-amber-800">
+                              Document Resubmission Required
+                            </h3>
+                            <div className="mt-2 text-sm text-amber-700">
+                              <p>You've changed critical vehicle information:</p>
+                              <ul className="mt-1 list-disc list-inside">
+                                {criticalChanges.map((field, index) => (
+                                  <li key={index}>{field}</li>
+                                ))}
+                              </ul>
+                              <p className="mt-2 font-medium">
+                                This will require you to resubmit vehicle registration documents for admin review.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+                return 'Are you sure you want to save these changes?'
+              })()
+            ) : 'Are you sure you want to add this car to your fleet?'
+          }
           confirmText={mode === 'edit' ? 'Yes, Save' : 'Yes, Add Car'}
           cancelText="Cancel"
           onConfirm={() => formRef.current?.requestSubmit()}

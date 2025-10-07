@@ -1,4 +1,5 @@
 "use client"
+import React from "react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +16,7 @@ interface ConfirmationDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   title: string
-  description: string
+  description: string | React.ReactNode
   confirmText?: string
   cancelText?: string
   variant?: "default" | "destructive"
