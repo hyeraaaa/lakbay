@@ -112,7 +112,7 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col-reverse space-y-reverse space-y-4">
         {messages.map((m) => {
           const isUser = m.user_id === Number(user?.id)
           return (
