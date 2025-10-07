@@ -52,8 +52,10 @@ export function ConfirmationDialog({
           <div className="flex items-center gap-3">
             <AlertDialogTitle className="text-black font-semibold text-lg leading-tight">{title}</AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="text-gray-600 text-sm leading-relaxed">
-            {description}
+          <AlertDialogDescription asChild>
+            <div className="text-gray-600 text-sm leading-relaxed">
+              {description}
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
 

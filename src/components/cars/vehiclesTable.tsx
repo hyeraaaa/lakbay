@@ -194,11 +194,11 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
             {row.original.availability === "pending_registration" && (
               <DropdownMenuItem
                 onSelect={(e) => { e.preventDefault(); setUploadForId(row.original.id) }}
-                disabled={registrationMap[row.original.id]?.hasRegistration && registrationMap[row.original.id]?.status !== 'rejected'}
+                disabled={registrationMap[row.original.id]?.status === 'pending'}
               >
                 <FileText size={16} />
                 <span>
-                  {registrationMap[row.original.id]?.hasRegistration && registrationMap[row.original.id]?.status !== 'rejected'
+                  {registrationMap[row.original.id]?.status === 'pending'
                     ? 'Waiting for admin review'
                     : 'Submit Documents'}
                 </span>
@@ -344,6 +344,13 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
             })
             // Fetch latest canonical data from server to ensure all fields (e.g., availability) are up-to-date
             await refreshRow(editVehicleId)
+            // Refresh registration status so submit button re-enables unless a submission is pending
+            try {
+              const status = await registrationService.getRegistrationStatus(editVehicleId)
+              setRegistrationMap(prev => ({ ...prev, [editVehicleId]: { hasRegistration: !!status.hasRegistration, status: status.registration?.status } }))
+            } catch {
+              // ignore refresh errors
+            }
             setEditOpen(false)
           } catch (e) {
             console.error(e)
