@@ -90,7 +90,7 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
   }
 
   return (
-    <div className="flex max-w-xl mx-auto max-h-[89vh] flex-col bg-background border border-border">
+    <div className="flex max-w-xl mx-auto min-h-[89vh] max-h-[89vh] flex-col bg-background lg:border lg:border-border rounded-lg">
       {/* Header */}
       <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3">
         <Link href="/chat">
