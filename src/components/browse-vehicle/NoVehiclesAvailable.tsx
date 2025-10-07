@@ -17,7 +17,7 @@ export default function NoVehiclesAvailable() {
 
         {/* Gorilla Image */}
         <div className="mb-4 relative">
-          <div className="relative w-48 h-48 mx-auto rounded-xl overflow-hidden shadow-lg">
+          {/* <div className="relative w-48 h-48 mx-auto rounded-xl overflow-hidden shadow-lg">
             <Image
               src="/gorilla-404.jpeg"
               alt="Disappointed gorilla looking for vehicles"
@@ -25,7 +25,7 @@ export default function NoVehiclesAvailable() {
               className="object-cover grayscale"
               priority
             />
-          </div>
+          </div> */}
           <div className="absolute -top-2 -right-2 bg-gray-800 text-white px-2 py-1 rounded-full text-xs font-semibold transform rotate-12">
             No Cars!
           </div>

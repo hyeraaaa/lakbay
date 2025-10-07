@@ -14,7 +14,7 @@ export default function NotFound() {
 
         {/* Gorilla Image */}
         <div className="mb-8 relative">
-          <div className="relative w-80 h-80 mx-auto rounded-2xl overflow-hidden shadow-2xl">
+          {/* <div className="relative w-80 h-80 mx-auto rounded-2xl overflow-hidden shadow-2xl">
             <Image
               src="/gorilla-404.jpeg"
               alt="Frustrated gorilla giving the finger"
@@ -22,7 +22,7 @@ export default function NotFound() {
               className="object-cover grayscale"
               priority
             />
-          </div>
+          </div> */}
           <div className="absolute -top-4 -right-4 bg-gray-800 text-white px-3 py-1 rounded-full text-sm font-semibold transform rotate-12">
             Oops!
           </div>
