@@ -65,20 +65,18 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
     inputValue,
   })
 
-  // Instantly jump to bottom when entering chat (no visible scroll)
+  // Scroll behavior control
+  const initialLoad = useRef(true)
+
   useEffect(() => {
     if (!messages.length) return
-    requestAnimationFrame(() => {
-      if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ block: "end", behavior: "auto" })
-      }
-    })
-  }, [numericId])
-
-  // Smoothly scroll when new messages or typing indicator appear
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ block: "end", behavior: "smooth" })
+    if (initialLoad.current) {
+      initialLoad.current = false
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "auto" })
+      })
+    } else {
+      messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" })
     }
   }, [messages.length, isOtherTyping])
 
@@ -90,7 +88,7 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
   }
 
   return (
-    <div className="flex max-w-xl my-auto mx-auto h-screen md:h-[89vh] flex-col bg-background">
+    <div className="flex max-w-xl my-auto mx-auto min-h-[100dvh] max-h-[100dvh] md:min-h-[89vh] md:max-h-[89vh] flex-col bg-background">
       {/* Header */}
       <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3">
         <Link href="/chat">
@@ -117,7 +115,6 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
           const isUser = m.user_id === Number(user?.id)
           return (
             <div key={m.message_id} className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
-              {/* Avatar only for the other participant */}
               {!isUser && (
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={peer?.profile_picture || "/placeholder.svg"} alt={peer?.first_name} />
@@ -142,7 +139,6 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
 
         {isOtherTyping && (
           <div className="flex justify-start items-end gap-2">
-            {/* Typing avatar */}
             <Avatar className="h-8 w-8">
               <AvatarImage src={peer?.profile_picture || "/placeholder.svg"} alt={peer?.first_name} />
               <AvatarFallback className="bg-primary text-primary-foreground">
@@ -150,7 +146,6 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
               </AvatarFallback>
             </Avatar>
 
-            {/* Typing bubble */}
             <div className="max-w-[75%] px-3 py-2 rounded-lg text-sm bg-muted text-foreground">
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
@@ -182,7 +177,7 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
             }}
             placeholder="Type a message..."
             rows={1}
-            className="flex-1 min-h-[36px] max-h-40 overflow-y-auto resize-none px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex-1 min-h-[36px] max-h-40 overflow-y-auto resize-none px-3 py-2 rounded-md border border-border bg-background text-foreground text-[16px] focus:outline-none focus:ring-2 focus:ring-ring"
           />
 
           <Button

@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { useMemo } from "react"
+import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { Search, MoreVertical, Edit } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Search } from "lucide-react"
 import { useGeneralChat } from "@/hooks/general-chat/useGeneralChat"
 import { useGeneralChatSocket } from "@/hooks/general-chat/useGeneralChatSocket"
+import { useJWT } from "@/contexts/JWTContext"
 
 const ChatsPage = () => {
   const {
@@ -21,6 +22,7 @@ const ChatsPage = () => {
     setSessions,
     inputValue,
   } = useGeneralChat()
+  const { user } = useJWT()
 
   // Initialize socket to keep sessions list in sync in real-time
   useGeneralChatSocket({
@@ -43,20 +45,11 @@ const ChatsPage = () => {
   }, [sessions, search])
 
   return (
-    <div className="flex min-h-[80vh] max-h-[80vh] flex-col bg-background max-w-xl my-auto mx-auto border border-border rounded-lg">
+    <div className="flex min-h-[100dvh] max-h-[100dvh] md:min-h-[89vh] md:max-h-[89vh] flex-col bg-background max-w-xl my-auto mx-auto border border-border">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
+      <header className="flex justify-start align-center gap-2 border-b border-border bg-card px-4 py-3">
+        <Image src="/logo.png" alt="Lakbay" width={28} height={28} className="h-8 w-auto" priority />
         <h1 className="text-2xl font-semibold text-foreground">Messages</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Edit className="h-5 w-5" />
-            <span className="sr-only">New message</span>
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <MoreVertical className="h-5 w-5" />
-            <span className="sr-only">More options</span>
-          </Button>
-        </div>
       </header>
 
       {/* Search */}
@@ -92,31 +85,53 @@ const ChatsPage = () => {
             .join("")
             .slice(0, 2)
             .toUpperCase()
-          return (
-          <Link
-            key={s.session_id}
-            href={`/chat/${s.session_id}`}
-            className="flex items-center gap-3 border-b border-border px-4 py-3 transition-colors hover:bg-secondary/50"
-          >
-            <div className="relative">
-              <Avatar className="h-14 w-14">
-                <AvatarImage src={avatar} alt={name} />
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-            </div>
 
-            <div className="flex-1 overflow-hidden">
-              <div className="flex items-baseline justify-between gap-2">
-                <h3 className="font-semibold text-foreground">{name}</h3>
-                <span className="text-xs text-muted-foreground">
-                  {s.last_message ? new Date(s.last_message.created_at).toLocaleString() : ""}
-                </span>
+          // Determine who sent the last message
+          const isYou = s.last_message?.user_id === Number(user?.id)
+
+          // Format timestamp
+          const createdAt = s.last_message ? new Date(s.last_message.created_at) : null
+          let displayTime = ""
+          if (createdAt) {
+            const now = new Date()
+            const diffMs = now.getTime() - createdAt.getTime()
+            const diffHours = diffMs / (1000 * 60 * 60)
+
+            if (diffHours < 24) {
+              displayTime = createdAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            } else {
+              displayTime = createdAt.toLocaleDateString([], { weekday: "short" })
+            }
+          }
+
+          return (
+            <Link
+              key={s.session_id}
+              href={`/chat/${s.session_id}`}
+              className="flex items-center gap-3 border-b border-border px-4 py-3 transition-colors hover:bg-secondary/50"
+            >
+              <div className="relative">
+                <Avatar className="h-14 w-14">
+                  <AvatarImage src={avatar} alt={name} />
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
               </div>
-              <p className="truncate text-sm text-muted-foreground">{lastMessage}</p>
-            </div>
-          </Link>
+
+              <div className="flex-1 overflow-hidden">
+                <div className="flex items-baseline justify-between gap-2">
+                  <h3 className="font-semibold text-foreground">{name}</h3>
+                  <span className="text-xs text-muted-foreground">{displayTime}</span>
+                </div>
+                <p className="truncate text-sm text-muted-foreground">
+                  {isYou ? (
+                    <span className="text-primary font-medium">You: </span>
+                  ) : null}
+                  {lastMessage}
+                </p>
+              </div>
+            </Link>
           )
         })}
       </div>
@@ -124,4 +139,4 @@ const ChatsPage = () => {
   )
 }
 
-export default ChatsPage;
+export default ChatsPage

@@ -17,8 +17,10 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
         <>
           <Sidebar />
           <div className="md:pl-16">
-            <DashboardNavbar />
-            <div className="lg:p-4 lg:pt-6">{children}</div>
+            <div className="hidden md:block">
+              <DashboardNavbar/>
+            </div>
+            <div className="md:p-4 lg:pt-6">{children}</div>
           </div>
         </>
       ) : (

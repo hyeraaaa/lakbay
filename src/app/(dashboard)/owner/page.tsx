@@ -101,7 +101,7 @@ export default function Page() {
   const firstName = user?.first_name || user?.email?.split('@')[0] || 'there'
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <main className="max-w-7xl mx-auto space-y-6">
         <div className="space-y-1">
           {isLoading ? (
@@ -125,13 +125,6 @@ export default function Page() {
             <SalesChart data={earnings} isLoading={isLoading} />
           </div>
         </div>
-        <EventCalendar
-              events={visibleEvents as CalendarEvent[]}
-              initialView="month"
-              onRangeChange={fetchRangeBookings}
-              interactive={false}
-              className="border-0"
-            />
       </main>
     </div>
   )
