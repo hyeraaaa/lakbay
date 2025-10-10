@@ -6,6 +6,7 @@ import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useGeneralChat } from "@/hooks/general-chat/useGeneralChat"
 import { useGeneralChatSocket } from "@/hooks/general-chat/useGeneralChatSocket"
 import { useJWT } from "@/contexts/JWTContext"
@@ -69,7 +70,17 @@ const ChatsPage = () => {
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto">
         {isLoadingSessions && (
-          <div className="px-4 py-3 text-sm text-muted-foreground">Loading sessions...</div>
+          <div className="px-4 py-3 space-y-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-14 w-14 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-3 w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
         )}
         {!isLoadingSessions && filtered.length === 0 && (
           <div className="px-4 py-3 text-sm text-muted-foreground">No conversations found</div>

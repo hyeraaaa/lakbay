@@ -4,6 +4,7 @@ import Link from "next/link"
 import { use, useEffect, useMemo, useRef, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { ArrowLeft, Paperclip, Send } from "lucide-react"
 import { useGeneralChat } from "@/hooks/general-chat/useGeneralChat"
 import { useGeneralChatSocket } from "@/hooks/general-chat/useGeneralChatSocket"
@@ -30,13 +31,20 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
     return Number.isFinite(n) ? n : null
   }, [id])
 
+  const [isLoadingMessages, setIsLoadingMessages] = useState<boolean>(false)
+
   useEffect(() => {
     let active = true
     const init = async () => {
       if (!numericId) return
       if (sessionId !== numericId) setSessionId(numericId)
-      const res = await generalChatService.getMessages(numericId, 1, 50)
-      if (active && res.ok) setMessages(() => res.data.messages)
+      setIsLoadingMessages(true)
+      try {
+        const res = await generalChatService.getMessages(numericId, 1, 50)
+        if (active && res.ok) setMessages(() => res.data.messages)
+      } finally {
+        if (active) setIsLoadingMessages(false)
+      }
     }
     init()
     return () => {
@@ -100,20 +108,46 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
           </Button>
         </Link>
 
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={avatar} alt={name} />
-          <AvatarFallback className="bg-primary text-primary-foreground">{initials}</AvatarFallback>
-        </Avatar>
+        {isLoadingMessages ? (
+          <>
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </>
+        ) : (
+          <>
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={avatar} alt={name} />
+              <AvatarFallback className="bg-primary text-primary-foreground">{initials}</AvatarFallback>
+            </Avatar>
 
-        <div className="flex-1">
-          <h2 className="font-semibold text-foreground">{name}</h2>
-          <p className="text-xs text-muted-foreground">{isOtherTyping ? "Typing..." : ""}</p>
-        </div>
+            <div className="flex-1">
+              <h2 className="font-semibold text-foreground">{name}</h2>
+              <p className="text-xs text-muted-foreground">{isOtherTyping ? "Typing..." : ""}</p>
+            </div>
+          </>
+        )}
       </header>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-        {messages.map((m) => {
+        {isLoadingMessages && (
+          <div className="space-y-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className={`flex items-end gap-2 ${i % 2 === 0 ? "justify-start" : "justify-end"}`}>
+                {i % 2 === 0 && <Skeleton className="h-8 w-8 rounded-full" />}
+                <div className={`max-w-[60%] ${i % 2 === 0 ? "mr-auto" : "ml-auto"}`}>
+                  <Skeleton className="h-6 w-48 mb-2 rounded-lg" />
+                  <Skeleton className="h-4 w-32 rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!isLoadingMessages && messages.map((m) => {
           const isUser = m.user_id === Number(user?.id)
           return (
             <div key={m.message_id} className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
@@ -139,7 +173,7 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
           )
         })}
 
-        {isOtherTyping && (
+        {!isLoadingMessages && isOtherTyping && (
           <div className="flex justify-start items-end gap-2">
             <Avatar className="h-8 w-8">
               <AvatarImage src={peer?.profile_picture || "/placeholder.svg"} alt={peer?.first_name} />
