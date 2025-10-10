@@ -9,7 +9,7 @@ export type UseGeneralChatSocketArgs = {
   sessionId: number | null
   selectedChat: string | null
   setSessionId: (v: number | null) => void
-  setMessages: (updater: (prev: GeneralChatMessage[]) => GeneralChatMessage[] | GeneralChatMessage[]) => void
+  setMessages: (updater: ((prev: GeneralChatMessage[]) => GeneralChatMessage[]) | GeneralChatMessage[]) => void
   setSessions: (v: GeneralChatSessionSummary[]) => void
   inputValue: string
 }
@@ -32,7 +32,7 @@ export function useGeneralChatSocket(args: UseGeneralChatSocketArgs) {
   useEffect(() => { sessionIdRef.current = sessionId }, [sessionId])
   useEffect(() => { selectedChatRef.current = selectedChat }, [selectedChat])
 
-  // Setup socket connection and listeners (persist across session changes)
+  // Socket setup
   useEffect(() => {
     if (!isAuthenticated) return
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
@@ -53,17 +53,19 @@ export function useGeneralChatSocket(args: UseGeneralChatSocketArgs) {
     })
     socketRef.current = socket
 
-    const onConnect = () => { setSocketConnected(true) }
-    const onDisconnect = () => { setSocketConnected(false) }
-    const onConnectError = () => { setSocketConnected(false) }
-    const onError = () => {}
+    const onConnect = () => setSocketConnected(true)
+    const onDisconnect = () => setSocketConnected(false)
+    const onConnectError = () => setSocketConnected(false)
 
     const onNewGeneralMessage = (messageData: NewGeneralMessagePayload) => {
-      const incomingSessionId = messageData?.session_id as number | undefined
-      if (!sessionIdRef.current && incomingSessionId && selectedChatRef.current) {
+      const incomingSessionId = messageData?.session_id
+      if (!incomingSessionId) return
+
+      if (!sessionIdRef.current && selectedChatRef.current) {
+        // New session created from incoming message
         setSessionId(incomingSessionId)
         generalChatService.getMessages(incomingSessionId, 1, 50).then(msgs => {
-          if (msgs.ok) setMessages(() => msgs.data.messages)
+          if (msgs.ok) setMessages(msgs.data.messages)
         })
         generalChatService.getSessions().then(r => {
           if (r.ok && Array.isArray(r.data)) setSessions(r.data)
@@ -71,8 +73,16 @@ export function useGeneralChatSocket(args: UseGeneralChatSocketArgs) {
         return
       }
 
-      if (incomingSessionId && incomingSessionId === sessionIdRef.current) {
+      if (incomingSessionId === sessionIdRef.current) {
         setMessages(prev => {
+          // Replace temporary message if content matches
+          const tempIndex = prev.findIndex(m => m.message_id < 0 && m.message === messageData.message)
+          if (tempIndex >= 0) {
+            const copy = [...prev]
+            copy[tempIndex] = messageData
+            return copy
+          }
+          // Avoid duplicate message_id
           const exists = prev.some(m => m.message_id === messageData.message_id)
           if (exists) return prev
           return [...prev, messageData]
@@ -81,6 +91,7 @@ export function useGeneralChatSocket(args: UseGeneralChatSocketArgs) {
           if (r.ok && Array.isArray(r.data)) setSessions(r.data)
         })
       } else {
+        // Update session list if message belongs to other session
         generalChatService.getSessions().then(r => {
           if (r.ok && Array.isArray(r.data)) setSessions(r.data)
         })
@@ -88,36 +99,29 @@ export function useGeneralChatSocket(args: UseGeneralChatSocketArgs) {
     }
 
     const onGeneralMessageSent = (data: GeneralMessageSentPayload) => {
-      const ackSessionId = data?.session_id as number | undefined
+      const ackSessionId = data?.session_id
       if (!sessionIdRef.current && ackSessionId) {
         setSessionId(ackSessionId)
         generalChatService.getMessages(ackSessionId, 1, 50).then(msgs => {
-          if (msgs.ok) setMessages(() => msgs.data.messages)
+          if (msgs.ok) setMessages(msgs.data.messages)
         })
         generalChatService.getSessions().then(r => {
           if (r.ok && Array.isArray(r.data)) setSessions(r.data)
         })
         return
       }
-      const sid = sessionIdRef.current
-      if (sid) {
-        generalChatService.getMessages(sid, 1, 50).then(msgs => {
-          if (msgs.ok) setMessages(() => msgs.data.messages)
+      if (sessionIdRef.current) {
+        generalChatService.getMessages(sessionIdRef.current, 1, 50).then(msgs => {
+          if (msgs.ok) setMessages(msgs.data.messages)
         })
       }
     }
 
-    // General chat namespace broadcasts
-    // - 'user_typing': { userId, userType }
-    // - 'user_stopped_typing': { userId }
     const onUserTyping = (data: TypingPayload) => {
-      const otherUserId = data?.userId as number | undefined
-      if (!otherUserId) return
-      if (Number(user?.id) === otherUserId) return
+      const otherUserId = data?.userId
+      if (!otherUserId || otherUserId === Number(user?.id)) return
       setIsOtherTyping(true)
-      if (typingTimeoutRef.current) {
-        window.clearTimeout(typingTimeoutRef.current)
-      }
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
       typingTimeoutRef.current = window.setTimeout(() => {
         setIsOtherTyping(false)
         typingTimeoutRef.current = null
@@ -125,12 +129,11 @@ export function useGeneralChatSocket(args: UseGeneralChatSocketArgs) {
     }
 
     const onUserStoppedTyping = (data: TypingPayload) => {
-      const otherUserId = data?.userId as number | undefined
-      if (!otherUserId) return
-      if (Number(user?.id) === otherUserId) return
+      const otherUserId = data?.userId
+      if (!otherUserId || otherUserId === Number(user?.id)) return
       setIsOtherTyping(false)
       if (typingTimeoutRef.current) {
-        window.clearTimeout(typingTimeoutRef.current)
+        clearTimeout(typingTimeoutRef.current)
         typingTimeoutRef.current = null
       }
     }
@@ -138,7 +141,6 @@ export function useGeneralChatSocket(args: UseGeneralChatSocketArgs) {
     socket.on('connect', onConnect)
     socket.on('disconnect', onDisconnect)
     socket.on('connect_error', onConnectError)
-    socket.on('error', onError)
     socket.on('new_general_message', onNewGeneralMessage)
     socket.on('new_message', onNewGeneralMessage)
     socket.on('general_message_sent', onGeneralMessageSent)
@@ -149,7 +151,6 @@ export function useGeneralChatSocket(args: UseGeneralChatSocketArgs) {
       socket.off('connect', onConnect)
       socket.off('disconnect', onDisconnect)
       socket.off('connect_error', onConnectError)
-      socket.off('error', onError)
       socket.off('new_general_message', onNewGeneralMessage)
       socket.off('new_message', onNewGeneralMessage)
       socket.off('general_message_sent', onGeneralMessageSent)
@@ -159,20 +160,15 @@ export function useGeneralChatSocket(args: UseGeneralChatSocketArgs) {
       socketRef.current = null
       setSocketConnected(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user?.first_name, user?.last_name, user?.profile_picture])
 
-  // Ensure we join the current session room when available
+  // Join session room when available
   useEffect(() => {
-    if (!socketRef.current) return
-    if (!socketConnected) return
-    if (!sessionId) return
-    try {
-      socketRef.current.emit('join_session', { sessionId })
-    } catch (_) {}
+    if (!socketRef.current || !socketConnected || !sessionId) return
+    socketRef.current.emit('join_session', { sessionId })
   }, [socketConnected, sessionId])
 
-  // Typing indicator (emit start/stop)
+  // Typing indicator emit
   useEffect(() => {
     if (!socketRef.current) return
     const socket = socketRef.current
@@ -188,13 +184,15 @@ export function useGeneralChatSocket(args: UseGeneralChatSocketArgs) {
     } else {
       socket.emit('typing_stop', { sessionId: sid })
     }
-    return () => { if (stopTimer) window.clearTimeout(stopTimer) }
+    return () => { if (stopTimer) clearTimeout(stopTimer) }
   }, [inputValue, sessionId])
 
+  // Send message with optimistic update
   const sendMessage = async (payload: { message: string; sessionId?: number; ownerId?: number }) => {
     const text = payload.message.trim()
     if (!text) return
     const tempId = -Date.now()
+
     setMessages(prev => [
       ...prev,
       {
@@ -234,7 +232,7 @@ export function useGeneralChatSocket(args: UseGeneralChatSocketArgs) {
       const sid = res.data?.session?.session_id ?? payload.sessionId
       if (sid) {
         const msgs = await generalChatService.getMessages(sid, 1, 50)
-        if (msgs.ok) setMessages(() => msgs.data.messages)
+        if (msgs.ok) setMessages(msgs.data.messages)
       }
     }
   }
@@ -243,5 +241,3 @@ export function useGeneralChatSocket(args: UseGeneralChatSocketArgs) {
 }
 
 export default useGeneralChatSocket
-
-

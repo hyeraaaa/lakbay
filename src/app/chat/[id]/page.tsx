@@ -42,7 +42,9 @@ const ChatRoomPage = ({ params }: { params: Promise<{ id: string }> }) => {
     return () => {
       active = false
     }
-  }, [numericId, sessionId, setSessionId, setMessages])
+    // We intentionally depend only on numericId to avoid a fetch loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numericId])
 
   const peer = useMemo(() => {
     const s = sessions.find((ss) => ss.session_id === (numericId || sessionId || -1))
