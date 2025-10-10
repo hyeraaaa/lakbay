@@ -118,7 +118,7 @@ export default function PaymentSuccessPage() {
 
   return (
     <div
-      className="bg-background flex items-center justify-center"
+      className="bg-background flex pt-20 justify-center"
       style={{ minHeight: remainingHeight ? `${remainingHeight}px` : undefined }}
     >
       <div className="w-full max-w-md">

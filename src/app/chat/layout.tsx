@@ -25,7 +25,9 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
         </>
       ) : (
         <>
+        <div className="hidden md:block">
           {showNavbar && <CustomerNavbar />}
+          </div>
           {children}
         </>
       )}

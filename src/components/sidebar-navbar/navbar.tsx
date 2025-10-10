@@ -18,6 +18,7 @@ import { GeneralChatWidget } from "@/components/chat/generalChatwidget"
 import { generalChatService, type GeneralChatMessage } from "@/services/generalChatService"
 import { usePathname, useRouter } from "next/navigation"
 import { encodeId } from "@/lib/idCodec"
+import { useIsMobile } from "@/hooks/use-mobile"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -31,6 +32,7 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
+  const isMobile = useIsMobile()
 
   const navigationItems = useMemo(() => {
     const isAdmin = user?.user_type?.toLowerCase() === "admin"
@@ -164,11 +166,14 @@ export function Navbar() {
                 size="icon"
                 className="h-8 w-8 relative hover:bg-primary/10 transition-colors"
                 onClick={() => {
-                  // For owners, just open the chat widget without setting ownerId
-                  // This will show them their incoming chat sessions
-                  // Also clear unread counter when opening the dialog
+                  // On md and smaller screens, go to /chat page instead of opening widget
+                  if (isMobile) {
+                    setUnreadCount(0)
+                    router.push('/chat')
+                    return
+                  }
+                  // On lg and above, open the general chat widget
                   setUnreadCount(0)
-                  // Queue the dispatch to the next tick to ensure listeners are mounted
                   setTimeout(() => {
                     const event = new CustomEvent('lakbay:open-owner-chat')
                     window.dispatchEvent(event)

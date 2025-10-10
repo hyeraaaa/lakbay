@@ -1,17 +1,33 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo } from "react"
+import { useMemo, useEffect, useState } from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
+import { useDashboardRoute } from "@/hooks/navbar/useDashboardRoute"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { Search, StepBack } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useGeneralChat } from "@/hooks/general-chat/useGeneralChat"
 import { useGeneralChatSocket } from "@/hooks/general-chat/useGeneralChatSocket"
 import { useJWT } from "@/contexts/JWTContext"
 
 const ChatsPage = () => {
+  const router = useRouter()
+  const [previousLabel, setPreviousLabel] = useState<string | null>(null)
+  const { getDashboardRoute } = useDashboardRoute()
+
+  useEffect(() => {
+    if (typeof document !== "undefined" && document.referrer) {
+      try {
+        const url = new URL(document.referrer)
+        setPreviousLabel(url.pathname || url.host)
+      } catch {
+        setPreviousLabel(null)
+      }
+    }
+  }, [])
   const {
     sessions,
     isLoadingSessions,
@@ -48,9 +64,15 @@ const ChatsPage = () => {
   return (
     <div className="flex min-h-[100dvh] max-h-[100dvh] md:min-h-[89vh] md:max-h-[89vh] flex-col bg-background max-w-xl my-auto mx-auto border border-border">
       {/* Header */}
-      <header className="flex justify-start align-center gap-2 border-b border-border bg-card px-4 py-3">
-        <Image src="/logo.png" alt="Lakbay" width={28} height={28} className="h-8 w-auto" priority />
-        <h1 className="text-2xl font-semibold text-foreground">Messages</h1>
+      <header className="flex flex-col items-start gap-1 border-b border-border bg-card px-4 py-3">
+        <button onClick={() => router.push(getDashboardRoute(String(user?.user_type || 'customer')))} className="text-sm text-primary cursor-pointer inline-flex items-center gap-1">
+          <StepBack stroke="currentColor" fill="currentColor"  className="h-4 w-4 " />
+          Dashboard
+        </button>
+        <div className="flex items-center gap-2">
+          <Image src="/logo.png" alt="Lakbay" width={28} height={28} className="h-8 w-auto" priority />
+          <h1 className="text-2xl font-semibold text-foreground">Messages</h1>
+        </div>
       </header>
 
       {/* Search */}

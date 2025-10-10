@@ -18,6 +18,7 @@ import SearchbarSm from "@/components/searchbar-sm";
 import { NotificationPopover } from "@/components/notifications/NotificationPopover";
 import { usePathname } from "next/navigation";
 import type { User } from "@/lib/jwt";
+import { MessageCircle } from "lucide-react";
 
 const Navbar = () => {
   const { 
@@ -77,7 +78,7 @@ const Navbar = () => {
                 <NotificationPopover />
               </NavigationMenuItem>
             )}
-            
+
             <NavigationMenuItem>
               {!mounted || isLoading ? (
                 <div className="flex items-center space-x-2">
@@ -105,7 +106,6 @@ const Navbar = () => {
 
         <div className="flex items-center gap-2 lg:hidden">
           {showSearch && <SearchbarSm className="w-auto" />}
-          
           {/* Mobile Notification Bell - Only show when authenticated */}
           {mounted && !isLoading && isAuthenticated && (
             <NotificationPopover />

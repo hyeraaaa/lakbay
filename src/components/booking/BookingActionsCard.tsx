@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useNotification } from '@/components/NotificationProvider';
+import { ConfirmationDialog } from '@/components/confirmation-dialog/confimationDialog';
 
 interface BookingActionsCardProps {
   booking: Booking;
@@ -28,8 +29,9 @@ interface BookingActionsCardProps {
 export default function BookingActionsCard({ booking, onAction }: BookingActionsCardProps) {
   const canCancel = bookingService.utils.canCancelBooking(booking);
   const canReview = bookingService.utils.canReviewBooking(booking, booking.user_id);
-  const canCheckIn = bookingService.utils.canCheckIn(booking, booking.user_id);
-  const canEndEarly = bookingService.utils.canEndEarly(booking, booking.user_id);
+  const isCancellationPending = booking.cancellation_status === 'pending_owner_approval';
+  const [isActionOpen, setIsActionOpen] = useState(false);
+  const [actionType, setActionType] = useState<string>('');
 
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -60,6 +62,7 @@ export default function BookingActionsCard({ booking, onAction }: BookingActions
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -68,9 +71,28 @@ export default function BookingActionsCard({ booking, onAction }: BookingActions
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {isCancellationPending && (
+          <div className="space-y-1">
+            {booking.cancellation_status && (
+              <div className="text-sm text-gray-700">
+                <span className="font-medium">Cancellation Status:</span>{' '}
+                <span className="capitalize">{String(booking.cancellation_status).replaceAll('_', ' ')}</span>
+              </div>
+            )}
+            {booking.cancellation_reason && (
+              <div className="text-sm text-gray-700">
+                <span className="font-medium">Reason:</span>{' '}
+                <span className="whitespace-pre-line">{booking.cancellation_reason}</span>
+              </div>
+            )}
+          </div>
+        )}
         {booking.status === BookingStatus.PENDING_PAYMENT && (
           <Button
-            onClick={() => handleAction('pay')}
+            onClick={() => {
+              setActionType('pay');
+              setIsActionOpen(true);
+            }}
             disabled={actionLoading === 'pay'}
             className={`w-full bg-black hover:bg-neutral-900 text-white ${actionLoading === 'pay' ? 'opacity-70' : ''}`}
           >
@@ -85,7 +107,7 @@ export default function BookingActionsCard({ booking, onAction }: BookingActions
           </Button>
         )}
 
-        {canCancel && (
+        {canCancel && !isCancellationPending && (
           <AlertDialog
             open={isCancelOpen}
             onOpenChange={(open) => {
@@ -155,39 +177,7 @@ export default function BookingActionsCard({ booking, onAction }: BookingActions
           </AlertDialog>
         )}
 
-        {canCheckIn && (
-          <Button
-            onClick={() => handleAction('check-in')}
-            disabled={actionLoading === 'check-in'}
-            className={`w-full bg-black hover:bg-neutral-900 text-white ${actionLoading === 'check-in' ? 'opacity-70' : ''}`}
-          >
-            {actionLoading === 'check-in' ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              'Check In'
-            )}
-          </Button>
-        )}
-
-        {canEndEarly && (
-          <Button
-            onClick={() => handleAction('end-early')}
-            disabled={actionLoading === 'end-early'}
-            className={`w-full bg-white hover:bg-neutral-100 text-black border ${actionLoading === 'end-early' ? 'opacity-70' : ''}`}
-          >
-            {actionLoading === 'end-early' ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              'End Early'
-            )}
-          </Button>
-        )}
+        
 
         {canReview && (
           <AlertDialog
@@ -278,5 +268,16 @@ export default function BookingActionsCard({ booking, onAction }: BookingActions
         )}
       </CardContent>
     </Card>
+    <ConfirmationDialog
+      open={isActionOpen}
+      onOpenChange={setIsActionOpen}
+      title={'Proceed to Payment'}
+      description={'You will be redirected to complete your payment.'}
+      confirmText={'Proceed'}
+      onConfirm={() => {
+        void handleAction('pay');
+      }}
+    />
+    </>
   );
 }

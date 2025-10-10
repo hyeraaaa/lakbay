@@ -59,7 +59,7 @@ export default function OwnerBookingDetailsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4">
+    <div className="max-w-7xl mx-auto px-4">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Button

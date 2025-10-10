@@ -439,6 +439,21 @@ export const bookingService = {
     return response.json();
   },
 
+  // Reject cancellation (owner only)
+  rejectCancellation: async (bookingId: number): Promise<CancellationResponse> => {
+    const response = await apiRequest(`${API_BASE_URL}/api/bookings/${bookingId}/cancel/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to reject cancellation');
+    }
+
+    return response.json();
+  },
+
   // Leave a review for a completed booking
   leaveReview: async (bookingId: number, review: BookingReview): Promise<Review> => {
     const response = await apiRequest(`${API_BASE_URL}/api/bookings/${bookingId}/review`, {
@@ -476,7 +491,9 @@ export const bookingService = {
     canCancelBooking: (booking: Booking): boolean => {
       return booking.status !== BookingStatus.ON_GOING && 
              booking.status !== BookingStatus.COMPLETED &&
-             booking.status !== BookingStatus.CANCELED;
+             booking.status !== BookingStatus.CANCELED &&
+             // Disallow further cancellations if there's any cancellation workflow already
+             !booking.cancellation_status;
     },
 
     // Check if booking can be updated

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { User, LogOut, Home, Car } from "lucide-react"
 import Link from "next/link"
 import { User as UserType } from "@/lib/jwt"
+import { MessageCircle } from "lucide-react"
 
 interface MobileAuthSectionProps {
   mounted: boolean
@@ -53,6 +54,18 @@ const MobileAuthSection = ({
             >
               <Home className="h-5 w-5 mr-3" />
               Dashboard
+            </Button>
+          </Link>
+          
+          <Link href="/chat">
+            <Button
+              variant="ghost"
+              size="lg"
+              className="w-full justify-start text-lg py-6 transition-all duration-200 hover:bg-gray-100"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <MessageCircle className="h-5 w-5 mr-3" />
+              Chat
             </Button>
           </Link>
 

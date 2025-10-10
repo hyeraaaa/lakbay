@@ -100,7 +100,7 @@ export function GeneralChatWidget() {
         >
           <button
             onClick={() => setIsOpen(true)}
-            className="px-4 py-2 bg-white text-gray-700 hover:bg-gray-50 rounded-lg shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-105 border border-gray-200 cursor-pointer hover:border-gray-300"
+            className="hidden md:flex px-4 py-2 bg-white text-gray-700 hover:bg-gray-50 rounded-lg shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-105 border border-gray-200 cursor-pointer hover:border-gray-300"
             aria-label="Open chat"
           >
             <MessageCircle className="w-4 h-4" />

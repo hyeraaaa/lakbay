@@ -31,6 +31,7 @@ export default function OwnerBookingActionsCard({ booking, onAction }: OwnerBook
   const [error, setError] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const { success, error: notifyError } = useNotification();
+  const isCancellationPending = booking.cancellation_status === 'pending_owner_approval';
 
   // Don't show actions if booking is cancelled
   if (booking.status === BookingStatus.CANCELED) {
@@ -54,6 +55,10 @@ export default function OwnerBookingActionsCard({ booking, onAction }: OwnerBook
         case 'approveCancellation':
           await bookingService.approveCancellation(booking.booking_id);
           success('Cancellation approved successfully');
+          break;
+        case 'rejectCancellation':
+          await bookingService.rejectCancellation(booking.booking_id);
+          success('Cancellation rejected');
           break;
         case 'reject':
           await bookingService.rejectBooking(booking.booking_id, rejectReason.trim() || undefined);
@@ -101,6 +106,13 @@ export default function OwnerBookingActionsCard({ booking, onAction }: OwnerBook
         buttonText: 'Approve Cancellation',
         triggerButtonClass: 'bg-black hover:bg-neutral-900 text-white',
         confirmButtonClass: 'bg-black hover:bg-neutral-900 text-white',
+      },
+      rejectCancellation: {
+        title: 'Reject Cancellation',
+        description: 'Reject this cancellation request. The booking will remain active.',
+        buttonText: 'Reject Cancellation',
+        triggerButtonClass: 'bg-white hover:bg-neutral-100 text-black border',
+        confirmButtonClass: 'bg-white hover:bg-neutral-100 text-black border',
       },
       reject: {
         title: 'Reject Booking',
@@ -170,8 +182,8 @@ export default function OwnerBookingActionsCard({ booking, onAction }: OwnerBook
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {(booking.cancellation_status || booking.cancellation_reason) && (
-            <div className="rounded-md border p-3 space-y-1">
+          {isCancellationPending && (
+            <div className="space-y-1">
               {booking.cancellation_status && (
                 <div className="text-sm text-gray-700">
                   <span className="font-medium">Cancellation Status:</span>{' '}
@@ -186,12 +198,13 @@ export default function OwnerBookingActionsCard({ booking, onAction }: OwnerBook
               )}
             </div>
           )}
-          {renderActionButton('approve', booking.status === BookingStatus.AWAITING_OWNER_APPROVAL)}
-          {renderActionButton('reject', booking.status === BookingStatus.AWAITING_OWNER_APPROVAL)}
-          {renderActionButton('approveCancellation', booking.cancellation_status === 'pending_owner_approval' && booking.status !== BookingStatus.ON_GOING && booking.status !== BookingStatus.COMPLETED)}
-          {renderActionButton('checkout', booking.status === BookingStatus.CONFIRMED)}
-          {renderActionButton('checkin', booking.status === BookingStatus.ON_GOING)}
-          {renderActionButton('endEarly', booking.status === BookingStatus.ON_GOING)}
+          {renderActionButton('approve', booking.status === BookingStatus.AWAITING_OWNER_APPROVAL && !isCancellationPending)}
+          {renderActionButton('reject', booking.status === BookingStatus.AWAITING_OWNER_APPROVAL && !isCancellationPending)}
+          {renderActionButton('approveCancellation', isCancellationPending && booking.status !== BookingStatus.ON_GOING && booking.status !== BookingStatus.COMPLETED)}
+          {renderActionButton('rejectCancellation', isCancellationPending && booking.status !== BookingStatus.ON_GOING && booking.status !== BookingStatus.COMPLETED)}
+          {renderActionButton('checkout', booking.status === BookingStatus.CONFIRMED && !isCancellationPending)}
+          {renderActionButton('checkin', booking.status === BookingStatus.ON_GOING && !isCancellationPending)}
+          {renderActionButton('endEarly', booking.status === BookingStatus.ON_GOING && !isCancellationPending)}
 
           {booking.status === BookingStatus.PENDING_PAYMENT && (
             <div className="text-center py-4">
