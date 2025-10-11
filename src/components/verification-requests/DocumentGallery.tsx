@@ -57,9 +57,22 @@ export default function DocumentGallery({
         return "No passport documents uploaded for this verification request."
       case "id_card":
         return "No national ID documents uploaded for this verification request."
+      case "payout_failed":
+        return "This is a system payout failure that can be retried."
+      case "refund_request":
+        return "This is a refund request that requires admin action."
+      case "reactivation_request":
+        return "This is an account reactivation request that requires admin action."
       default:
         return "No documents uploaded for this verification request."
     }
+  }
+
+  // For action-based requests (no documents), don't show the gallery at all
+  const isActionBasedRequest = ["payout_failed", "refund_request", "reactivation_request"].includes(docType)
+  
+  if (isActionBasedRequest) {
+    return null // Don't render anything for action-based requests
   }
 
   if (!docUrls || docUrls.length === 0) {

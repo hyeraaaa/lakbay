@@ -254,4 +254,19 @@ export const authService = {
       message: data.message || (response.ok ? undefined : 'Failed to resend 2FA code')
     };
   },
+
+  deactivateAccount: async (userId: string, password: string, reason?: string) => {
+    const response = await apiRequest(`${API_BASE_URL}/api/users/${userId}/deactivate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password, reason }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    return { 
+      ok: response.ok, 
+      data,
+      message: data.message || (response.ok ? undefined : 'Failed to deactivate account')
+    };
+  },
 };

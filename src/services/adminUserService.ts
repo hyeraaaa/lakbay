@@ -67,8 +67,12 @@ export const adminUserService = {
     return res.json().catch(() => ({}))
   },
 
-  async deactivateUser(userId: number) {
-    const res = await apiRequest(`${API_BASE_URL}/api/admin/users/${userId}/deactivate`, { method: "POST" })
+  async deactivateUser(userId: number, reason?: string) {
+    const res = await apiRequest(`${API_BASE_URL}/api/admin/users/${userId}/deactivate`, { 
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: reason || "Admin deactivation" })
+    })
     return res.json().catch(() => ({}))
   },
 

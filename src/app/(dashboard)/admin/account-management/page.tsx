@@ -6,6 +6,8 @@ import { adminUserService, type AdminUserSummary } from '@/services/adminUserSer
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
  
 import { encodeId } from '@/lib/idCodec'
 import { ConfirmationDialog } from '@/components/confirmation-dialog/confimationDialog'
@@ -47,6 +49,7 @@ export default function Page() {
 
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false)
   const [pendingAction, setPendingAction] = useState<{ action: 'activate' | 'deactivate' | 'ban'; userId: number } | null>(null)
+  const [deactivationReason, setDeactivationReason] = useState<string>("")
 
   const handleAction = async (action: "view" | "activate" | "deactivate" | "ban", userId: number) => {
     if (action === 'view') {
@@ -103,19 +106,46 @@ export default function Page() {
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         title={pendingAction?.action === 'activate' ? 'Activate User' : pendingAction?.action === 'deactivate' ? 'Deactivate User' : 'Ban User'}
-        description={pendingAction?.action === 'activate'
-          ? 'This will set the account status to active and allow the user to access their account.'
-          : pendingAction?.action === 'deactivate'
-            ? 'This will deactivate the account and prevent the user from accessing their account.'
-            : 'This will ban the account and block access permanently until unbanned.'}
+        description={
+          <div className="space-y-3">
+            <p>
+              {pendingAction?.action === 'activate'
+                ? 'This will set the account status to active and allow the user to access their account.'
+                : pendingAction?.action === 'deactivate'
+                  ? 'This will deactivate the account and prevent the user from accessing their account.'
+                  : 'This will ban the account and block access permanently until unbanned.'}
+            </p>
+            {pendingAction?.action === 'deactivate' && (
+              <div className="space-y-2">
+                <Label htmlFor="deactivation-reason" className="text-sm font-medium text-gray-700">
+                  Reason for deactivation *
+                </Label>
+                <Textarea
+                  id="deactivation-reason"
+                  placeholder="Please provide a reason for deactivating this user..."
+                  value={deactivationReason}
+                  onChange={(e) => setDeactivationReason(e.target.value)}
+                  className="min-h-[80px] resize-none"
+                />
+              </div>
+            )}
+          </div>
+        }
         confirmText={pendingAction?.action === 'activate' ? 'Activate' : pendingAction?.action === 'deactivate' ? 'Deactivate' : 'Ban'}
         variant={pendingAction?.action === 'ban' ? 'destructive' : 'default'}
         onConfirm={async () => {
           if (!pendingAction) return
+          
+          // Validate reason for deactivation
+          if (pendingAction.action === 'deactivate' && !deactivationReason.trim()) {
+            error('Please provide a reason for deactivation')
+            return
+          }
+          
           setLoading(true)
           try {
             if (pendingAction.action === 'activate') await adminUserService.activateUser(pendingAction.userId)
-            if (pendingAction.action === 'deactivate') await adminUserService.deactivateUser(pendingAction.userId)
+            if (pendingAction.action === 'deactivate') await adminUserService.deactivateUser(pendingAction.userId, deactivationReason.trim())
             if (pendingAction.action === 'ban') await adminUserService.banUser(pendingAction.userId)
             const message = pendingAction.action === 'activate' ? 'User activated' : pendingAction.action === 'deactivate' ? 'User deactivated' : 'User banned'
             success(message)
@@ -126,9 +156,13 @@ export default function Page() {
           } finally {
             setLoading(false)
             setPendingAction(null)
+            setDeactivationReason("")
           }
         }}
-        onCancel={() => setPendingAction(null)}
+        onCancel={() => {
+          setPendingAction(null)
+          setDeactivationReason("")
+        }}
       />
     </div>
   )

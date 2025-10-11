@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { EmailSettingsCard } from "@/components/test-settings/emailSettingsCard"
 import { PasswordSettingsCard } from "@/components/test-settings/passwordSettingsCard"
+import { DeactivateAccountCard } from "@/components/test-settings/deactivateAccountCard"
 import { useAccountSettings } from "@/hooks/settings/useAccountSettings"
 import { useEffect, useState } from "react"
 import { useNotification } from "@/components/NotificationProvider"
@@ -103,6 +104,8 @@ export function SecuritySettings() {
           )}
         </CardContent>
       </Card>
+
+      <DeactivateAccountCard />
     </div>
   )
 }

@@ -68,12 +68,29 @@ export default function RequestDetailPage() {
 
       <div className="max-w-4xl mx-auto px-6 py-6">
         <div className="space-y-4">
-          <div className="text-sm text-gray-600">
-            {request.doc_type === "vehicle_registration" 
-              ? `${docUrls.length} vehicle registration documents` 
-              : `${docUrls.length} attachments`} • 
-            <DocumentTypeBadge docType={request.doc_type} />
-          </div>
+          {/* Only show document count for document-based requests */}
+          {!["payout_failed", "refund_request", "reactivation_request"].includes(request.doc_type) && (
+            <div className="text-sm text-gray-600">
+              {request.doc_type === "vehicle_registration" 
+                ? `${docUrls.length} vehicle registration documents` 
+                : `${docUrls.length} attachments`} • 
+              <DocumentTypeBadge docType={request.doc_type} />
+            </div>
+          )}
+          
+          {/* Show badge for action-based requests */}
+          {["payout_failed", "refund_request", "reactivation_request"].includes(request.doc_type) && (
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600">
+                <DocumentTypeBadge docType={request.doc_type} />
+              </div>
+              <div className="text-sm text-gray-500">
+                {request.doc_type === "payout_failed" && "This payout failed due to a Stripe error and can be retried."}
+                {request.doc_type === "refund_request" && "This refund request requires your review and decision."}
+                {request.doc_type === "reactivation_request" && "This account reactivation request requires your approval."}
+              </div>
+            </div>
+          )}
 
           <DocumentGallery
             docUrls={docUrls}
