@@ -48,6 +48,21 @@ interface RawReviewItem {
   reviewed_by_user?: RawUser
   reviewer?: RawUser
   created_at?: string
+  // Additional fields for payout_failed requests
+  payout_id?: string | number
+  amount?: number
+  failure_reason?: string
+  updated_at?: string
+  // Additional fields for refund requests
+  refund_id?: string | number
+  booking_id?: string | number
+  refund_amount?: number
+  refund_reason?: string
+  requested_at?: string
+  // Additional fields for reactivation requests
+  reactivation_id?: string | number
+  deactivation_reason?: string
+  reactivation_reason?: string
 }
 
 // Unified review item coming from the backend. We normalize it to VerificationRequest-compatible shape.
@@ -124,6 +139,48 @@ function mapItem(it: RawReviewItem): AdminReviewItem {
     reviewedAt = it.reviewed_at
     reviewedBy = it.reviewed_by ? String(it.reviewed_by) : undefined
     notes = it.notes
+  } else if (itemType === 'payout_failed') {
+    // Failed payout data structure
+    userInfo = it.user
+    reviewerInfo = it.reviewer
+    docType = "payout_failed"
+    docUrl = ''
+    docUrls = []
+    verificationId = `payout_${it.payout_id || it.id || ''}`
+    userId = String(it.user_id || it.owner_id || '')
+    status = it.status || 'pending'
+    submittedAt = it.submitted_at || it.updated_at || new Date().toISOString()
+    reviewedAt = it.reviewed_at
+    reviewedBy = it.reviewed_by ? String(it.reviewed_by) : undefined
+    notes = it.failure_reason || it.notes
+  } else if (itemType === 'refund') {
+    // Refund request data structure
+    userInfo = it.user
+    reviewerInfo = it.reviewer
+    docType = "refund_request"
+    docUrl = ''
+    docUrls = []
+    verificationId = `refund_${it.refund_id || it.id || ''}`
+    userId = String(it.user_id || '')
+    status = it.status || 'pending'
+    submittedAt = it.submitted_at || it.requested_at || new Date().toISOString()
+    reviewedAt = it.reviewed_at
+    reviewedBy = it.reviewed_by ? String(it.reviewed_by) : undefined
+    notes = it.refund_reason || it.notes
+  } else if (itemType === 'reactivation_request') {
+    // Account reactivation data structure
+    userInfo = it.user
+    reviewerInfo = it.reviewer
+    docType = "reactivation_request"
+    docUrl = ''
+    docUrls = []
+    verificationId = `reactivation_${it.reactivation_id || it.request_id || it.id || ''}`
+    userId = String(it.user_id || '')
+    status = it.status || 'pending'
+    submittedAt = it.submitted_at || it.created_at || new Date().toISOString()
+    reviewedAt = it.reviewed_at
+    reviewedBy = it.reviewed_by ? String(it.reviewed_by) : undefined
+    notes = it.reactivation_reason || it.notes
   } else {
     // Fallback for unknown structure
     userInfo = it.user || it.users_verification_user_idTousers
@@ -177,9 +234,24 @@ function mapItem(it: RawReviewItem): AdminReviewItem {
   return base
 }
 
+// Pagination interface
+export interface PaginationData {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
 export const adminReviewService = {
-  async getAll(): Promise<AdminReviewItem[]> {
-    const response = await apiRequest(`${API_BASE_URL}/api/admin/reviews`, {
+  async getAll(page?: number, limit?: number, status?: string): Promise<{ items: AdminReviewItem[], pagination?: PaginationData }> {
+    const params = new URLSearchParams()
+    if (page !== undefined) params.append('page', String(page))
+    if (limit !== undefined) params.append('limit', String(limit))
+    if (status && status !== 'all') params.append('status', status)
+    
+    const url = `${API_BASE_URL}/api/admin/reviews${params.toString() ? `?${params.toString()}` : ''}`
+    
+    const response = await apiRequest(url, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -188,7 +260,7 @@ export const adminReviewService = {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || "Failed to fetch admin reviews")
     }
-    const data = await response.json().catch(() => ({} as { items?: RawReviewItem[]; reviews?: RawReviewItem[] }))
+    const data = await response.json().catch(() => ({} as { items?: RawReviewItem[]; reviews?: RawReviewItem[]; pagination?: PaginationData }))
     
     // Debug logging to see what we're getting
     console.log("Admin reviews response:", data)
@@ -199,7 +271,10 @@ export const adminReviewService = {
     const mapped = list.map(mapItem)
     console.log("Mapped admin review items:", mapped)
     
-    return mapped
+    return {
+      items: mapped,
+      pagination: data.pagination
+    }
   },
 
   async getById(id: string): Promise<AdminReviewItem | null> {
@@ -219,7 +294,7 @@ export const adminReviewService = {
 
     try {
       const all = await this.getAll()
-      return all.find((x) => String(x.verification_id) === String(id)) || null
+      return all.items.find((x) => String(x.verification_id) === String(id)) || null
     } catch (e) {
       return null
     }

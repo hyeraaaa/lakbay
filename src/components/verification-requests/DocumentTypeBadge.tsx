@@ -38,6 +38,24 @@ export default function DocumentTypeBadge({ docType }: DocumentTypeBadgeProps) {
           Vehicle Registration
         </Badge>
       )
+    case "payout_failed":
+      return (
+        <Badge variant="secondary" className="bg-red-100 text-red-700">
+          Failed Payout
+        </Badge>
+      )
+    case "refund_request":
+      return (
+        <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
+          Refund Request
+        </Badge>
+      )
+    case "reactivation_request":
+      return (
+        <Badge variant="secondary" className="bg-pink-100 text-pink-700">
+          Reactivation Request
+        </Badge>
+      )
     default:
       return null
   }

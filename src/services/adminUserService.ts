@@ -76,6 +76,20 @@ export const adminUserService = {
     const res = await apiRequest(`${API_BASE_URL}/api/admin/users/${userId}/ban`, { method: "POST" })
     return res.json().catch(() => ({}))
   },
+
+  async approveReactivation(userId: number) {
+    const res = await apiRequest(`${API_BASE_URL}/api/admin/users/${userId}/reactivation/approve`, { method: "POST" })
+    return res.json().catch(() => ({}))
+  },
+
+  async rejectReactivation(userId: number, notes: string) {
+    const res = await apiRequest(`${API_BASE_URL}/api/admin/users/${userId}/reactivation/reject`, { 
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notes })
+    })
+    return res.json().catch(() => ({}))
+  },
 }
 
 export default adminUserService

@@ -156,7 +156,7 @@ interface VerificationApiItem {
 export interface VerificationRequest {
   verification_id: string
   user_id: string
-  doc_type: "driver_license" | "passport" | "id_card" | "business_license" | "vehicle_registration"
+  doc_type: "driver_license" | "passport" | "id_card" | "business_license" | "vehicle_registration" | "payout_failed" | "refund_request" | "reactivation_request"
   doc_url: string
   doc_urls?: string[]
   status: "pending" | "approved" | "rejected"

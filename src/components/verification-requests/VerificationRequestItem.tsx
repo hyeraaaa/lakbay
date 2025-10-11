@@ -40,6 +40,12 @@ export default function VerificationRequestItem({
         return "Business Permit Verification Request"
       case "vehicle_registration":
         return "Vehicle Registration Request"
+      case "payout_failed":
+        return "Failed Payout Request"
+      case "refund_request":
+        return "Refund Request"
+      case "reactivation_request":
+        return "Account Reactivation Request"
       default:
         return "Account Verification Request"
     }

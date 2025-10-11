@@ -28,7 +28,6 @@ import {
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Link from "next/link"
@@ -127,53 +126,56 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
 
   const columns: ColumnDef<VehicleRow>[] = [
     {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-      ),
-      size: 28,
-      enableSorting: false,
-    },
-    {
       header: "Vehicle",
       accessorKey: "brand",
       cell: ({ row }) => (
-        <div>
+        <div className="pl-4">
           <div className="font-medium">{row.original.brand} {row.original.model}</div>
           <div className="text-xs text-muted-foreground">{row.original.plate}</div>
         </div>
       ),
-      size: 260,
+      size: 100,
     },
-    { header: "Type", accessorKey: "type", size: 140 },
+    { 
+      header: "Type", 
+      accessorKey: "type", 
+      size: 100,
+      cell: ({ row }) => (
+        <div className="px-2 capitalize">{row.original.type}</div>
+      ),
+    },
     {
       header: "Rate/Day",
       accessorKey: "ratePerDay",
-      cell: ({ row }) => `₱${row.original.ratePerDay}`,
-      size: 140,
+      cell: ({ row }) => (
+        <div className="px-2 font-medium">₱{row.original.ratePerDay.toLocaleString()}</div>
+      ),
+      size: 100,
     },
-    { header: "Fuel", accessorKey: "fuel_type", size: 140 },
+    { 
+      header: "Fuel", 
+      accessorKey: "fuel_type", 
+      size: 100,
+      cell: ({ row }) => (
+        <div className="px-2 capitalize">{row.original.fuel_type}</div>
+      ),
+    },
     {
       header: "Availability",
       accessorKey: "availability",
       cell: ({ row }) => (
-        <Badge
-          className={cn(
-            "border px-2 py-0.5 text-[11px] rounded-full",
-            getAvailabilityBadgeColor(row.original.availability)
-          )}
-        >
-          {row.original.availability.replace(/_/g, " ")}
-        </Badge>
+        <div className="px-2">
+          <Badge
+            className={cn(
+              "border px-2 py-0.5 text-[11px]",
+              getAvailabilityBadgeColor(row.original.availability)
+            )}
+          >
+            {row.original.availability.replace(/_/g, " ")}
+          </Badge>
+        </div>
       ),
-      size: 140,
+      size: 100,
     },
     {
       id: "actions",
@@ -181,11 +183,11 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost" aria-label="Open actions menu">
+            <Button className="ms-3" size="icon" variant="ghost" aria-label="Open actions menu">
               <MoreHorizontal size={16} />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-40">
+          <DropdownMenuContent align="end" className="min-w-30">
             <DropdownMenuItem asChild>
               <Link href={`/owner/vehicle/vehicle-details/${encodeId(row.original.id.toString())}`}>
                 <Eye size={16} /> View Details
@@ -196,7 +198,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
                 onSelect={(e) => { e.preventDefault(); setUploadForId(row.original.id) }}
                 disabled={registrationMap[row.original.id]?.status === 'pending'}
               >
-                <FileText size={16} />
+              <FileText size={16} />
                 <span>
                   {registrationMap[row.original.id]?.status === 'pending'
                     ? 'Waiting for admin review'
@@ -261,7 +263,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
         </DropdownMenu>
       ),
       enableSorting: false,
-      size: 120,
+      size: 30 ,
     },
   ]
 
@@ -401,7 +403,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
       />
       <div className="bg-background rounded-md border">
         <div className="overflow-x-auto">
-          <Table className="table-fixed min-w-[720px]">
+          <Table className="table-fixed min-w-[900px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent">
@@ -416,7 +418,10 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
                   >
                     {header.isPlaceholder ? null : header.column.getCanSort() ? (
                       <div
-                        className={cn(header.column.getCanSort() && "flex h-full cursor-pointer items-center justify-between gap-2 select-none")}
+                        className={cn(
+                          header.column.getCanSort() && "flex h-full cursor-pointer items-center justify-between gap-2 select-none",
+                          header.column.id === "brand" ? "pl-4" : "px-2"
+                        )}
                         onClick={header.column.getToggleSortingHandler()}
                         onKeyDown={(e) => {
                           if (header.column.getCanSort() && (e.key === "Enter" || e.key === " ")) {
@@ -433,7 +438,9 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
                         }[header.column.getIsSorted() as string] ?? null}
                       </div>
                     ) : (
-                      flexRender(header.column.columnDef.header, header.getContext())
+                      <div className={cn(header.column.id === "brand" ? "pl-4" : "px-2")}>
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </div>
                     )}
                   </TableHead>
                 ))}

@@ -2,6 +2,7 @@
 
 import { useVerificationRequests } from "@/hooks/verification-requests"
 import VerificationRequestsSkeleton from "@/components/verification-requests/VerificationRequestsSkeleton"
+import PaginationControls from "@/components/booking/PaginationControls"
 import {
   VerificationRequestsHeader,
   VerificationRequestsToolbar,
@@ -19,6 +20,9 @@ const VerificationInbox = () => {
     selectedItems,
     toggleSelection,
     selectAll,
+    currentPage,
+    pagination,
+    handlePageChange,
   } = useVerificationRequests()
 
   if (loading) {
@@ -45,6 +49,22 @@ const VerificationInbox = () => {
           selectedItems={selectedItems}
           toggleSelection={toggleSelection}
         />
+
+        {/* Pagination */}
+        {pagination && pagination.totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-border">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Showing {((currentPage - 1) * pagination.limit) + 1} to {Math.min(currentPage * pagination.limit, pagination.total)} of {pagination.total} requests
+              </div>
+              <PaginationControls
+                page={currentPage}
+                totalPages={pagination.totalPages}
+                goToPage={handlePageChange}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -5,6 +5,9 @@ import { verificationService, type VerificationRequest } from "@/services/verifi
 import { registrationService } from "@/services/registrationService"
 import { ownerEnrollmentService } from "@/services/ownerEnrollmentService"
 import { adminReviewService, type AdminReviewItem } from "@/services/adminReviewService"
+import { adminPayoutService } from "@/services/adminPayoutService"
+import { refundsDisputesService } from "@/services/refundsDisputesService"
+import { adminUserService } from "@/services/adminUserService"
 import { getAccessToken } from "@/lib/jwt"
 
 // Extended interface to handle all types of requests
@@ -75,6 +78,39 @@ export function useVerificationRequest(id: string | undefined) {
         const verId = verificationId.replace('ver_', '')
         success = await verificationService.approve(verId)
       }
+      // Check if this is a failed payout request
+      else if (verificationId.startsWith('payout_')) {
+        const payoutId = verificationId.replace('payout_', '')
+        try {
+          await adminPayoutService.retryPayout(parseInt(payoutId))
+          success = true
+        } catch (error) {
+          console.error("Error retrying payout:", error)
+          return false
+        }
+      }
+      // Check if this is a refund request
+      else if (verificationId.startsWith('refund_')) {
+        const refundId = verificationId.replace('refund_', '')
+        try {
+          await refundsDisputesService.approveRefund(parseInt(refundId), "Refund approved")
+          success = true
+        } catch (error) {
+          console.error("Error approving refund:", error)
+          return false
+        }
+      }
+      // Check if this is a reactivation request
+      else if (verificationId.startsWith('reactivation_')) {
+        const userId = verificationId.replace('reactivation_', '')
+        try {
+          await adminUserService.approveReactivation(parseInt(userId))
+          success = true
+        } catch (error) {
+          console.error("Error approving reactivation:", error)
+          return false
+        }
+      }
       // Legacy fallback for numeric IDs (owner enrollment)
       else if (/^\d+$/.test(verificationId)) {
         try {
@@ -130,6 +166,34 @@ export function useVerificationRequest(id: string | undefined) {
       else if (verificationId.startsWith('ver_')) {
         const verId = verificationId.replace('ver_', '')
         success = await verificationService.reject(verId)
+      }
+      // Check if this is a failed payout request
+      else if (verificationId.startsWith('payout_')) {
+        // For payouts, rejection might not be applicable, but we can mark as reviewed
+        // This would depend on the business logic - for now, we'll just return success
+        success = true
+      }
+      // Check if this is a refund request
+      else if (verificationId.startsWith('refund_')) {
+        const refundId = verificationId.replace('refund_', '')
+        try {
+          await refundsDisputesService.rejectRefund(parseInt(refundId), "Refund rejected")
+          success = true
+        } catch (error) {
+          console.error("Error rejecting refund:", error)
+          return false
+        }
+      }
+      // Check if this is a reactivation request
+      else if (verificationId.startsWith('reactivation_')) {
+        const userId = verificationId.replace('reactivation_', '')
+        try {
+          await adminUserService.rejectReactivation(parseInt(userId), "Reactivation request rejected")
+          success = true
+        } catch (error) {
+          console.error("Error rejecting reactivation:", error)
+          return false
+        }
       }
       // Legacy fallback for numeric IDs (owner enrollment)
       else if (/^\d+$/.test(verificationId)) {

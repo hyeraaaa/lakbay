@@ -10,7 +10,7 @@ type StatusFilter = "all" | "pending" | "approved" | "rejected"
 interface ExtendedRequest {
   verification_id: string
   user_id: string
-  doc_type: "driver_license" | "passport" | "id_card" | "business_license" | "vehicle_registration"
+  doc_type: "driver_license" | "passport" | "id_card" | "business_license" | "vehicle_registration" | "payout_failed" | "refund_request" | "reactivation_request"
   doc_url: string
   doc_urls?: string[]
   status: "pending" | "approved" | "rejected"
@@ -39,20 +39,30 @@ export const useVerificationRequests = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState<{
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  } | null>(null)
+
+  const pageSize = 10
 
   useEffect(() => {
     fetchVerificationRequests()
-  }, [])
+  }, [currentPage, statusFilter])
 
   const fetchVerificationRequests = async () => {
     try {
       setLoading(true)
-      const unified: AdminReviewItem[] = await adminReviewService.getAll()
-      const sorted = [...unified].sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
-      setRequests(sorted)
+      const result = await adminReviewService.getAll(currentPage, pageSize, statusFilter)
+      setRequests(result.items)
+      setPagination(result.pagination)
     } catch (error) {
       console.error("Error fetching verification requests:", error)
       setRequests([])
+      setPagination(null)
     } finally {
       setLoading(false)
     }
@@ -64,8 +74,8 @@ export const useVerificationRequests = () => {
       request.user?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       request.user_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (request.vehicle && `${request.vehicle.brand} ${request.vehicle.model}`.toLowerCase().includes(searchQuery.toLowerCase()))
-    const matchesStatus = statusFilter === "all" || request.status === statusFilter
-    return matchesSearch && matchesStatus
+    // Note: Status filtering is now handled server-side, so we don't need to filter here
+    return matchesSearch
   })
 
   const toggleSelection = (id: string) => {
@@ -86,6 +96,15 @@ export const useVerificationRequests = () => {
     }
   }
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handleStatusFilterChange = (status: StatusFilter) => {
+    setStatusFilter(status)
+    setCurrentPage(1) // Reset to first page when status changes
+  }
+
   return {
     requests,
     filteredRequests,
@@ -93,10 +112,14 @@ export const useVerificationRequests = () => {
     searchQuery,
     setSearchQuery,
     statusFilter,
-    setStatusFilter,
+    setStatusFilter: handleStatusFilterChange,
     selectedItems,
     toggleSelection,
     selectAll,
     refetch: fetchVerificationRequests,
+    // Pagination
+    currentPage,
+    pagination,
+    handlePageChange,
   }
 }
