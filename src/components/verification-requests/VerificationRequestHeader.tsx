@@ -24,8 +24,12 @@ export default function VerificationRequestHeader({
   submitted_at,
   getImageSrc,
 }: VerificationRequestHeaderProps) {
-  const displayName = user?.name || `User ${user_id}`
-  const initials = (user?.name?.trim().charAt(0).toUpperCase() || user_id.charAt(0).toUpperCase())
+  const displayName = doc_type === "payout_failed" 
+    ? `Owner ${user_id}` 
+    : user?.name || `User ${user_id}`
+  const initials = doc_type === "payout_failed" 
+    ? "O" 
+    : (user?.name?.trim().charAt(0).toUpperCase() || user_id.charAt(0).toUpperCase())
   return (
     <header className="bg-white px-6">
       <div className="flex items-center gap-4">

@@ -52,17 +52,31 @@ interface RawReviewItem {
   payout_id?: string | number
   amount?: number
   failure_reason?: string
+  error_message?: string
   updated_at?: string
+  owner_user?: RawUser
+  booking?: {
+    users?: RawUser
+  }
   // Additional fields for refund requests
   refund_id?: string | number
   booking_id?: string | number
   refund_amount?: number
   refund_reason?: string
   requested_at?: string
+  requested_by?: string | number
+  requested_by_user?: RawUser
+  processed_by?: string | number
+  processed_by_user?: RawUser
+  processed_at?: string
+  admin_notes?: string
   // Additional fields for reactivation requests
   reactivation_id?: string | number
   deactivation_reason?: string
   reactivation_reason?: string
+  decided_by?: string | number
+  decided_by_admin?: RawUser
+  decided_at?: string
 }
 
 // Unified review item coming from the backend. We normalize it to VerificationRequest-compatible shape.
@@ -140,46 +154,46 @@ function mapItem(it: RawReviewItem): AdminReviewItem {
     reviewedBy = it.reviewed_by ? String(it.reviewed_by) : undefined
     notes = it.notes
   } else if (itemType === 'payout_failed') {
-    // Failed payout data structure
-    userInfo = it.user
-    reviewerInfo = it.reviewer
+    // Failed payout data structure - system event, no user submission
+    userInfo = undefined // No user data needed for system payout failures
+    reviewerInfo = undefined // No reviewer for system events
     docType = "payout_failed"
     docUrl = ''
     docUrls = []
     verificationId = `payout_${it.payout_id || it.id || ''}`
-    userId = String(it.user_id || it.owner_id || '')
-    status = it.status || 'pending'
-    submittedAt = it.submitted_at || it.updated_at || new Date().toISOString()
-    reviewedAt = it.reviewed_at
-    reviewedBy = it.reviewed_by ? String(it.reviewed_by) : undefined
-    notes = it.failure_reason || it.notes
+    userId = String(it.owner_id || '') // Use owner_id for reference
+    status = 'pending' // Always pending for retry
+    submittedAt = it.updated_at || new Date().toISOString()
+    reviewedAt = undefined
+    reviewedBy = undefined
+    notes = it.error_message || it.failure_reason || 'Stripe payout failed - ready for retry'
   } else if (itemType === 'refund') {
     // Refund request data structure
-    userInfo = it.user
-    reviewerInfo = it.reviewer
+    userInfo = it.requested_by_user || it.user
+    reviewerInfo = it.processed_by_user || it.reviewer
     docType = "refund_request"
     docUrl = ''
     docUrls = []
     verificationId = `refund_${it.refund_id || it.id || ''}`
-    userId = String(it.user_id || '')
+    userId = String(it.user_id || it.requested_by || '')
     status = it.status || 'pending'
-    submittedAt = it.submitted_at || it.requested_at || new Date().toISOString()
-    reviewedAt = it.reviewed_at
-    reviewedBy = it.reviewed_by ? String(it.reviewed_by) : undefined
-    notes = it.refund_reason || it.notes
+    submittedAt = it.submitted_at || it.requested_at || it.created_at || new Date().toISOString()
+    reviewedAt = it.reviewed_at || it.processed_at
+    reviewedBy = it.reviewed_by || it.processed_by ? String(it.reviewed_by || it.processed_by) : undefined
+    notes = it.refund_reason || it.admin_notes || it.notes
   } else if (itemType === 'reactivation_request') {
     // Account reactivation data structure
     userInfo = it.user
-    reviewerInfo = it.reviewer
+    reviewerInfo = it.decided_by_admin || it.reviewer
     docType = "reactivation_request"
     docUrl = ''
     docUrls = []
     verificationId = `reactivation_${it.reactivation_id || it.request_id || it.id || ''}`
     userId = String(it.user_id || '')
     status = it.status || 'pending'
-    submittedAt = it.submitted_at || it.created_at || new Date().toISOString()
-    reviewedAt = it.reviewed_at
-    reviewedBy = it.reviewed_by ? String(it.reviewed_by) : undefined
+    submittedAt = it.submitted_at || it.requested_at || it.created_at || new Date().toISOString()
+    reviewedAt = it.reviewed_at || it.decided_at
+    reviewedBy = it.reviewed_by || it.decided_by ? String(it.reviewed_by || it.decided_by) : undefined
     notes = it.reactivation_reason || it.notes
   } else {
     // Fallback for unknown structure

@@ -71,7 +71,9 @@ export default function VerificationRequestItem({
 
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="font-medium text-sm text-foreground w-40 truncate">
-            {request.user?.name || `User ${request.user_id}`}
+            {request.doc_type === "payout_failed" 
+              ? `Owner ${request.user_id}` 
+              : request.user?.name || `User ${request.user_id}`}
           </div>
 
           <div className="flex-1 min-w-0">
