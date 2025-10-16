@@ -4,6 +4,7 @@ import { useJWT } from "@/contexts/JWTContext"
 import { Sidebar } from "@/components/sidebar-navbar/sidebar"
 import { Navbar as DashboardNavbar } from "@/components/sidebar-navbar/navbar"
 import { Navbar as CustomerNavbar } from "@/components/navbar"
+import { GeneralChatWidget } from "@/components/chat/generalChatwidget"
 
 export default function ProfileLayout({ children }: { children: React.ReactNode }) {
   const { user } = useJWT()
@@ -27,6 +28,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
           {children}
         </>
       )}
+      <GeneralChatWidget />
     </ProtectedRoute>
   )
 }

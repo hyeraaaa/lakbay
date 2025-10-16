@@ -21,7 +21,7 @@ export function PasswordInput({ id, label, placeholder, value, onChange, disable
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
-      <div className="relative max-w-md">
+      <div className="relative">
         <Input
           id={id}
           type={showPassword ? "text" : "password"}

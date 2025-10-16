@@ -25,14 +25,6 @@ export default function ImageGallery({ carImages, isGalleryOpen, setIsGalleryOpe
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 66vw"
             priority
           />
-          <div className="absolute top-4 right-4 flex gap-2">
-            <button className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
-              <Heart className="h-4 w-4" />
-            </button>
-            <button className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
-              <Share className="h-4 w-4" />
-            </button>
-          </div>
           {/* View all photos button (mobile only) */}
           <Button
             type="button"
@@ -76,7 +68,7 @@ export default function ImageGallery({ carImages, isGalleryOpen, setIsGalleryOpe
             type="button"
             variant="secondary"
             aria-label="View all photos"
-            className="absolute bottom-3 right-3 bg-white hover:bg-white active:bg-white hover:opacity-100 active:opacity-100 rounded-lg px-3 py-2 shadow-md flex items-center gap-2"
+            className="absolute bottom-3 right-3 bg-white hover:bg-white active:bg-white hover:opacity-100 active:opacity-100 rounded-lg px-3 py-2 shadow-md flex items-center gap-2 rounded-sm border border-gray-300 shadow-sm"
             onClick={() => setIsGalleryOpen(true)}
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

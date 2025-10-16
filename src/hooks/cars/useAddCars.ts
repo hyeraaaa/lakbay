@@ -36,25 +36,37 @@ const initialFormData: VehicleFormData = {
   images: [],
 }
 
-export function useVehicles() {
+export type VehicleServerFilters = {
+  availability?: 'available' | 'unavailable'
+  is_registered?: boolean
+}
+
+export function useVehicles(initialFilters?: VehicleServerFilters) {
   const { user } = useJWT()
   const [vehicles, setVehicles] = useState<VehicleResponse[]>([])
+  const [allVehicles, setAllVehicles] = useState<VehicleResponse[]>([])
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true)
+  const [isLoadingAllVehicles, setIsLoadingAllVehicles] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
+  const [filters, setFilters] = useState<VehicleServerFilters>(initialFilters || {})
 
   const fetchVehicles = useCallback(async () => {
     if (!user) return
 
     try {
       setIsLoadingVehicles(true)
-      const fetchedVehicles = await vehicleService.getMyVehicles()
-      setVehicles(fetchedVehicles)
+      const query: Record<string, string | number | boolean | undefined> = {
+        availability: filters.availability,
+        is_registered: typeof filters.is_registered === 'boolean' ? filters.is_registered : undefined,
+      }
+      const filtered = await vehicleService.getMyVehicles(query)
+      setVehicles(filtered)
     } catch (error) {
       console.error("Error fetching vehicles:", error)
     } finally {
       setIsLoadingVehicles(false)
     }
-  }, [user])
+  }, [user, filters])
 
   const createVehicle = async (formData: VehicleFormData) => {
     setIsCreating(true)
@@ -136,12 +148,33 @@ export function useVehicles() {
     fetchVehicles()
   }, [user, fetchVehicles])
 
+  // Fetch unfiltered (for stats) once when user is available
+  useEffect(() => {
+    const fetchAll = async () => {
+      if (!user) return
+      try {
+        setIsLoadingAllVehicles(true)
+        const unfiltered = await vehicleService.getMyVehicles()
+        setAllVehicles(unfiltered)
+      } catch (error) {
+        console.error("Error fetching all vehicles:", error)
+      } finally {
+        setIsLoadingAllVehicles(false)
+      }
+    }
+    fetchAll()
+  }, [user])
+
   return {
     vehicles,
+    allVehicles,
     isLoadingVehicles,
+    isLoadingAllVehicles,
     isCreating,
     fetchVehicles,
     createVehicle,
+    filters,
+    setFilters,
   }
 }
 

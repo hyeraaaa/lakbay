@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Loader2 } from "lucide-react"
-import { useVehicles, type VehicleFormData } from "@/hooks/cars/useAddCars"
+import { useState, useEffect, useMemo } from "react"
+import { Loader2, Car, CheckCircle, XCircle, ShieldCheck } from "lucide-react"
+import { useVehicles, type VehicleFormData, type VehicleServerFilters } from "@/hooks/cars/useAddCars"
 import { useStripeConnectStatus } from "@/hooks/cars/useStripeConnectStatus"
 import VehiclesTable from "@/components/cars/vehiclesTable"
 import { EmptyCarsState } from "@/components/cars/emptyCarState"
@@ -10,9 +10,10 @@ import { AddCarDialog } from "@/components/cars/addCarDialog"
 import { Container } from "@/components/container"
 import { useNotification } from "@/components/NotificationProvider"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent } from "@/components/ui/card"
 export default function CarsPage() {
   const { success, error, info } = useNotification()
-  const { vehicles, isLoadingVehicles, isCreating, createVehicle, fetchVehicles } = useVehicles()
+  const { vehicles, allVehicles, isLoadingVehicles, isLoadingAllVehicles, isCreating, createVehicle, fetchVehicles, filters, setFilters } = useVehicles()
   const { needsSetup, isLoading: isStripeLoading } = useStripeConnectStatus()
 
   // Show notification when Stripe Connect setup is needed
@@ -42,8 +43,35 @@ export default function CarsPage() {
     }
   }
   
+  const isFiltered = useMemo(() => {
+    return Boolean(filters?.availability) || typeof filters?.is_registered === 'boolean'
+  }, [filters])
+
   return ( 
-    <div className="bg-background">
+    <div>
+      <h3 className="text-3xl font-bold tracking-tight text-balance">Vehicles</h3>
+      <p className="text-muted-foreground text-pretty mb-2">Easily manage and track all your registered vehicles in one place.</p>
+      {
+        // Stats cards
+      }
+      <VehiclesStats 
+        vehiclesCount={allVehicles.length} 
+        vehicles={allVehicles} 
+        isLoading={isLoadingAllVehicles}
+        onFilterChange={(key) => {
+          if (key === 'all') {
+            setFilters({})
+          } else if (key === 'available') {
+            setFilters({ availability: 'available' })
+          } else if (key === 'unavailable') {
+            setFilters({ availability: 'unavailable' })
+          } else if (key === 'registered') {
+            setFilters({ is_registered: true })
+          }
+        }}
+        activeFilter={(filters?.availability ? (filters.availability as 'available' | 'unavailable') : (filters?.is_registered ? 'registered' : 'all'))}
+      />
+      
         {/* Cars Display */}
         {isLoadingVehicles ? (
           <div className="space-y-4">
@@ -106,7 +134,11 @@ export default function CarsPage() {
               <Skeleton className="h-4 w-80" />
             </div>
           ) : (
-            <EmptyCarsState needsStripeSetup={needsSetup} />
+            (isFiltered ? (
+              <div className="bg-background rounded-md border p-8 text-center text-sm text-muted-foreground">No vehicles match the selected filter.</div>
+            ) : (
+              <EmptyCarsState needsStripeSetup={needsSetup} />
+            ))
           )
         ) : (
           <VehiclesTable vehicles={vehicles} onChange={fetchVehicles} />
@@ -120,5 +152,69 @@ export default function CarsPage() {
           hideTrigger={!isStripeLoading && needsSetup}
         />
       </div>
+  )
+}
+
+type VehiclesStatsProps = {
+  vehiclesCount: number
+  vehicles: ReturnType<typeof useVehicles>["vehicles"]
+  isLoading: boolean
+  onFilterChange: (key: "all" | "available" | "unavailable" | "registered") => void
+  activeFilter: "all" | "available" | "unavailable" | "registered"
+}
+
+function VehiclesStats({ vehiclesCount, vehicles, isLoading, onFilterChange, activeFilter }: VehiclesStatsProps) {
+  const counts = useMemo(() => {
+    const total = vehiclesCount
+    const available = vehicles.filter(v => (v.availability || "").toLowerCase() === "available").length
+    const unavailable = Math.max(0, total - available)
+    const registered = vehicles.filter(v => !!v.is_registered).length
+    return { total, available, unavailable, registered }
+  }, [vehiclesCount, vehicles])
+
+  const items = [
+    { key: "total", label: "Total", value: counts.total, Icon: Car },
+    { key: "available", label: "Available", value: counts.available, Icon: CheckCircle },
+    { key: "unavailable", label: "Unavailable", value: counts.unavailable, Icon: XCircle },
+    { key: "registered", label: "Registered", value: counts.registered, Icon: ShieldCheck },
+  ] as const
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      {items.map(({ key, label, value, Icon }) => {
+        const isActive = (key === "total" && activeFilter === "all") || key === activeFilter
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onFilterChange(key === "total" ? "all" : (key as "available" | "unavailable" | "registered"))}
+            className={`text-left rounded-md focus:outline-none ${isLoading ? "cursor-default" : "cursor-pointer"}`}
+            aria-pressed={isActive}
+          >
+            <Card>
+              <CardContent className="p-4">
+                {isLoading ? (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Skeleton className="h-7 w-20 mb-1" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    <Skeleton className="h-5 w-5" />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">{value.toLocaleString()}</div>
+                      <div className="text-sm text-gray-600">{label}</div>
+                    </div>
+                    <Icon className="w-5 h-5 text-black" />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </button>
+        )
+      })}
+    </div>
   )
 }

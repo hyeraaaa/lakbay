@@ -21,14 +21,6 @@ type StatsCardsProps = {
 
 const statItems = [
   {
-    key: "total" as keyof StatsCounts,
-    label: "Total",
-    icon: Calendar,
-    color: "text-gray-900",
-    bgColor: "bg-transparent",
-    iconColor: "text-black",
-  },
-  {
     key: "pending" as keyof StatsCounts,
     label: "Pending",
     icon: Clock,

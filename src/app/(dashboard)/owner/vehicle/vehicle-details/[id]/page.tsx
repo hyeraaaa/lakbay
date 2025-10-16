@@ -21,7 +21,7 @@ import { vehicleService } from "@/services/vehicleServices"
 export default function CarBookingInterface() {
   const [selectedImage, setSelectedImage] = useState(0)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
-  const { vehicle, isLoading, reviews, reviewsError, tripCount } = useVehicleDetails()
+  const { vehicle, isLoading, reviews, reviewsAll, reviewsError, tripCount } = useVehicleDetails()
 
   // Priority prefetch: kick off location-related data fetch ASAP using route id
   const params = useParams()
@@ -51,7 +51,7 @@ export default function CarBookingInterface() {
   }, [vehicle])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       {isLoading ? (
         <VehicleDetailsSkeleton />
       ) : (
@@ -71,37 +71,33 @@ export default function CarBookingInterface() {
               fuelType={vehicle?.fuel_type}
               transmission={vehicle?.transmission}
               coding={vehicle?.coding}
-              rating={reviews && reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : null}
+              rating={reviewsAll && reviewsAll.length > 0 ? reviewsAll.reduce((sum, r) => sum + r.rating, 0) / reviewsAll.length : null}
               tripCount={tripCount}
-            />
-
-            <HostSection 
-              hostFirstName={vehicle?.users?.first_name} 
-              hostLastName={vehicle?.users?.last_name} 
-              hostProfilePicture={vehicle?.users?.profile_picture}
-              hostUserId={vehicle?.owner_id}
             />
 
             <VehicleFeatures description={vehicle?.description} features={vehicle?.features} />
 
-
             {/* Location Section moved below grid for larger layout */}
 
-              <ReviewsSection reviews={reviews} reviewsError={reviewsError} />
+              <ReviewsSection reviews={reviews} reviewsError={reviewsError} reviewsAll={reviewsAll} />
+
+
           </div>
 
-          {/* Booking Sidebar */}
-          <div>
-            <BookingSidebar 
-              pricePerDay={vehicle?.rate_per_day} 
-              vehicleId={vehicle?.vehicle_id || 0}
-            />
+          {/* Sidebar (right column) */}
+          <div className="lg:col-span-1">
+            <div>
+              <BookingSidebar
+                pricePerDay={vehicle?.rate_per_day}
+                vehicleId={vehicle?.vehicle_id || 0}
+              />
+            </div>
           </div>
         </div>
 
-        <LiveLocationSection vehicle={vehicle} />
       </div>
       )}
+      <LiveLocationSection vehicle={vehicle} />
     </div>
   )
 }

@@ -31,18 +31,17 @@ export default function VehicleFeatures({ description, features }: VehicleFeatur
   return (
     <>
       {/* Vehicle description */}
-      <div className="border-t pt-6">
-        <h3 className="font-semibold text-lg mb-4">Vehicle description</h3>
+      <div className="border-b border-neutral-300 pb-8">
+        <h3 className="font-semibold text-lg mb-2">Vehicle description</h3>
         <div className="flex items-start gap-2">
-          <Info className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 text-sm mb-5">
             {description?.trim() || "No description provided for this vehicle."}
           </p>
         </div>
       </div>
 
       {/* Vehicle Features */}
-      <div className="border-t pt-6">
+      <div className="border-b border-neutral-300 pb-8">
         <h3 className="font-semibold text-lg mb-4">Vehicle features</h3>
         {!features || features.length === 0 ? (
           <p className="text-sm text-gray-600">No listed features.</p>
@@ -52,7 +51,7 @@ export default function VehicleFeatures({ description, features }: VehicleFeatur
               <Badge
                 key={`${f}-${idx}`}
                 variant="outline"
-                className="px-3 py-1 bg-gray-50 border-gray-200 text-gray-800"
+                className="px-3 py-1 bg-white border-gray-300 text-gray-800"
               >
                 {normalizeFeatureLabel(f)}
               </Badge>

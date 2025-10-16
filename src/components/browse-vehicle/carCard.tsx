@@ -47,7 +47,7 @@ const CarCard: React.FC<CarCardProps> = ({
     return `Coding every ${pretty}`
   })()
   return (
-    <div className="bg-white rounded-xl border border-border hover:bg-[whitesmoke] transition-all duration-200 overflow-hidden group">
+    <div className="bg-white rounded-sm hover:bg-gray-50 transition-all duration-200 overflow-hidden group border border-neutral-200 shadow-sm">
       {/* Large and medium screens: horizontal layout */}
       <div className="hidden sm:flex h-32">
         <div className="w-40 flex-shrink-0 relative">
@@ -61,12 +61,6 @@ const CarCard: React.FC<CarCardProps> = ({
             )}
           </div>
 
-          <button
-            onClick={onFavoriteToggle}
-            className="absolute top-2 right-2 p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
-          >
-            <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"}`} />
-          </button>
         </div>
 
         <div className="flex-1 p-4 flex flex-col justify-between">
@@ -108,7 +102,7 @@ const CarCard: React.FC<CarCardProps> = ({
               Host: <span className="font-medium text-gray-800">{hostName}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+              <Star className="w-3 h-3 fill-blue-500 text-blue-500" />
               <span className="text-xs font-medium text-gray-800">{rating}</span>
             </div>
           </div>
@@ -128,12 +122,6 @@ const CarCard: React.FC<CarCardProps> = ({
             )}
           </div>
 
-          <button
-            onClick={onFavoriteToggle}
-            className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
-          >
-            <Heart className={`w-5 h-5 ${isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"}`} />
-          </button>
         </div>
 
         <div className="p-4">

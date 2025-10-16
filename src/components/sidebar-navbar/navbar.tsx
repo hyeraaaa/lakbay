@@ -145,7 +145,7 @@ export function Navbar() {
   
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-background border-b border-border">
+      <header className="sticky top-0 z-50 w-full bg-background border-b border-neutral-200">
         <div className="flex h-14 items-center px-6">
           {/* Logo (visible on xs to md screens) */}
           <div className="lg:hidden">

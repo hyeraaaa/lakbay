@@ -101,8 +101,8 @@ export default function Page() {
   const firstName = user?.first_name || user?.email?.split('@')[0] || 'there'
 
   return (
-    <div className="bg-background">
-      <main className="max-w-7xl mx-auto space-y-6">
+    <div>
+      <main className="mx-auto space-y-6">
         <div className="space-y-1">
           {isLoading ? (
             <>
@@ -111,7 +111,7 @@ export default function Page() {
             </>
           ) : (
             <>
-              <h2 className="text-3xl font-bold tracking-tight text-balance">{greeting} {firstName}</h2>
+              <h2 className="text-3xl font-bold tracking-tight text-balance">{greeting}, {firstName}</h2>
               <p className="text-muted-foreground text-pretty">Manage vehicles, earnings, and bookings with live insights</p>
             </>
           )}

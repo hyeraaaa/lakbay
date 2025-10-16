@@ -24,7 +24,7 @@ export default function TitleAndBadges({ title, seats, fuelType, transmission, r
     return `Coding every ${pretty}`
   })()
   return (
-    <div>
+    <div className="border-b border-neutral-300 pb-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
       <div className="flex items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
@@ -34,21 +34,21 @@ export default function TitleAndBadges({ title, seats, fuelType, transmission, r
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 mb-6">
-        <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-gray-50 border-gray-200">
+      <div className="flex flex-wrap gap-3">
+        <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-white border-gray-300">
           <Users className="h-3 w-3" />
           {seats ?? "-"} seats
         </Badge>
-        <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-gray-50 border-gray-200">
+        <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-white border-gray-300">
           <Fuel className="h-3 w-3" />
           {fuelType || "Gas (Regular)"}
         </Badge>
-        <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-gray-50 border-gray-200">
+          <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-gray-50 border-gray-300">
           <Settings className="h-3 w-3" />
           {normalizeTransmissionLabel(transmission)}
         </Badge>
         {codingLabel && (
-          <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-blue-50 border-blue-200 text-blue-700">
+          <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-blue-50 border-blue-300 text-blue-700">
             <Calendar className="h-3 w-3" />
             <span className="text-xs">{codingLabel}</span>
           </Badge>

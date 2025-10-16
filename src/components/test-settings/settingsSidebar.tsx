@@ -32,7 +32,7 @@ export function SettingsSidebar({ activeTab, onTabChange }: SettingsSidebarProps
 
   const sidebarItems = isOwner ? ownerSidebarItems : baseSidebarItems
   return (
-    <div className="w-64 bg-background p-6">
+    <div className="w-64 p-6">
       <nav className="space-y-2">
         {sidebarItems.map((item) => {
           const Icon = item.icon

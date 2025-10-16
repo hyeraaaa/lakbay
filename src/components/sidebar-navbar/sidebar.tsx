@@ -62,7 +62,7 @@ export function Sidebar() {
   if (!isMdUp) return null
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-16 border-r border-border">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-16 border-r border-neutral-200 bg-white">
       <div className="flex h-full flex-col items-center py-4">
         {/* Logo */}
         <div className="mb-8">

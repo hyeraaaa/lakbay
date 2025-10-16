@@ -55,7 +55,7 @@ export default function LiveLocationSection({ vehicle }: LiveLocationSectionProp
         )}
       </div>
       {vehicle && (
-        <div className="h-[22rem] md:h-[28rem] lg:h-[34rem] rounded-md overflow-hidden border">
+        <div className="h-[22rem] md:h-[28rem] lg:h-[40rem] overflow-hidden">
           <VehicleMap
             vehicles={vehiclesForMap}
             className="h-full"

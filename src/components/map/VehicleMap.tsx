@@ -20,6 +20,11 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  // Make the default marker smaller
+  iconSize: [20, 33],
+  iconAnchor: [10, 33],
+  popupAnchor: [0, -28],
+  shadowSize: [40, 40],
 });
 
 interface VehicleMapProps {
@@ -27,6 +32,7 @@ interface VehicleMapProps {
   isLoading?: boolean;
   className?: string;
   showControls?: boolean;
+  showZoomControl?: boolean;
   markerVariant?: 'price' | 'pin';
   center?: [number, number] | null;
   zoom?: number | null;
@@ -36,7 +42,7 @@ interface VehicleMapProps {
   autoFitOnUpdate?: boolean | null;
 }
 
-const VehicleMap: React.FC<VehicleMapProps> = ({ vehicles, isLoading, className = "", showControls = true, markerVariant = 'price', center, zoom, interactiveMarkers = true, showMarkerPopups = true, singleMarkerZoom = 16, autoFitOnUpdate = true }) => {
+const VehicleMap: React.FC<VehicleMapProps> = ({ vehicles, isLoading, className = "", showControls = true, showZoomControl = true, markerVariant = 'pin', center, zoom, interactiveMarkers = true, showMarkerPopups = true, singleMarkerZoom = 12, autoFitOnUpdate = true }) => {
   const [isClient, setIsClient] = useState(false);
   const { coords: internalUserLocation, accuracy: userAccuracy, isActive, error: locateError, toggle, disable } = useUserLocation();
   const { routeCoords, routeInfo } = useRouteToFirstVehicle(internalUserLocation, vehicles);
@@ -56,20 +62,33 @@ const VehicleMap: React.FC<VehicleMapProps> = ({ vehicles, isLoading, className 
   const FitToVehicles: React.FC<{ coords: Array<[number, number]> }> = ({ coords }) => {
     const map = useMap();
     useEffect(() => {
+      // Allow external interactions (like marker "View cars here") to skip auto-fit for a short window
+      try {
+        const globalAny = window as unknown as { __lakbaySkipNextAutoFit?: boolean; __lakbaySkipAutoFitUntil?: number };
+        const now = Date.now();
+        if (globalAny.__lakbaySkipNextAutoFit) {
+          globalAny.__lakbaySkipNextAutoFit = false;
+          return;
+        }
+        if (typeof globalAny.__lakbaySkipAutoFitUntil === 'number' && now < globalAny.__lakbaySkipAutoFitUntil) {
+          return;
+        }
+      } catch {}
+
       const valid = coords.filter(([lat, lon]) => Number.isFinite(lat) && Number.isFinite(lon));
       if (valid.length === 0) return;
       const effectiveUser = internalUserLocation;
       if (effectiveUser && Number.isFinite(effectiveUser[0]) && Number.isFinite(effectiveUser[1])) {
         const bounds = L.latLngBounds([effectiveUser, ...valid]);
-        map.fitBounds(bounds, { padding: [40, 40], animate: true });
+        map.fitBounds(bounds, { padding: [40, 40], animate: true, maxZoom: 17 });
         return;
       }
       if (valid.length === 1) {
-        const z = Number.isFinite(singleMarkerZoom) ? (singleMarkerZoom ?? 14) : 14;
+        const z = Number.isFinite(singleMarkerZoom) ? (singleMarkerZoom ?? 12) : 12;
         map.setView(valid[0], z, { animate: true });
       } else {
         const bounds = L.latLngBounds(valid);
-        map.fitBounds(bounds, { padding: [40, 40], animate: true });
+        map.fitBounds(bounds, { padding: [40, 40], animate: true, maxZoom: 17 });
       }
     }, [coords, map]);
     return null;
@@ -131,12 +150,15 @@ const VehicleMap: React.FC<VehicleMapProps> = ({ vehicles, isLoading, className 
         className="z-0"
         worldCopyJump={false}
         attributionControl={false}
+        zoomControl={showZoomControl}
+        maxZoom={19}
         center={validCoords.length === 0 && !internalUserLocation && center ? center : undefined}
         zoom={validCoords.length === 0 && !internalUserLocation && zoom ? zoom : undefined}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
           noWrap={true}
         />
         {autoFitOnUpdate && validCoords.length > 0 && <FitToVehicles coords={validCoords} />}
@@ -187,75 +209,7 @@ const VehicleMap: React.FC<VehicleMapProps> = ({ vehicles, isLoading, className 
       </button>
       )}
       
-      {/* Custom CSS for vehicle markers */}
-      <style jsx global>{`
-        .vehicle-marker {
-          background: white;
-          border: 2px solid #3b82f6;
-          border-radius: 50%;
-          width: 40px;
-          height: 40px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        
-        .vehicle-marker--simple {
-          width: 36px;
-          height: 36px;
-        }
-
-        .vehicle-marker:hover {
-          transform: scale(1.1);
-          box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-        
-        .vehicle-marker-icon {
-          font-size: 16px;
-          line-height: 1;
-        }
-        
-        .vehicle-marker-price {
-          font-size: 8px;
-          font-weight: bold;
-          color: #059669;
-          line-height: 1;
-          margin-top: 1px;
-        }
-        
-        .vehicle-popup {
-          min-width: 200px;
-        }
-        
-        .leaflet-popup-content {
-          margin: 8px 12px;
-        }
-        
-        .leaflet-popup-content-wrapper {
-          border-radius: 8px;
-        }
-        .user-marker-circle {
-          background: #2563eb;
-          border: 2px solid #1d4ed8;
-          border-radius: 50%;
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .user-marker-glyph {
-          color: white;
-          font-size: 18px;
-          line-height: 1;
-        }
-      `}</style>
+      {/* Tailwind handles marker and popup styling now; removed global CSS */}
     </div>
   );
 };

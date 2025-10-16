@@ -334,9 +334,16 @@ class VehicleService {
     }
   }
 
-  async getMyVehicles(): Promise<VehicleResponse[]> {
+  async getMyVehicles(params?: Record<string, string | number | boolean | undefined>): Promise<VehicleResponse[]> {
     try {
-      const response = await apiRequest(`${API_BASE_URL}/api/vehicles/owner/my-vehicles`, {
+      const query = params
+        ? Object.entries(params)
+            .filter(([, v]) => v !== undefined && v !== null && `${v}`.trim?.() !== '')
+            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+            .join('&')
+        : ''
+      const url = `${API_BASE_URL}/api/vehicles/owner/my-vehicles${query ? `?${query}` : ''}`
+      const response = await apiRequest(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -534,9 +541,12 @@ class VehicleService {
     }
   }
 
-  async getVehicleReviews(vehicleId: number): Promise<VehicleReview[]> {
+  async getVehicleReviews(vehicleId: number, params?: { rating?: number | null }): Promise<VehicleReview[]> {
     try {
-      const response = await apiRequest(`${API_BASE_URL}/api/vehicles/${vehicleId}/reviews`, {
+      const query = params && typeof params.rating !== 'undefined' && params.rating !== null
+        ? `?rating=${encodeURIComponent(String(params.rating))}`
+        : '';
+      const response = await apiRequest(`${API_BASE_URL}/api/vehicles/${vehicleId}/reviews${query}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

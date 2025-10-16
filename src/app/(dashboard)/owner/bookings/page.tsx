@@ -6,6 +6,7 @@ import { RefreshCw } from 'lucide-react';
 import { SearchFiltersCard } from '@/components/booking/SearchFiltersCard';
 import { ResultsSummary } from '@/components/booking/ResultsSummary';
 import { OwnerBookingsDataTable } from '@/components/booking/OwnerBookingsDataTable';
+import { StatsCards as BookingStatsCards } from '@/components/booking/StatsCards';
 import { useOwnerBookingsPage } from '@/hooks/booking/useOwnerBookingsPage';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -27,6 +28,7 @@ const OwnerBookingsPage = () => {
     filters,
     pagination,
     statusOptions,
+    statusCounts,
     // actions
     handleSearch,
     handleStatusFilter,
@@ -145,6 +147,9 @@ const OwnerBookingsPage = () => {
           Refresh
         </Button>
       </div>
+
+      {/* Stats */}
+      <BookingStatsCards counts={statusCounts} />
 
 
       <SearchFiltersCard

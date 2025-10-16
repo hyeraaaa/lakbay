@@ -42,7 +42,11 @@ export function useGeocodeLocation(city?: string | null, province?: string | nul
         const lon = parseFloat(best.lon)
         if (Number.isFinite(lat) && Number.isFinite(lon)) {
           setCenter([lat, lon])
-          setZoom(city ? 15 : 12)
+          // Use gentler defaults: city-level ~13, province-only ~10
+          const hasCity = !!city && String(city).trim().length > 0
+          const hasProvince = !!province && String(province).trim().length > 0
+          const z = hasCity ? 13 : (hasProvince ? 10 : 12)
+          setZoom(z)
         }
       } catch (e: unknown) {
         if (!aborted) setError(e instanceof Error ? e.message : 'Geocoding error')

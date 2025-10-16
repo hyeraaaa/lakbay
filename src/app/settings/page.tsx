@@ -18,6 +18,9 @@ export default function SettingsPage() {
   const user = getCurrentUser()
   const isOwner = user?.user_type === 'owner'
   const isCustomer = user?.user_type === 'customer'
+  const isAdmin = user?.user_type === 'admin'
+
+  const containerClass = `mx-auto${isAdmin || isOwner ? '' : ' max-w-7xl py-5'}`
 
   // Redirect non-owners away from stripe tab
   useEffect(() => {
@@ -44,9 +47,9 @@ export default function SettingsPage() {
   return (
     <NotificationProvider>
       <ProtectedRoute requireAuth={true}>
-      <div className="bg-background">
-        <div className="mx-auto max-w-7xl">
-          <div className="bg-background">
+      <div>
+        <div className={containerClass}>
+          <div>
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
               <p className="text-muted-foreground">Manage your account settings and preferences</p>

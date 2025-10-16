@@ -11,7 +11,7 @@ const Logo = () => {
         className="h-12 w-12 object-contain"
         priority
       />
-      <span className="text-2xl text-primary font-medium tracking-[.1em]">
+      <span className="text-2xl text-primary font-medium tracking-[.1em] lg:block hidden">
         Lakbay
       </span>
     </div>

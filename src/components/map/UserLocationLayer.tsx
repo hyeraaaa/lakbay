@@ -9,8 +9,8 @@ function createUserIcon() {
   return L.divIcon({
     className: 'custom-user-marker',
     html: `
-      <div class="user-marker">
-        <div class="user-marker-circle">${userSvg}</div>
+      <div>
+        <div class="bg-blue-600 border-2 border-blue-700 rounded-full w-9 h-9 flex items-center justify-center shadow">${userSvg}</div>
       </div>
     `,
     iconSize: [36, 36],

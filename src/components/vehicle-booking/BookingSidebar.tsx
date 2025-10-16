@@ -152,7 +152,7 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
 
   return (
     <>
-    <Card className="sticky top-6 border border-border">
+    <Card>
       <CardContent className="px-6">
         {/* Price */}
         <div className="mb-6">
@@ -166,6 +166,7 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
 
 
         {/* Your Trip */}
+        {!shouldHidePaymentButton && (
         <div className="mb-6 space-y-4 pt-4 border-t border-border">
           <h3 className="font-semibold text-lg mb-4 text-foreground">Your trip</h3>
     
@@ -303,7 +304,6 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
           )}
 
           {/* Continue Button */}
-          {!shouldHidePaymentButton && (
             <Button 
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-base font-medium"
               onClick={() => setIsConfirmOpen(true)}
@@ -318,11 +318,11 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
                 "Continue to Payment"
               )}
             </Button>
-          )}
         </div>
+        )}
 
         {/* Availability Info */}
-        {!isLoadingBookings && (
+        {!shouldHidePaymentButton && !isLoadingBookings && (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center text-sm text-blue-800">
               <CalendarIcon className="mr-2 h-4 w-4" />

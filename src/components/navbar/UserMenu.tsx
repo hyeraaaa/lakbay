@@ -75,7 +75,7 @@ const UserMenu = ({
               onClick={() => setIsUserMenuOpen(false)}
             >
               <Home className="h-5 w-5" />
-              <span>Dashboard</span>
+              <span>{(user.user_type === 'owner' || user.user_type === 'admin') ? 'Dashboard' : 'Home'}</span>
             </button>
           </Link>
           

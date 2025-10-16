@@ -19,6 +19,7 @@ import { NotificationPopover } from "@/components/notifications/NotificationPopo
 import { usePathname } from "next/navigation";
 import type { User } from "@/lib/jwt";
 import { MessageCircle } from "lucide-react";
+import { useState } from "react";
 
 const Navbar = () => {
   const { 
@@ -43,6 +44,15 @@ const Navbar = () => {
 
   const pathname = usePathname();
   const showSearch = pathname === "/user";
+  const showNavLinks = pathname.startsWith("/user/vehicle/") && pathname.split("/").length === 4;
+
+  const [active, setActive] = useState("overview");
+
+  const links = [
+    { id: "overview", label: "Overview" },
+    { id: "reviews", label: "Reviews" },
+    { id: "location", label: "Location" },
+  ];
 
 
   const handleLogout = async () => {
@@ -56,21 +66,44 @@ const Navbar = () => {
   return (
     <header
       id="app-navbar"
-      className={`sticky top-0 z-50 w-full bg-white py-3 px-5 ${
-        mounted && isScrolled ? "border-b border-gray-300" : "border-b-0"
-      }`}
+      className={`sticky top-0 z-50 w-full bg-white py-3 px-5 border-b border-gray-300`}
     >
-      <div className="relative flex items-center justify-between">
+      {/* Desktop Layout */}
+      <div className="hidden lg:flex items-center justify-between relative">
         <Logo />
 
         {showSearch && (
-          <div className="hidden lg:block absolute left-1/2 -translate-x-1/2 w-full max-w-xl px-4">
+          <div className="absolute left-1/2 -translate-x-1/2 w-full lg:max-w-2xl">
             <SearchbarSm />
           </div>
         )}
 
+    {showNavLinks && (
+      <nav className="absolute left-1/2 -translate-x-1/2 flex items-center space-x-6">
+        {["overview", "reviews", "location"].map((item) => (
+          <a
+            key={item}
+            href={`#${item}`}
+            onClick={() => setActive(item)}
+            className={`
+              relative text-sm font-medium text-gray-700 transition-colors
+              hover:text-black
+              after:content-[''] after:absolute after:left-0 after:bottom-0
+              after:h-[2px] after:w-0 after:bg-black after:transition-all after:duration-300
+              hover:after:w-full
+              [&.active]:after:w-full [&.active]:after:bg-black
+            `}
+          >
+            {item.charAt(0).toUpperCase() + item.slice(1)}
+          </a>
+        ))}
+      </nav>
+    )}
+
+
+
         {/* Desktop Navigation */}
-        <NavigationMenu className="hidden lg:block">
+        <NavigationMenu>
           <NavigationMenuList className="flex items-center space-x-2">
             {/* Notification Bell - Only show when authenticated */}
             {mounted && !isLoading && isAuthenticated && (
@@ -103,26 +136,58 @@ const Navbar = () => {
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
+      </div>
 
-        <div className="flex items-center gap-2 lg:hidden">
-          {showSearch && <SearchbarSm className="w-auto" />}
-          {/* Mobile Notification Bell - Only show when authenticated */}
-          {mounted && !isLoading && isAuthenticated && (
-            <NotificationPopover />
-          )}
-          
-          <MobileMenu
-            isMenuOpen={isMenuOpen}
-            setIsMenuOpen={setIsMenuOpen}
-            mounted={mounted}
-            isLoading={isLoading}
-            isLoggingOut={isLoggingOut}
-            isAuthenticated={isAuthenticated}
-            user={user as User}
-            getDashboardRoute={getDashboardRoute}
-            handleLogout={handleLogout}
-          />
-        </div>
+      {/* Mobile Layout */}
+      <div className="lg:hidden">
+        {showSearch ? (
+          <div className="flex items-center gap-2">
+            <Logo />
+            <div className="flex-1">
+              <SearchbarSm />
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Mobile Notification Bell - Only show when authenticated */}
+              {mounted && !isLoading && isAuthenticated && (
+                <NotificationPopover />
+              )}
+              
+              <MobileMenu
+                isMenuOpen={isMenuOpen}
+                setIsMenuOpen={setIsMenuOpen}
+                mounted={mounted}
+                isLoading={isLoading}
+                isLoggingOut={isLoggingOut}
+                isAuthenticated={isAuthenticated}
+                user={user as User}
+                getDashboardRoute={getDashboardRoute}
+                handleLogout={handleLogout}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <Logo />
+            <div className="flex items-center gap-2">
+              {/* Mobile Notification Bell - Only show when authenticated */}
+              {mounted && !isLoading && isAuthenticated && (
+                <NotificationPopover />
+              )}
+              
+              <MobileMenu
+                isMenuOpen={isMenuOpen}
+                setIsMenuOpen={setIsMenuOpen}
+                mounted={mounted}
+                isLoading={isLoading}
+                isLoggingOut={isLoggingOut}
+                isAuthenticated={isAuthenticated}
+                user={user as User}
+                getDashboardRoute={getDashboardRoute}
+                handleLogout={handleLogout}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

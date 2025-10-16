@@ -60,7 +60,6 @@ export function EmailSettingsCard({ email, setEmail, isUpdating, onSubmit }: Ema
               placeholder="Enter your new email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="max-w-md"
               disabled={isUpdating}
             />
           </div>
@@ -75,7 +74,6 @@ export function EmailSettingsCard({ email, setEmail, isUpdating, onSubmit }: Ema
                 setConfirmEmail(e.target.value)
                 if (validationError) setValidationError(null)
               }}
-              className="max-w-md"
               disabled={isUpdating}
             />
           </div>

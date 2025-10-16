@@ -9,12 +9,16 @@ import TitleAndBadges from "@/components/vehicle-booking/TitleAndBadges"
 import HostSection from "@/components/vehicle-booking/HostSection"
 import VehicleFeatures from "@/components/vehicle-booking/VehicleFeatures"
 import BookingSidebar from "@/components/vehicle-booking/BookingSidebar"
-import { Star } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { MapPin } from "lucide-react"
 import ReviewsSection from "@/components/vehicle-booking/ReviewsSection"
 import LocationSection from "@/components/map/LocationSection"
 import { useVehicleDetails } from "@/hooks/booking/useVehicleDetails"
 import VehicleDetailsSkeleton from "@/components/vehicle-booking/VehicleDetailsSkeleton"
+import Link from "next/link"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { transformVehicleData } from "@/lib/transformVehicleData"
+
 
 export default function CarBookingInterface() {
   const [selectedImage, setSelectedImage] = useState(0)
@@ -34,12 +38,30 @@ export default function CarBookingInterface() {
     return urls
   }, [vehicle])
 
+  const locationLabel = useMemo(() => {
+    if (!vehicle) return null
+    return transformVehicleData(vehicle).location
+  }, [vehicle])
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen scroll-smooth">
       {isLoading ? (
         <VehicleDetailsSkeleton />
       ) : (
       <div className="max-w-7xl mx-auto px-4 py-6">
+        <Breadcrumb className="mb-4">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/user">Home</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Vehicles</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Full-width Image Gallery */}
           <div className="lg:col-span-3">
@@ -48,8 +70,8 @@ export default function CarBookingInterface() {
           </div>
 
           {/* Main Content (below gallery) */}
-          <div className="lg:col-span-2 space-y-6">
-            <TitleAndBadges
+          <div id="overview" className="lg:col-span-2 space-y-6 scroll-mt-24">
+              <TitleAndBadges
               title={vehicle ? `${vehicle.brand} ${vehicle.model} ${vehicle.year}` : "Vehicle"}
               seats={vehicle?.seats}
               fuelType={vehicle?.fuel_type}
@@ -58,20 +80,17 @@ export default function CarBookingInterface() {
               rating={reviews && reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : null}
               tripCount={tripCount}
             />
-
-            <HostSection 
+                <HostSection 
               hostFirstName={vehicle?.users?.first_name} 
               hostLastName={vehicle?.users?.last_name} 
               hostProfilePicture={vehicle?.users?.profile_picture}
               hostUserId={vehicle?.owner_id}
             />
-
-            <VehicleFeatures description={vehicle?.description} features={vehicle?.features} />
-
-
-            {/* Location Section moved below grid for larger layout */}
-
+                <VehicleFeatures description={vehicle?.description} features={vehicle?.features} />
+            
+            <div id="reviews" className="scroll-mt-24">
               <ReviewsSection reviews={reviews} reviewsError={reviewsError} />
+            </div>
           </div>
 
           {/* Booking Sidebar */}
@@ -82,10 +101,13 @@ export default function CarBookingInterface() {
             />
           </div>
         </div>
-
-        <LocationSection vehicle={vehicle} />
       </div>
       )}
+
+
+      <div id="location" className="scroll-mt-24">
+        <LocationSection vehicle={vehicle} />
+      </div>
     </div>
   )
 }

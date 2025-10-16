@@ -9,12 +9,11 @@ type LocationSectionProps = {
 
 export default function LocationSection({ vehicle }: LocationSectionProps) {
   return (
-    <div className="mt-10">
-      <h3 className="font-semibold text-lg mb-4">Location</h3>
+    <div>
       {/* Loading state removed; parent page shows a skeleton */}
       {vehicle && (
-        <div className="h-[22rem] md:h-[28rem] lg:h-[34rem] rounded-md overflow-hidden border">
-          <VehicleMap vehicles={[vehicle]} className="h-full" showControls={true} markerVariant="pin" interactiveMarkers={false} showMarkerPopups={false} singleMarkerZoom={17} />
+        <div className="h-[22rem] md:h-[28rem] lg:h-[40rem] overflow-hidden">
+          <VehicleMap vehicles={[vehicle]} className="h-full" showControls={true} showZoomControl={false} markerVariant="pin" interactiveMarkers={false} showMarkerPopups={false} singleMarkerZoom={14} />
         </div>
       )}
     </div>

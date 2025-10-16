@@ -4,7 +4,7 @@ import Searchbar from "@/components/searchbar";
 const Hero = () => {
   return (
     <>
-      <section className="bg-[#eff3f6] h-auto md:h-[450px] rounded-lg mx-5 flex items-center">
+      <section className="bg-[#eff3f6] h-auto md:h-[450px] rounded-lg mx-5 flex items-center mt-5">
         <Container className="flex flex-col items-center justify-center py-5">
           <div className="flex flex-col items-center justify-center">
             <h1 className="font-thin tracking-wider text-center px-4" style={{ fontSize: 'clamp(1.875rem, 4vw, 3.75rem)' }}>

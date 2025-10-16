@@ -46,7 +46,7 @@ export default function BecomeHostPage() {
   }
 
   return (
-    <div className="bg-background">
+    <div>
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         {!isLoading && isAccountVerified && (
           <div className="text-center mb-8">

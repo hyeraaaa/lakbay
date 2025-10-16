@@ -29,9 +29,9 @@ export default function HostSection({ hostFirstName, hostLastName, hostProfilePi
     } catch {}
   }
   return (
-    <div className="border-t pt-6">
+    <div>
       <h3 className="font-semibold text-lg mb-4">Hosted by</h3>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 border-b border-neutral-300 pb-8">
         <Link href={hostUserId ? `/profile/${encodeId(String(hostUserId))}` : "#"} className="flex items-center gap-4 flex-1">
           <Avatar className="h-12 w-12">
             <AvatarImage src={hostProfilePicture ? getImageUrl(hostProfilePicture) : "/placeholder.svg"} />

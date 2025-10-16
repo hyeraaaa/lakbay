@@ -146,3 +146,7 @@
 .car-list-scroll:hover::-webkit-scrollbar-thumb {
   background-color: color-mix(in oklch, var(--ring) 85%, transparent);
 }
+
+html{
+  scroll-behavior: smooth;
+}
