@@ -10,15 +10,16 @@ import { format } from "date-fns"
 import { useCitySearch } from "@/hooks/useCitySearch"
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation"
 import { useDateRange } from "@/hooks/useDateRange"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
 
 interface SearchbarSmProps {
   className?: string
 }
 
-const SearchbarSm = ({ className }: SearchbarSmProps) => {
+const SearchbarSmContent = ({ className }: SearchbarSmProps) => {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [isSearchPopoverOpen, setIsSearchPopoverOpen] = useState(false)
 
@@ -54,6 +55,29 @@ const SearchbarSm = ({ className }: SearchbarSmProps) => {
     },
     onClose: () => setShowSuggestions(false),
   })
+
+  // Initialize state from URL parameters
+  useEffect(() => {
+    const city = searchParams.get('city')
+    const province = searchParams.get('province')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
+
+    // Set location if both city and province exist
+    if (city && province) {
+      setFromLocation(`${city}, ${province}`)
+    } else if (city) {
+      setFromLocation(city)
+    }
+
+    // Set date range if both dates exist
+    if (startDate && endDate) {
+      setDateRange({
+        from: new Date(startDate),
+        to: new Date(endDate)
+      })
+    }
+  }, [searchParams, setFromLocation, setDateRange])
 
   const handleClearInput = () => {
     setFromLocation("")
@@ -405,6 +429,24 @@ const SearchbarSm = ({ className }: SearchbarSmProps) => {
         </Button>
       </div>
     </>
+  )
+}
+
+const SearchbarSm = ({ className }: SearchbarSmProps) => {
+  return (
+    <Suspense fallback={
+      <div className={cn("lg:hidden w-full", className)}>
+        <div className="w-full bg-[#fafafc] border border-gray-300 rounded-lg px-4 py-2 flex items-center gap-3">
+          <div className="flex-1 text-left min-w-0">
+            <div className="text-sm font-medium text-gray-900 truncate">Loading...</div>
+            <div className="text-xs text-gray-500 truncate">Loading...</div>
+          </div>
+          <Search className="w-4 h-4 text-gray-400" />
+        </div>
+      </div>
+    }>
+      <SearchbarSmContent className={className} />
+    </Suspense>
   )
 }
 

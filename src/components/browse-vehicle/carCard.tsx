@@ -47,7 +47,7 @@ const CarCard: React.FC<CarCardProps> = ({
     return `Coding every ${pretty}`
   })()
   return (
-    <div className="bg-white rounded-sm hover:bg-gray-50 transition-all duration-200 overflow-hidden group border border-neutral-200 shadow-sm">
+    <div className="bg-white rounded-sm hover:bg-gray-50 transition-all duration-200 overflow-hidden group border border-neutral-200 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
       {/* Large and medium screens: horizontal layout */}
       <div className="hidden sm:flex h-32">
         <div className="w-40 flex-shrink-0 relative">

@@ -16,7 +16,7 @@ export default function VerificationRequestsToolbar({
   selectAll,
 }: VerificationRequestsToolbarProps) {
   return (
-    <div className="border-b border-border bg-card px-6 py-2">
+    <div className="border-b border-border px-6 py-2">
       <div className="flex items-center gap-4">
         <Checkbox
           checked={selectedItems.size === filteredRequestsLength && filteredRequestsLength > 0}

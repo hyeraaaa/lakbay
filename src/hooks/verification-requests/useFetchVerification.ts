@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { verificationService, type VerificationRequest } from "@/services/verificationServices"
 import { adminReviewService, type AdminReviewItem } from "@/services/adminReviewService"
 
@@ -38,7 +38,6 @@ export const useVerificationRequests = () => {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
   const [pagination, setPagination] = useState<{
     page: number
@@ -47,54 +46,51 @@ export const useVerificationRequests = () => {
     totalPages: number
   } | null>(null)
 
-  const pageSize = 10
+  const pageSize = 20
+
+  // Reset to page 1 when search query changes (but don't refetch immediately)
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1)
+    }
+  }, [searchQuery])
 
   useEffect(() => {
     fetchVerificationRequests()
-  }, [currentPage, statusFilter])
+  }, [statusFilter, currentPage])
 
-  const fetchVerificationRequests = async () => {
+  const fetchVerificationRequests = useCallback(async () => {
     try {
       setLoading(true)
-      const result = await adminReviewService.getAll(currentPage, pageSize, statusFilter)
+      // Use server-side pagination with status filter
+      const result = await adminReviewService.getAll(
+        currentPage, 
+        pageSize, 
+        statusFilter === "all" ? undefined : statusFilter
+      )
+      
       setRequests(result.items)
-      setPagination(result.pagination)
+      
+      // Update pagination from server response
+      if (result.pagination) {
+        setPagination(result.pagination)
+      } else {
+        // Fallback pagination calculation if server doesn't return it
+        setPagination({
+          page: currentPage,
+          limit: pageSize,
+          total: result.items.length,
+          totalPages: Math.ceil(result.items.length / pageSize)
+        })
+      }
+      
     } catch (error) {
-      console.error("Error fetching verification requests:", error)
       setRequests([])
       setPagination(null)
     } finally {
       setLoading(false)
     }
-  }
-
-  const filteredRequests = requests.filter((request) => {
-    const matchesSearch =
-      request.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.user?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.user_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (request.vehicle && `${request.vehicle.brand} ${request.vehicle.model}`.toLowerCase().includes(searchQuery.toLowerCase()))
-    // Note: Status filtering is now handled server-side, so we don't need to filter here
-    return matchesSearch
-  })
-
-  const toggleSelection = (id: string) => {
-    const newSelected = new Set(selectedItems)
-    if (newSelected.has(id)) {
-      newSelected.delete(id)
-    } else {
-      newSelected.add(id)
-    }
-    setSelectedItems(newSelected)
-  }
-
-  const selectAll = () => {
-    if (selectedItems.size === filteredRequests.length && filteredRequests.length > 0) {
-      setSelectedItems(new Set())
-    } else {
-      setSelectedItems(new Set(filteredRequests.map((r) => r.verification_id)))
-    }
-  }
+  }, [currentPage, pageSize, statusFilter])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -105,17 +101,32 @@ export const useVerificationRequests = () => {
     setCurrentPage(1) // Reset to first page when status changes
   }
 
+  // Client-side search filtering (only on current page results for efficiency)
+  const filteredRequests = requests.filter((request) => {
+    if (!searchQuery.trim()) return true
+    
+    const query = searchQuery.toLowerCase()
+    return (
+      request.user?.name?.toLowerCase().includes(query) ||
+      request.user?.email?.toLowerCase().includes(query) ||
+      request.user_id.toLowerCase().includes(query) ||
+      (request.vehicle && `${request.vehicle.brand} ${request.vehicle.model}`.toLowerCase().includes(query))
+    )
+  })
+
+  // Ensure we never exceed the page size limit
+  const getPaginatedFilteredRequests = () => {
+    return filteredRequests.slice(0, pageSize)
+  }
+
   return {
     requests,
-    filteredRequests,
+    filteredRequests: getPaginatedFilteredRequests(),
     loading,
     searchQuery,
     setSearchQuery,
     statusFilter,
     setStatusFilter: handleStatusFilterChange,
-    selectedItems,
-    toggleSelection,
-    selectAll,
     refetch: fetchVerificationRequests,
     // Pagination
     currentPage,

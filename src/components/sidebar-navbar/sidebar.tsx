@@ -19,7 +19,6 @@ const getNavItemsByRole = (userType?: string, currentUserId?: string) => {
       { icon: ScrollText, label: "Logs", href: "/admin/logs" },
       { icon: MessageSquare, label: "Chat", href: "/admin/chat" },
       { icon: UsersIcon, label: "Account Management", href: "/admin/account-management" },
-      { icon: User, label: "Profile", href: `/profile/${currentUserId ? encodeId(String(currentUserId)) : ''}` },
       
       { icon: Settings, label: "Settings", href: "/settings" },
     ]

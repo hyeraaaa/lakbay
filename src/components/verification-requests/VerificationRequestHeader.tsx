@@ -31,7 +31,7 @@ export default function VerificationRequestHeader({
     ? "O" 
     : (user?.name?.trim().charAt(0).toUpperCase() || user_id.charAt(0).toUpperCase())
   return (
-    <header className="bg-white px-6">
+    <header className="px-6">
       <div className="flex items-center gap-4">
         <Link href="/admin/verification-requests">
           <Button variant="ghost" size="sm" className="text-gray-600 hover:bg-gray-100">
@@ -52,7 +52,11 @@ export default function VerificationRequestHeader({
                 : "Verification Request"}
             </p>
           </div>
-          <div className="ml-auto text-sm text-gray-500">{new Date(submitted_at).toLocaleDateString()}</div>
+          <div className="ml-auto text-sm text-gray-500">{new Date(submitted_at).toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}</div>
         </div>
       </div>
     </header>

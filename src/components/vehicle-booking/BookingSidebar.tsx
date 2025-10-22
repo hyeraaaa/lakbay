@@ -32,9 +32,9 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
   const [dropoffLocation, setDropoffLocation] = useState<string>("")
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   
+  const { user, isAuthenticated } = useJWT()
   const { isLoading, error, createBookingAndPay, clearError } = useBooking()
-  const { isDateBooked, isLoading: isLoadingBookings, error: bookingsError, refreshBookings } = useVehicleBookings(vehicleId)
-  const { user } = useJWT()
+  const { isDateBooked, isLoading: isLoadingBookings, error: bookingsError, refreshBookings } = useVehicleBookings(vehicleId, isAuthenticated)
 
   const shouldHidePaymentButton = user?.user_type === 'owner' || user?.user_type === 'admin'
 
@@ -168,10 +168,31 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
         {/* Your Trip */}
         {!shouldHidePaymentButton && (
         <div className="mb-6 space-y-4 pt-4 border-t border-border">
-          <h3 className="font-semibold text-lg mb-4 text-foreground">Your trip</h3>
-    
-          {/* Trip Start */}
-          <div className="mb-4">
+          {isAuthenticated && <h3 className="font-semibold text-lg mb-4 text-foreground">Your trip</h3>}
+          
+          {/* Guest Login Prompt */}
+          {!isAuthenticated && (
+            <div className="mb-4 p-4 bg-[#f8f8f8] border border-neutral-200 rounded-lg shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
+              <div className="text-center">
+                <h4 className="font-medium text-black mb-2">Sign in to book this vehicle</h4>
+                <p className="text-sm text-black mb-3">Create an account or sign in to proceed with your booking</p>
+                <div className="flex gap-2 justify-center">
+                  <Button asChild variant="default" size="sm">
+                    <a href="/login">Sign In</a>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <a href="/register">Create Account</a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Booking Form - Only show for authenticated users */}
+          {isAuthenticated && (
+            <>
+              {/* Trip Start */}
+              <div className="mb-4">
             <label className="text-sm font-medium text-foreground mb-2 block">Trip start</label>
             <div className="grid grid-cols-2 gap-2">
               <Popover open={isStartPopoverOpen} onOpenChange={setIsStartPopoverOpen}>
@@ -303,26 +324,28 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
             </Alert>
           )}
 
-          {/* Continue Button */}
-            <Button 
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-base font-medium"
-              onClick={() => setIsConfirmOpen(true)}
-              disabled={!isFormValid || isLoading || isLoadingBookings}
-            >
-              {isLoading || isLoadingBookings ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isLoading ? "Processing..." : "Loading availability..."}
-                </>
-              ) : (
-                "Continue to Payment"
-              )}
-            </Button>
+              {/* Continue Button */}
+              <Button 
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-base font-medium"
+                onClick={() => setIsConfirmOpen(true)}
+                disabled={!isFormValid || isLoading || isLoadingBookings}
+              >
+                {isLoading || isLoadingBookings ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isLoading ? "Processing..." : "Loading availability..."}
+                  </>
+                ) : (
+                  "Continue to Payment"
+                )}
+              </Button>
+            </>
+          )}
         </div>
         )}
 
         {/* Availability Info */}
-        {!shouldHidePaymentButton && !isLoadingBookings && (
+        {!shouldHidePaymentButton && !isLoadingBookings && isAuthenticated && (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center text-sm text-blue-800">
               <CalendarIcon className="mr-2 h-4 w-4" />

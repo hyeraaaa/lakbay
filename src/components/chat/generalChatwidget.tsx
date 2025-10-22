@@ -12,7 +12,7 @@ import { useGeneralChat } from "@/hooks/general-chat/useGeneralChat"
 import { useGeneralChatSocket } from "@/hooks/general-chat/useGeneralChatSocket"
 
 export function GeneralChatWidget() {
-  const { user } = useJWT()
+  const { user, isAuthenticated } = useJWT()
   const isOwner = user?.user_type?.toLowerCase() === "owner"
   const {
     isOpen,
@@ -91,8 +91,8 @@ export function GeneralChatWidget() {
 
   return (
     <>
-      {/* Floating Chat Button - Only show for non-owners */}
-      {!isOwner && (
+      {/* Floating Chat Button - Only show for authenticated non-owners */}
+      {isAuthenticated && !isOwner && (
         <div
           className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ${
             isOpen ? "scale-0 opacity-0" : "scale-100 opacity-100"
@@ -109,7 +109,8 @@ export function GeneralChatWidget() {
         </div>
       )}
 
-      {/* Chat Window */}
+      {/* Chat Window - Only show for authenticated non-owners */}
+      {isAuthenticated && !isOwner && (
       <div
         className={`fixed bottom-4 right-4 w-[95vw] h-[80vh] max-w-[700px] max-h-[600px] sm:w-[500px] sm:h-[500px] lg:w-[700px] lg:h-[600px] bg-card rounded-lg shadow-2xl flex flex-col z-50 border-2 border-border transition-all duration-300 origin-bottom-right ${
           isOpen ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-4 pointer-events-none"
@@ -356,6 +357,7 @@ export function GeneralChatWidget() {
           </div>
         </div>
       </div>
+      )}
     </>
   )
 }

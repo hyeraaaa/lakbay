@@ -44,8 +44,6 @@ export const useOwnerBookings = (): UseOwnerBookingsReturn => {
       
       // Backend now handles filtering and pagination
       const response: BookingListResponse = await bookingService.listBookings(filters);
-      const all = response.bookings || [];
-      setAllBookings(all);
       setBookings(response.bookings || []);
       setPagination({
         page: response.page || 1,
@@ -61,6 +59,25 @@ export const useOwnerBookings = (): UseOwnerBookingsReturn => {
       setIsLoading(false);
     }
   }, [filters]);
+
+  const fetchAllBookings = useCallback(async () => {
+    try {
+      // Fetch all bookings without any filters for stats
+      const response: BookingListResponse = await bookingService.listBookings({
+        page: 1,
+        limit: 1000 // Large limit to get all bookings
+      });
+      setAllBookings(response.bookings || []);
+    } catch (err: unknown) {
+      console.error('Error fetching all bookings for stats:', err);
+      setAllBookings([]);
+    }
+  }, []);
+
+  // Fetch all bookings for stats on mount
+  useEffect(() => {
+    fetchAllBookings();
+  }, [fetchAllBookings]);
 
   // Avoid duplicate fetches in React Strict Mode by tracking the last filters used
   const lastFetchKeyRef = useRef<string | null>(null);
@@ -91,8 +108,8 @@ export const useOwnerBookings = (): UseOwnerBookingsReturn => {
   }, []);
 
   const refreshBookings = useCallback(async () => {
-    await fetchBookings();
-  }, [fetchBookings]);
+    await Promise.all([fetchBookings(), fetchAllBookings()]);
+  }, [fetchBookings, fetchAllBookings]);
 
   const goToPage = useCallback((page: number) => {
     updateFilters({ page });

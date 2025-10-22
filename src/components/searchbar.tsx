@@ -92,28 +92,19 @@ const Searchbar = ({ className }: SearchbarProps) => {
   };
 
   const handleSearch = () => {
-    // Clear previous validation errors
     setValidationErrors([]);
+    if (!validateFields()) return;
 
-    // Validate all fields
-    if (!validateFields()) {
-      return;
-    }
-
-    // Build query parameters
     const params = new URLSearchParams();
-    params.append("location", fromLocation.trim());
-
-    if (dateRange?.from) {
-      params.append("startDate", format(dateRange.from, "yyyy-MM-dd"));
-    }
-
-    if (dateRange?.to) {
-      params.append("endDate", format(dateRange.to, "yyyy-MM-dd"));
-    }
-
-    // Redirect to search results page
-    router.push(`/search?${params.toString()}`);
+    const [cityRaw = "", provinceRaw = ""] = fromLocation.split(",");
+    const city = cityRaw.trim();
+    const province = provinceRaw.trim();
+    if (city) params.append("city", city);
+    if (province) params.append("province", province);
+    if (dateRange?.from) params.append("startDate", format(dateRange.from, "yyyy-MM-dd"));
+    if (dateRange?.to) params.append("endDate", format(dateRange.to, "yyyy-MM-dd"));
+    params.append("_", Date.now().toString());
+    router.push(`/user?${params.toString()}`);
   };
 
   const isLocationValid = fromLocation.trim() !== "";

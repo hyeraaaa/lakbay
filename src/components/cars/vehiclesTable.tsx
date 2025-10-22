@@ -401,7 +401,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
           }
         }}
       />
-      <div className="bg-white rounded-md shadow-sm">
+      <div className="bg-white rounded-md border border-neutral-200 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
         <div className="overflow-x-auto">
           <Table className="table-fixed min-w-[900px]">
           <TableHeader>

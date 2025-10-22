@@ -11,6 +11,7 @@ interface ActionButtonsProps {
   actionLoading: boolean
   onApprove: () => void
   onReject: () => void
+  requestType?: string
 }
 
 export default function ActionButtons({
@@ -18,6 +19,7 @@ export default function ActionButtons({
   actionLoading,
   onApprove,
   onReject,
+  requestType,
 }: ActionButtonsProps) {
   const [confirmApproveOpen, setConfirmApproveOpen] = useState(false)
   const [confirmRejectOpen, setConfirmRejectOpen] = useState(false)
@@ -27,6 +29,9 @@ export default function ActionButtons({
   if (status !== "pending") {
     return null
   }
+
+  const isPayoutRequest = requestType === "payout_failed"
+  const approveButtonText = isPayoutRequest ? "Retry Payout" : "Approve"
 
   return (
     <div className="flex gap-3 pt-4 border-t border-gray-200">
@@ -38,33 +43,35 @@ export default function ActionButtons({
         {approveLoading ? (
           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
         ) : null}
-        Approve
+        {approveButtonText}
       </Button>
-      <Button
-        variant="outline"
-        onClick={() => setConfirmRejectOpen(true)}
-        disabled={approveLoading || rejectLoading}
-        className="text-gray-700 border-gray-300 hover:bg-gray-50 rounded-full px-6 bg-transparent disabled:opacity-50"
-      >
-        {rejectLoading ? (
-          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-        ) : null}
-        Reject
-      </Button>
+      {!isPayoutRequest && (
+        <Button
+          variant="outline"
+          onClick={() => setConfirmRejectOpen(true)}
+          disabled={approveLoading || rejectLoading}
+          className="text-gray-700 border-gray-300 hover:bg-gray-50 rounded-full px-6 bg-transparent disabled:opacity-50"
+        >
+          {rejectLoading ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : null}
+          Reject
+        </Button>
+      )}
       <ConfirmationDialog
         open={confirmApproveOpen}
         onOpenChange={setConfirmApproveOpen}
-        title="Approve verification?"
-        description="This will mark the user's verification as approved."
-        confirmText="Approve"
+        title={isPayoutRequest ? "Retry payout?" : "Approve verification?"}
+        description={isPayoutRequest ? "This will retry the failed payout to the owner." : "This will mark the user's verification as approved."}
+        confirmText={approveButtonText}
         onConfirm={async () => {
           try {
             setApproveLoading(true)
             await Promise.resolve(onApprove())
-            success("Verification approved")
+            success(isPayoutRequest ? "Payout retry initiated" : "Verification approved")
             setConfirmApproveOpen(false)
           } catch (e: unknown) {
-            error(e instanceof Error ? e.message : "Failed to approve")
+            error(e instanceof Error ? e.message : `Failed to ${isPayoutRequest ? "retry payout" : "approve"}`)
           } finally {
             setApproveLoading(false)
           }

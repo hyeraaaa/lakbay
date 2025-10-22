@@ -47,8 +47,8 @@ export const adminPayoutService = {
     return data as FailedPayoutsResponse
   },
 
-  async retryPayout(payoutId: number) {
-    const res = await apiRequest(`${API_BASE_URL}/api/admin/payouts/${payoutId}/retry`, { method: "POST" })
+  async retryPayout(bookingId: number) {
+    const res = await apiRequest(`${API_BASE_URL}/api/admin/bookings/${bookingId}/payouts/retry`, { method: "POST" })
     return res.json().catch(() => ({}))
   },
 }

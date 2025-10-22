@@ -26,7 +26,7 @@ const AdminChatPage: React.FC = () => {
   } = useAdminChat()
 
   return (
-    <div className="h-[calc(100vh-88px)]">
+    <div className="h-[calc(100vh-100px)]">
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
         {/* Left: Escalations list */}

@@ -13,7 +13,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
     const showNavbar = userType === "customer"
 
   return (
-    <ProtectedRoute requireAuth={true}>
+    <ProtectedRoute requireAuth={false}>
       {shouldUseSidebar ? (
         <>
           <Sidebar />

@@ -11,20 +11,20 @@ interface UserLayoutProps {
   children: React.ReactNode;
 }
 
-/**
- * User Layout Component
- * Wraps all user routes with UserRoute protection
- * This ensures all pages under /user are protected with user authentication
- */
 export default function UserLayout({ children }: UserLayoutProps) {
   const pathname = usePathname();
   const showBanner = pathname === '/user';
-  return (
-    <UserRoute>
+  const protectedRoutes = ['/user/bookings', '/user/become-a-host'];
+  const isProtected = protectedRoutes.includes(pathname);
+
+  const content = (
+    <>
       {showBanner && <VerificationBanner />}
       <Navbar />
       {children}
       <GeneralChatWidget />
-    </UserRoute>
+    </>
   );
+
+  return isProtected ? <UserRoute>{content}</UserRoute> : content;
 }

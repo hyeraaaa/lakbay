@@ -5,7 +5,7 @@ import { Search, Filter } from "lucide-react"
 
 export const VerificationRequestsSkeleton = () => {
   return (
-    <div className="flex bg-background">
+    <div className="flex">
       <div className="flex-1 min-h-0 flex flex-col">
         {/* Header skeleton */}
         <header className="border-b border-border bg-card px-6 py-3">

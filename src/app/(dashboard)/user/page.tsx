@@ -1,5 +1,5 @@
 "use client"
-import { useMemo, useState } from "react"
+import { useMemo, useState, Suspense } from "react"
 import FilterBar from "@/components/filters/FilterBar"
 import { useVehicles } from "@/hooks/useVehicles"
 import VehicleListSkeleton from "@/components/browse-vehicle/VehicleListSkeleton"
@@ -12,7 +12,7 @@ import { useSearchParams } from "next/navigation"
 import { useGeocodeLocation } from "@/hooks/useGeocodeLocation"
 import { decodeId } from "@/lib/idCodec"
 
-const Page = () => {
+const UserPageContent = () => {
   const [showMap, setShowMap] = useState(false)
   const searchParams = useSearchParams()
 
@@ -109,6 +109,14 @@ const Page = () => {
         <MapToggleButton showMap={showMap} onToggle={() => setShowMap(!showMap)} />
       </div>
     </div>
+  )
+}
+
+const Page = () => {
+  return (
+    <Suspense fallback={<VehicleListSkeleton />}>
+      <UserPageContent />
+    </Suspense>
   )
 }
 

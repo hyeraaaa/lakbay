@@ -57,7 +57,7 @@ export default function RequestDetailPage() {
       : []
 
   return (
-    <div className="bg-white">
+    <div>
       <VerificationRequestHeader
         user={request.user}
         user_id={request.user_id}
@@ -104,6 +104,7 @@ export default function RequestDetailPage() {
             actionLoading={actionLoading}
             onApprove={handleApprove}
             onReject={handleReject}
+            requestType={request.doc_type}
           />
 
           <ReviewNotes

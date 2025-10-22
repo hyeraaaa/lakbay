@@ -14,7 +14,7 @@ type Props = {
 }
 
 export default function ProfileHeader({ profile, userId }: Props) {
-  const { user } = useJWT()
+  const { user, isAuthenticated } = useJWT()
   const fullName = useMemo(() => {
     if (!profile) return "Profile"
     const name = `${profile.first_name || ""} ${profile.last_name || ""}`.trim()
@@ -52,7 +52,7 @@ export default function ProfileHeader({ profile, userId }: Props) {
 
       <div className="mt-5 flex items-center justify-between gap-4">
         <h1 className="text-3xl font-semibold text-foreground tracking-tight">{fullName || "User"}</h1>
-        {String(user?.id ?? "") !== String(userId) && (
+        {String(user?.id ?? "") !== String(userId) && isAuthenticated && (
           
             <Button className="flex items-center gap-2 bg-black text-white hover:bg-gray-800" onClick={handleChatClick}>
               <MessageCircle className="h-4 w-4" />

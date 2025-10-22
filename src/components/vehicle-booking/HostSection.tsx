@@ -16,7 +16,7 @@ type HostSectionProps = {
 }
 
 export default function HostSection({ hostFirstName, hostLastName, hostProfilePicture, hostUserId }: HostSectionProps) {
-  const { user } = useJWT()
+  const { user, isAuthenticated } = useJWT()
   const isOwnerViewingOwnListing = user?.user_type === 'owner' && String(user.id) === String(hostUserId || '')
 
   const handleChatClick = () => {
@@ -41,7 +41,7 @@ export default function HostSection({ hostFirstName, hostLastName, hostProfilePi
             <span className="font-semibold text-lg">{hostFirstName && hostLastName ? `${hostFirstName} ${hostLastName}` : "Host"}</span>
           </div>
         </Link>
-        {!isOwnerViewingOwnListing && (
+        {!isOwnerViewingOwnListing && isAuthenticated && (
           <Button variant="default" size="sm" className="bg-black hover:bg-gray-800" onClick={handleChatClick}>
             <MessageCircle className="h-4 w-4 mr-2" />
             Chat with Owner

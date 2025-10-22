@@ -19,7 +19,7 @@ export default function VerificationRequestsHeader({
   setStatusFilter,
 }: VerificationRequestsHeaderProps) {
   return (
-    <header className="border-b border-border bg-card px-6 py-3">
+    <header className="border-b border-border px-6 py-3">
       <div className="flex items-center justify-end">
         <div className="flex items-center gap-3">
           <div className="relative">

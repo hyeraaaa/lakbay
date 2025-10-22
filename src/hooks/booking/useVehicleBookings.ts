@@ -10,13 +10,13 @@ interface UseVehicleBookingsReturn {
   isDateBooked: (date: Date) => boolean;
 }
 
-export const useVehicleBookings = (vehicleId: number): UseVehicleBookingsReturn => {
+export const useVehicleBookings = (vehicleId: number, requireAuth: boolean = true): UseVehicleBookingsReturn => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const fetchBookings = useCallback(async () => {
-    if (!vehicleId) return;
+    if (!vehicleId || !requireAuth) return;
     
     try {
       setIsLoading(true);
@@ -41,7 +41,7 @@ export const useVehicleBookings = (vehicleId: number): UseVehicleBookingsReturn 
     } finally {
       setIsLoading(false);
     }
-  }, [vehicleId]);
+  }, [vehicleId, requireAuth]);
 
   useEffect(() => {
     fetchBookings();

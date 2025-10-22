@@ -24,7 +24,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           color: 'black',
           border: '1px solid rgba(0,0,0,0.08)',
         },
-        className: 'group toast bg-background text-foreground border border-border shadow-lg !z-[9999]',
+        className: 'group toast bg-background text-foreground border border-border shadow-sm !z-[9999]',
       }}
       {...props}
     />

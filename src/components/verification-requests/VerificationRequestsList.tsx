@@ -16,14 +16,10 @@ interface VerificationRequest {
 
 interface VerificationRequestsListProps {
   filteredRequests: VerificationRequest[]
-  selectedItems: Set<string>
-  toggleSelection: (id: string) => void
 }
 
 export default function VerificationRequestsList({
   filteredRequests,
-  selectedItems,
-  toggleSelection,
 }: VerificationRequestsListProps) {
   const [readItems, setReadItems] = useState<Set<string>>(new Set())
 
@@ -57,7 +53,11 @@ export default function VerificationRequestsList({
     if (diffInHours < 1) return "Just now"
     if (diffInHours < 24) return `${diffInHours}h ago`
     if (diffInHours < 48) return "Yesterday"
-    return date.toLocaleDateString()
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })
   }
 
   return (
@@ -72,9 +72,7 @@ export default function VerificationRequestsList({
               key={key}
               request={request}
               isRead={readItems.has(request.verification_id)}
-              isSelected={selectedItems.has(request.verification_id)}
               onMarkAsRead={markAsRead}
-              onToggleSelection={toggleSelection}
               formatDate={formatDate}
             />
           )

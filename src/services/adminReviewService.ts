@@ -265,6 +265,8 @@ export const adminReviewService = {
     
     const url = `${API_BASE_URL}/api/admin/reviews${params.toString() ? `?${params.toString()}` : ''}`
     
+    console.log('🌐 API call:', url)
+    
     const response = await apiRequest(url, {
       headers: {
         "Content-Type": "application/json",

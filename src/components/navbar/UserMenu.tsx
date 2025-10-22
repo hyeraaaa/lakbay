@@ -17,6 +17,10 @@ interface UserMenuProps {
   handleLogout: () => void;
 }
 
+const showProfileLink = (userType: string) => {
+  return userType === 'owner'
+}
+
 const UserMenu = ({
   user,
   fullName,
@@ -79,6 +83,7 @@ const UserMenu = ({
             </button>
           </Link>
           
+          {showProfileLink(user.user_type) && (
           <Link href={`/profile/${encodeId(String(user.id))}`}>
             <button
               className="w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-gray-100 flex items-center space-x-3 cursor-pointer"
@@ -88,6 +93,7 @@ const UserMenu = ({
               <span>Profile</span>
             </button>
           </Link>
+          )}
           
           <Link href="/user/bookings">
             <button

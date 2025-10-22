@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Archive, Trash2, Mail, Clock } from "lucide-react"
 import Link from "next/link"
 import { encodeId } from "@/lib/idCodec"
@@ -20,18 +19,14 @@ interface VerificationRequest {
 interface VerificationRequestItemProps {
   request: VerificationRequest
   isRead: boolean
-  isSelected: boolean
   onMarkAsRead: (id: string) => void
-  onToggleSelection: (id: string) => void
   formatDate: (dateString: string) => string
 }
 
 export default function VerificationRequestItem({
   request,
   isRead,
-  isSelected,
   onMarkAsRead,
-  onToggleSelection,
   formatDate,
 }: VerificationRequestItemProps) {
   const getRequestTypeLabel = (docType: string) => {
@@ -57,18 +52,10 @@ export default function VerificationRequestItem({
       href={`/admin/verification-requests/request-body/${encodeId(request.verification_id)}`}
     >
       <div
-        className={`flex items-center gap-3 px-6 py-2 hover:shadow-sm hover:bg-muted/30 cursor-pointer group border-b border-border ${
-          isRead ? "" : "bg-[whitesmoke]"
+        className={`flex items-center gap-3 px-6 py-2 hover:bg-muted/30 cursor-pointer group border-b border-border"
         }`}
         onClick={() => onMarkAsRead(request.verification_id)}
       >
-        <div className="flex items-center gap-3" onClick={(e) => e.preventDefault()}>
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={() => onToggleSelection(request.verification_id)}
-          />
-        </div>
-
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="font-medium text-sm text-foreground w-40 truncate">
             {request.doc_type === "payout_failed" 
@@ -89,24 +76,6 @@ export default function VerificationRequestItem({
 
           <div className="flex items-center gap-3 flex-shrink-0">
             <div className="text-xs text-muted-foreground">{formatDate(request.submitted_at)}</div>
-
-            <div
-              className="opacity-0 group-hover:opacity-100 flex items-center gap-1"
-              onClick={(e) => e.preventDefault()}
-            >
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Archive className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Mail className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Clock className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
         </div>
       </div>
