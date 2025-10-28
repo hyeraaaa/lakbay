@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useJWT } from "@/contexts/JWTContext";
 import { useUserBookings } from "@/hooks/booking/useUserBookings";
@@ -13,6 +13,9 @@ export const useBookingsPage = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  
+  // Debounce timer ref
+  const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const { user, isAuthenticated, isLoading: authLoading } = useJWT();
   const router = useRouter();
@@ -36,12 +39,30 @@ export const useBookingsPage = () => {
     }
   }, [isAuthenticated, authLoading, router]);
 
+  // Cleanup search timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleSearch = useCallback(
     (query: string) => {
       setSearchQuery(query);
-      updateFilters({ q: query || undefined, page: 1 } as Partial<BookingFilters>);
+      
+      // Clear existing timer
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+      
+      // Set new timer for debounced search
+      searchTimerRef.current = setTimeout(() => {
+        updateFilters({ q: query || undefined, page: 1 } as Partial<BookingFilters>);
+      }, 500);
     },
-    [updateFilters]
+    []
   );
 
   const handleStatusFilter = useCallback(
@@ -49,12 +70,12 @@ export const useBookingsPage = () => {
       setStatusFilter(status);
       updateFilters({ status: status === "all" ? undefined : status, page: 1 });
     },
-    [updateFilters]
+    []
   );
 
   const handleRefresh = useCallback(() => {
     refreshBookings();
-  }, [refreshBookings]);
+  }, []);
 
   const handleBookingAction = useCallback(
     (action: string, bookingId: number) => {
@@ -76,7 +97,7 @@ export const useBookingsPage = () => {
           break;
       }
     },
-    [refreshBookings, router]
+    []
   );
 
   const handleAlert = useCallback((message: string, _variant: AlertVariant) => {

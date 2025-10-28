@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { bookingService, Booking, BookingFilters, BookingListResponse } from '@/services/bookingServices';
 
 export interface UseUserBookingsOptions {
@@ -20,12 +20,17 @@ export const useUserBookings = (options: UseUserBookingsOptions = {}) => {
     totalPages: 0
   });
 
+  // Use ref to avoid circular dependencies
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+
   const fetchBookings = useCallback(async (newFilters?: Partial<BookingFilters>) => {
     setIsLoading(true);
     setError('');
 
     try {
-      const currentFilters = { ...filters, ...newFilters };
+      // Use ref to get latest filters without causing dependency issues
+      const currentFilters = { ...filtersRef.current, ...newFilters };
       console.log('Fetching bookings with filters:', currentFilters);
       console.log('API Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
       
@@ -50,28 +55,28 @@ export const useUserBookings = (options: UseUserBookingsOptions = {}) => {
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, []);
 
   const updateFilters = useCallback((newFilters: Partial<BookingFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
     fetchBookings(newFilters);
-  }, [fetchBookings]);
+  }, []);
 
   const refreshBookings = useCallback(() => {
     fetchBookings();
-  }, [fetchBookings]);
+  }, []);
 
   const goToPage = useCallback((page: number) => {
     if (page >= 1 && page <= pagination.totalPages) {
       fetchBookings({ page });
     }
-  }, [fetchBookings, pagination.totalPages]);
+  }, [pagination.totalPages]);
 
   const clearFilters = useCallback(() => {
     const clearedFilters = { page: 1, limit: 10 };
     setFilters(clearedFilters);
     fetchBookings(clearedFilters);
-  }, [fetchBookings]);
+  }, []);
 
   // Auto-fetch on mount if enabled
   useEffect(() => {
@@ -79,7 +84,8 @@ export const useUserBookings = (options: UseUserBookingsOptions = {}) => {
       console.log('Auto-fetching bookings on mount');
       fetchBookings();
     }
-  }, [autoFetch, fetchBookings]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFetch]);
 
   return {
     bookings,
