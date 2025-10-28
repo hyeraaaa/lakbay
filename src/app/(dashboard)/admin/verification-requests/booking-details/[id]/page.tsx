@@ -1,9 +1,9 @@
 "use client"
 
-import React from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import React from 'react'
+import { useParams } from 'next/navigation'
+import { AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { 
   Breadcrumb,
   BreadcrumbList,
@@ -11,39 +11,24 @@ import {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator
-} from '@/components/ui/breadcrumb';
-import { useJWT } from '@/contexts/JWTContext';
-import BookingDetailsSkeleton from '@/components/booking/BookingDetailsSkeleton';
+} from '@/components/ui/breadcrumb'
+import BookingDetailsSkeleton from '@/components/booking/BookingDetailsSkeleton'
 import { 
   VehicleInformationCard, 
   BookingDetailsCard, 
   PaymentSummaryCard, 
-  BookingActionsCard, 
   BookingReviewCard,
   MileageTrackingCard
-} from '@/components/booking';
-import { useBookingDetails } from '@/hooks/booking';
-import { decodeId } from '@/lib/idCodec';
+} from '@/components/booking'
+import { useBookingDetails } from '@/hooks/booking'
+import { decodeId } from '@/lib/idCodec'
 
+export default function AdminBookingDetailsPage() {
+  const params = useParams()
+  const encodedId = params.id as string
+  const bookingId = decodeId(encodedId)
 
-export default function BookingDetailsPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading, user } = useJWT();
-  const encodedId = params.id as string;
-  
-  // Decode the encrypted ID from the URL
-  const bookingId = decodeId(encodedId);
-  
-  const { booking, loading, error, handleAction } = useBookingDetails({ bookingId: bookingId || '' });
-
-  if (authLoading) {
-    return <BookingDetailsSkeleton />;
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
+  const { booking, loading, error, handleAction } = useBookingDetails({ bookingId: bookingId || '' })
 
   if (!bookingId) {
     return (
@@ -53,11 +38,11 @@ export default function BookingDetailsPage() {
           <AlertDescription>Invalid booking ID</AlertDescription>
         </Alert>
       </div>
-    );
+    )
   }
 
   if (loading) {
-    return <BookingDetailsSkeleton />;
+    return <BookingDetailsSkeleton />
   }
 
   if (error) {
@@ -68,7 +53,7 @@ export default function BookingDetailsPage() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       </div>
-    );
+    )
   }
 
   if (!booking) {
@@ -79,7 +64,7 @@ export default function BookingDetailsPage() {
           <AlertDescription>Booking not found</AlertDescription>
         </Alert>
       </div>
-    );
+    )
   }
 
   return (
@@ -95,8 +80,8 @@ export default function BookingDetailsPage() {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink href="/user/bookings" className="hover:text-primary">
-                Bookings
+              <BreadcrumbLink href="/admin/verification-requests" className="hover:text-primary">
+                Verification Requests
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -124,40 +109,20 @@ export default function BookingDetailsPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           <PaymentSummaryCard booking={booking} />
-          {booking.status === 'on_going' ? (
+          {/* In admin view we show review card if present; no user actions */}
+          {booking.reviews && booking.reviews.length > 0 ? (
+            <BookingReviewCard booking={booking} />
+          ) : null}
+          {booking.status === 'on_going' || booking.status === 'completed' ? (
             <MileageTrackingCard 
               booking={booking} 
-              onBookingUpdate={(updatedBooking) => {
-                // Update the booking state in the parent component
-                // This will be handled by the useBookingDetails hook
-              }}
+              onBookingUpdate={() => {}}
             />
-          ) : booking.status === 'completed' ? (
-            <>
-              <MileageTrackingCard 
-                booking={booking} 
-                onBookingUpdate={(updatedBooking) => {
-                  // Update the booking state in the parent component
-                  // This will be handled by the useBookingDetails hook
-                }}
-              />
-              {booking.reviews && booking.reviews.length > 0 ? (
-                <BookingReviewCard booking={booking} />
-              ) : user?.user_type !== 'admin' ? (
-                <BookingActionsCard booking={booking} onAction={handleAction} />
-              ) : null}
-            </>
-          ) : (
-            <>
-              {booking.reviews && booking.reviews.length > 0 ? (
-                <BookingReviewCard booking={booking} />
-              ) : user?.user_type !== 'admin' ? (
-                <BookingActionsCard booking={booking} onAction={handleAction} />
-              ) : null}
-            </>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
-  );
+  )
 }
+
+

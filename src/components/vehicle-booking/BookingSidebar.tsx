@@ -74,6 +74,18 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
     return isDateBooked(date)
   }
 
+  const rangeHasBookedDates = (start?: Date, end?: Date) => {
+    if (!start || !end) return false
+    const startDay = startOfDay(start)
+    const endDay = startOfDay(end)
+    const cursor = new Date(startDay)
+    while (cursor <= endDay) {
+      if (isDateBooked(cursor)) return true
+      cursor.setDate(cursor.getDate() + 1)
+    }
+    return false
+  }
+
   const handleSelectTripStart = (date?: Date) => {
     setTripStart(date)
     if (date && tripEnd && startOfDay(tripEnd) < startOfDay(date)) {
@@ -286,7 +298,17 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
                     onSelect={handleSelectTripEnd}
                     disabled={(date) => {
                       if (disableBookedDates(date)) return true
-                      if (tripStart) return startOfDay(date) < startOfDay(tripStart)
+                      if (tripStart) {
+                        if (startOfDay(date) < startOfDay(tripStart)) return true
+                        // prevent selecting an end date that would span any booked dates
+                        const startDay = startOfDay(tripStart)
+                        const endDay = startOfDay(date)
+                        const cursor = new Date(startDay)
+                        while (cursor <= endDay) {
+                          if (isDateBooked(cursor)) return true
+                          cursor.setDate(cursor.getDate() + 1)
+                        }
+                      }
                       return false
                     }}
                     fromDate={tripStart ?? new Date()}
@@ -346,11 +368,18 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
             </Alert>
           )}
 
+          {rangeHasBookedDates(tripStart, tripEnd) && (
+            <Alert className="mb-4" variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>The selected date range includes days that are already booked. Please choose a different range.</AlertDescription>
+            </Alert>
+          )}
+
               {/* Continue Button */}
               <Button 
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-base font-medium"
                 onClick={() => setIsConfirmOpen(true)}
-                disabled={!isFormValid || isLoading || isLoadingBookings}
+                disabled={!isFormValid || rangeHasBookedDates(tripStart, tripEnd) || isLoading || isLoadingBookings}
               >
                 {isLoading || isLoadingBookings ? (
                   <>

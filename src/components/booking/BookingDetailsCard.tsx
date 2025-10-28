@@ -96,6 +96,13 @@ export default function BookingDetailsCard({ booking }: BookingDetailsCardProps)
               <p className="text-gray-900">{formatDateTime(booking.created_at)}</p>
             </div>
 
+            {booking.status === BookingStatus.COMPLETED && (
+              <div>
+                <label className="text-sm font-medium text-gray-600">Completed On</label>
+                <p className="text-gray-900">{formatDateTime(booking.checkin_timestamp || booking.updated_at)}</p>
+              </div>
+            )}
+
             {booking.cancelled_at && (
               <div>
                 <label className="text-sm font-medium text-gray-600">Cancelled On</label>

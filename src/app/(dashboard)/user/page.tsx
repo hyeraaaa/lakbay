@@ -114,7 +114,7 @@ const UserPageContent = () => {
 
 const Page = () => {
   return (
-    <Suspense fallback={<VehicleListSkeleton />}>
+    <Suspense fallback={null}>
       <UserPageContent />
     </Suspense>
   )

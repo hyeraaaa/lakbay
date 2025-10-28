@@ -7,8 +7,16 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle, XCircle, Loader2, ArrowLeft, Receipt } from "lucide-react"
 import Link from "next/link"
 import { bookingService, PaymentStatus as ServerPaymentStatus } from "@/services/bookingServices"
+import { apiRequest } from "@/lib/jwt"
 
 type PaymentStatus = "processing" | "success" | "failed"
+
+type InvoiceSummary = {
+  invoice_id?: number | string
+  booking?: {
+    booking_id?: number
+  }
+}
 
 export default function PaymentSuccessPage() {
   const params = useParams<{ id: string }>()
@@ -21,6 +29,8 @@ export default function PaymentSuccessPage() {
   const [transactionDate, setTransactionDate] = useState<string | undefined>(undefined)
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined)
   const [remainingHeight, setRemainingHeight] = useState<number | null>(null)
+  const [invoiceId, setInvoiceId] = useState<number | null>(null)
+  const [isDownloading, setIsDownloading] = useState<boolean>(false)
 
   useEffect(() => {
     const load = async () => {
@@ -55,6 +65,24 @@ export default function PaymentSuccessPage() {
             break
           default:
             setPaymentStatus("processing")
+        }
+        // Try to resolve invoice id for this booking (best effort)
+        try {
+          const baseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/+$/, '')
+          const res = await apiRequest(`${baseUrl}/api/audit-invoices-reporting/invoices`, {
+            method: 'GET',
+          })
+          if (res.ok) {
+            const data = await res.json()
+            const list: Array<InvoiceSummary> = Array.isArray(data?.invoices) ? data.invoices : []
+            // Prefer an invoice whose booking matches this booking id
+            const match = list.find((inv) => inv?.booking?.booking_id === bookingId) || null
+            if (match?.invoice_id) {
+              setInvoiceId(Number(match.invoice_id))
+            }
+          }
+        } catch (e) {
+          // non-fatal if we cannot resolve invoice id here
         }
       } catch (err: unknown) {
         setPaymentStatus("failed")
@@ -116,6 +144,58 @@ export default function PaymentSuccessPage() {
 
   const content = getStatusContent()
 
+  const handleDownloadReceipt = async () => {
+    try {
+      setIsDownloading(true)
+      const baseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/+$/, '')
+
+      // If invoice id is unknown, attempt to fetch it on demand
+      let resolvedInvoiceId = invoiceId
+      if (!resolvedInvoiceId) {
+        const res = await apiRequest(`${baseUrl}/api/audit-invoices-reporting/invoices`, { method: 'GET' })
+        if (res.ok) {
+          const data = await res.json()
+          const list: Array<InvoiceSummary> = Array.isArray(data?.invoices) ? data.invoices : []
+          const match = list.find((inv) => inv?.booking?.booking_id === bookingId) || null
+          if (match?.invoice_id) {
+            resolvedInvoiceId = Number(match.invoice_id)
+            setInvoiceId(resolvedInvoiceId)
+          }
+        }
+      }
+
+      if (!resolvedInvoiceId) {
+        throw new Error('Invoice not found for this booking')
+      }
+
+      const url = `${baseUrl}/api/audit-invoices-reporting/invoices/${resolvedInvoiceId}/export?format=pdf`
+      const response = await apiRequest(url, { method: 'GET' })
+      if (!response.ok) {
+        const text = await response.text().catch(() => '')
+        throw new Error(text || 'Failed to download receipt')
+      }
+      const blob = await response.blob()
+      const downloadUrl = URL.createObjectURL(blob)
+
+      const contentDisposition = response.headers.get('Content-Disposition') || ''
+      const match = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(contentDisposition)
+      const fileName = decodeURIComponent(match?.[1] || match?.[2] || `invoice_${resolvedInvoiceId}.pdf`)
+
+      const a = document.createElement('a')
+      a.href = downloadUrl
+      a.download = fileName
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(downloadUrl)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to download receipt'
+      setErrorMessage(msg)
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
   return (
     <div
       className="bg-background flex pt-20 justify-center"
@@ -160,9 +240,9 @@ export default function PaymentSuccessPage() {
               <div className="space-y-3">
                 {paymentStatus === "success" ? (
                   <>
-                    <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleDownloadReceipt} disabled={isDownloading}>
                       <Receipt className="h-4 w-4 mr-2" />
-                      Download Receipt
+                      {isDownloading ? 'Preparing Receipt…' : 'Download Receipt'}
                     </Button>
                     <Link href="/user/bookings" className="block">
                       <Button variant="outline" className="w-full bg-transparent">

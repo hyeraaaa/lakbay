@@ -48,7 +48,8 @@ export const adminPayoutService = {
   },
 
   async retryPayout(bookingId: number) {
-    const res = await apiRequest(`${API_BASE_URL}/api/admin/bookings/${bookingId}/payouts/retry`, { method: "POST" })
+    // Use Stripe Connect payout endpoint for retrying owner payouts
+    const res = await apiRequest(`${API_BASE_URL}/api/stripe-connect/payout/${bookingId}`, { method: "POST" })
     return res.json().catch(() => ({}))
   },
 }

@@ -3,21 +3,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users, UserCheck, UserX, ShieldBan } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { AdminUserSummary } from '@/services/adminUserService'
+// Stats card now accepts explicit counts so it is independent of table filters/pagination
 
 type UserStatsCardsProps = {
   totalUsers: number
-  users: AdminUserSummary[]
+  active: number
+  deactivated: number
+  banned: number
   loading?: boolean
 }
 
-export function UserStatsCards({ totalUsers, users, loading = false }: UserStatsCardsProps) {
-  // Calculate stats from the current users array
-  const stats = {
-    active: users.filter(u => u.account_status.toLowerCase() === 'active').length,
-    deactivated: users.filter(u => u.account_status.toLowerCase() === 'deactivated').length,
-    banned: users.filter(u => u.account_status.toLowerCase() === 'banned').length,
-  }
+export function UserStatsCards({ totalUsers, active, deactivated, banned, loading = false }: UserStatsCardsProps) {
 
   if (loading) {
     return (
@@ -55,7 +51,7 @@ export function UserStatsCards({ totalUsers, users, loading = false }: UserStats
           <UserCheck className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.active}</div>
+          <div className="text-2xl font-bold">{active}</div>
         </CardContent>
       </Card>
 
@@ -65,7 +61,7 @@ export function UserStatsCards({ totalUsers, users, loading = false }: UserStats
           <UserX className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.deactivated}</div>
+          <div className="text-2xl font-bold">{deactivated}</div>
         </CardContent>
       </Card>
 
@@ -75,7 +71,7 @@ export function UserStatsCards({ totalUsers, users, loading = false }: UserStats
           <ShieldBan className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.banned}</div>
+          <div className="text-2xl font-bold">{banned}</div>
         </CardContent>
       </Card>
     </div>

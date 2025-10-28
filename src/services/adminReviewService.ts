@@ -160,7 +160,8 @@ function mapItem(it: RawReviewItem): AdminReviewItem {
     docType = "payout_failed"
     docUrl = ''
     docUrls = []
-    verificationId = `payout_${it.payout_id || it.id || ''}`
+    // Use booking_id so client can call payout retry endpoint that expects bookingId
+    verificationId = `payout_${it.booking_id || it.payout_id || it.id || ''}`
     userId = String(it.owner_id || '') // Use owner_id for reference
     status = 'pending' // Always pending for retry
     submittedAt = it.updated_at || new Date().toISOString()
@@ -234,6 +235,11 @@ function mapItem(it: RawReviewItem): AdminReviewItem {
           profile_picture: userInfo.profile_picture || null,
         }
       : undefined,
+  }
+
+  // Attach related booking id for action-based items when available
+  if (itemType === 'refund' && it.booking_id) {
+    ;(base as unknown as { related_booking_id?: number }).related_booking_id = Number(it.booking_id)
   }
 
   if (vehicleInfo) {

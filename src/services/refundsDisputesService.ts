@@ -53,22 +53,44 @@ export const refundsDisputesService = {
       }
     })
 
-    const res = await apiRequest(`${API_BASE_URL}/api/admin/refunds?${params.toString()}`, { method: "GET" })
+    const res = await apiRequest(`${API_BASE_URL}/api/refunds-disputes/refunds?${params.toString()}`, { method: "GET" })
     const data = await res.json()
     return data as RefundRequestsResponse
   },
 
-  async approveRefund(refundId: number, adminNotes?: string) {
-    const res = await apiRequest(`${API_BASE_URL}/api/admin/refunds/${refundId}/approve`, { 
+  async approveRefund(
+    refundId: number,
+    adminNotes: string = "Refund approved",
+    options?: { refundAmount?: number; refundPercentage?: number }
+  ) {
+    // Backend implements approval as processing a refund. It requires either
+    // refundAmount or refundPercentage and adminNotes.
+    const payload: Record<string, unknown> = {
+      adminNotes,
+    }
+
+    if (options?.refundAmount !== undefined && options?.refundPercentage !== undefined) {
+      // Prefer explicit amount when both are provided to avoid backend 400
+      payload.refundAmount = options.refundAmount
+    } else if (options?.refundAmount !== undefined) {
+      payload.refundAmount = options.refundAmount
+    } else if (options?.refundPercentage !== undefined) {
+      payload.refundPercentage = options.refundPercentage
+    } else {
+      // Default to 100% refund if not specified
+      payload.refundPercentage = 100
+    }
+
+    const res = await apiRequest(`${API_BASE_URL}/api/refunds-disputes/refunds/${refundId}/process`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ adminNotes })
+      body: JSON.stringify(payload),
     })
     return res.json().catch(() => ({}))
   },
 
   async rejectRefund(refundId: number, adminNotes: string) {
-    const res = await apiRequest(`${API_BASE_URL}/api/admin/refunds/${refundId}/reject`, { 
+    const res = await apiRequest(`${API_BASE_URL}/api/refunds-disputes/refunds/${refundId}/reject`, { 
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ adminNotes })

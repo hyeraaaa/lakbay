@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
+ 
 import { MoreHorizontal, Eye, CheckCircle, XCircle, Ban } from 'lucide-react'
 import type { AdminUserSummary } from '@/services/adminUserService'
 
@@ -206,47 +206,7 @@ export default function UsersDataTable({ users, onAction, page, totalPages, tota
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalItems)} of {totalItems} users
-          </div>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onPageChange(page - 1)}
-                  disabled={page === 1}
-                >
-                  <PaginationPrevious />
-                </Button>
-              </PaginationItem>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                <PaginationItem key={pageNum}>
-                  <PaginationLink
-                    onClick={() => onPageChange(pageNum)}
-                    isActive={pageNum === page}
-                  >
-                    {pageNum}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-              <PaginationItem>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onPageChange(page + 1)}
-                  disabled={page === totalPages}
-                >
-                  <PaginationNext />
-                </Button>
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      )}
+      
     </div>
   )
 }

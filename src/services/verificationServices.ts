@@ -170,6 +170,8 @@ export interface VerificationRequest {
     email: string
     profile_picture?: string | null
   }
+  // For action-based requests (e.g., refund), link to associated booking when available
+  related_booking_id?: number
 }
 
 export const verificationService = {

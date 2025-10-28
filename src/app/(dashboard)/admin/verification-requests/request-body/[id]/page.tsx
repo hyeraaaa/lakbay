@@ -12,6 +12,8 @@ import {
   ReviewNotes,
   ImageModal,
 } from "@/components/verification-requests"
+import Link from "next/link"
+import { encodeId } from "@/lib/idCodec"
 
 export default function RequestDetailPage() {
   const params = useParams()
@@ -28,9 +30,11 @@ export default function RequestDetailPage() {
     getImageSrc,
   } = useVerificationRequest(decodedId)
 
-  const handleApprove = async () => {
+  const relatedBookingId = (request as unknown as { related_booking_id?: number })?.related_booking_id
+
+  const handleApprove = async (options?: { refundPercentage?: number }) => {
     if (!request) return
-    await approveRequest(String(request.verification_id))
+    await approveRequest(String(request.verification_id), options)
   }
 
   const handleReject = async () => {
@@ -89,6 +93,16 @@ export default function RequestDetailPage() {
                 {request.doc_type === "refund_request" && "This refund request requires your review and decision."}
                 {request.doc_type === "reactivation_request" && "This account reactivation request requires your approval."}
               </div>
+              {request.doc_type === "refund_request" && relatedBookingId && (
+                <Link
+                  href={`/admin/verification-requests/booking-details/${encodeId(String(relatedBookingId))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  View booking details
+                </Link>
+              )}
             </div>
           )}
 

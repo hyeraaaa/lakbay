@@ -56,20 +56,37 @@ export const useVehicleBookings = (vehicleId: number, requireAuth: boolean = tru
     
     bookings.forEach(booking => {
       const startDate = new Date(booking.start_date);
-      const endDate = new Date(booking.end_date);
+      const scheduledEndDate = new Date(booking.end_date);
+      const checkinTimestamp = booking.checkin_timestamp ? new Date(booking.checkin_timestamp) : null;
       
       // Normalize to start of day
       const normalizedStartDate = new Date(startDate);
       normalizedStartDate.setHours(0, 0, 0, 0);
       
-      const normalizedEndDate = new Date(endDate);
+      // If the booking was checked-in (completed) early, release the check-in day for others
+      // So we block up to the day BEFORE the check-in date
+      const normalizedEndDate = new Date(scheduledEndDate);
       normalizedEndDate.setHours(0, 0, 0, 0);
+
+      const normalizedCheckinDay = checkinTimestamp ? new Date(checkinTimestamp) : null;
+      if (normalizedCheckinDay) {
+        normalizedCheckinDay.setHours(0, 0, 0, 0);
+      }
       
       // Add all dates in the booking range
       const currentDate = new Date(normalizedStartDate);
-      while (currentDate <= normalizedEndDate) {
-        bookedDates.push(new Date(currentDate));
-        currentDate.setDate(currentDate.getDate() + 1);
+      if (normalizedCheckinDay) {
+        // Block until the day before check-in
+        while (currentDate < normalizedCheckinDay) {
+          bookedDates.push(new Date(currentDate));
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      } else {
+        // No early check-in; block until scheduled end inclusive
+        while (currentDate <= normalizedEndDate) {
+          bookedDates.push(new Date(currentDate));
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
       }
     });
     
@@ -79,7 +96,8 @@ export const useVehicleBookings = (vehicleId: number, requireAuth: boolean = tru
   const isDateBooked = useCallback((date: Date): boolean => {
     return bookings.some(booking => {
       const startDate = new Date(booking.start_date);
-      const endDate = new Date(booking.end_date);
+      const scheduledEndDate = new Date(booking.end_date);
+      const checkinTimestamp = booking.checkin_timestamp ? new Date(booking.checkin_timestamp) : null;
       
       // Normalize dates to start of day for comparison
       const checkDate = new Date(date);
@@ -88,8 +106,15 @@ export const useVehicleBookings = (vehicleId: number, requireAuth: boolean = tru
       const normalizedStartDate = new Date(startDate);
       normalizedStartDate.setHours(0, 0, 0, 0);
       
-      const normalizedEndDate = new Date(endDate);
+      const normalizedEndDate = new Date(scheduledEndDate);
       normalizedEndDate.setHours(0, 0, 0, 0);
+      
+      // If checked-in early, release check-in date (exclusive end)
+      if (checkinTimestamp) {
+        const normalizedCheckinDay = new Date(checkinTimestamp);
+        normalizedCheckinDay.setHours(0, 0, 0, 0);
+        return checkDate >= normalizedStartDate && checkDate < normalizedCheckinDay;
+      }
       
       // Check if the date falls within any booking range
       return checkDate >= normalizedStartDate && checkDate <= normalizedEndDate;

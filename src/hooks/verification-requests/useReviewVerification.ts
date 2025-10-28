@@ -47,7 +47,10 @@ export function useVerificationRequest(id: string | undefined) {
     }
   }
 
-  const approveRequest = async (verificationId: string) => {
+  const approveRequest = async (
+    verificationId: string,
+    options?: { refundPercentage?: number }
+  ) => {
     setActionLoading(true)
     try {
       let success = false
@@ -93,7 +96,11 @@ export function useVerificationRequest(id: string | undefined) {
       else if (verificationId.startsWith('refund_')) {
         const refundId = verificationId.replace('refund_', '')
         try {
-          await refundsDisputesService.approveRefund(parseInt(refundId), "Refund approved")
+          await refundsDisputesService.approveRefund(
+            parseInt(refundId),
+            "Refund approved",
+            options?.refundPercentage !== undefined ? { refundPercentage: options.refundPercentage } : undefined
+          )
           success = true
         } catch (error) {
           console.error("Error approving refund:", error)

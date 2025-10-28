@@ -24,6 +24,9 @@ export default function Page() {
   const [totalPages, setTotalPages] = useState<number>(1)
   const [totalItems, setTotalItems] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(false)
+  const [statsLoading, setStatsLoading] = useState<boolean>(false)
+  const [hasLoadedStats, setHasLoadedStats] = useState<boolean>(false)
+  const [globalCounts, setGlobalCounts] = useState<{ total: number; active: number; deactivated: number; banned: number }>({ total: 0, active: 0, deactivated: 0, banned: 0 })
   const [search, setSearch] = useState<string>("")
   const [debouncedSearch, setDebouncedSearch] = useState<string>("")
   const [userType, setUserType] = useState<string>("all")
@@ -59,6 +62,17 @@ export default function Page() {
 
   useEffect(() => {
     fetchUsers()
+    // Fetch global counts once on mount
+    ;(async () => {
+      setStatsLoading(true)
+      try {
+        const counts = await adminUserService.getGlobalUserCounts()
+        setGlobalCounts(counts)
+        setHasLoadedStats(true)
+      } finally {
+        setStatsLoading(false)
+      }
+    })()
   }, [fetchUsers])
 
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false)
@@ -93,7 +107,13 @@ export default function Page() {
         <p className="text-muted-foreground text-pretty">View, manage, and monitor all user accounts across the platform</p>
       </div>
       
-      <UserStatsCards totalUsers={totalItems} users={users} loading={loading} />
+      <UserStatsCards
+        totalUsers={globalCounts.total}
+        active={globalCounts.active}
+        deactivated={globalCounts.deactivated}
+        banned={globalCounts.banned}
+        loading={statsLoading && !hasLoadedStats}
+      />
       
       <Card>
       <CardContent>
@@ -235,6 +255,11 @@ export default function Page() {
             const message = pendingAction.action === 'activate' ? 'User activated' : pendingAction.action === 'deactivate' ? 'User deactivated' : 'User banned'
             success(message)
             await fetchUsers()
+            // Refresh global counts after a state-changing action
+            setStatsLoading(true)
+            adminUserService.getGlobalUserCounts()
+              .then(setGlobalCounts)
+              .finally(() => setStatsLoading(false))
           } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Action failed'
             error(message)
@@ -255,6 +280,11 @@ export default function Page() {
         onOpenChange={setRegisterDialogOpen}
         onSuccess={() => {
           fetchUsers()
+          // Refresh global counts after registration
+          setStatsLoading(true)
+          adminUserService.getGlobalUserCounts()
+            .then(setGlobalCounts)
+            .finally(() => setStatsLoading(false))
         }}
       />
     </div>
