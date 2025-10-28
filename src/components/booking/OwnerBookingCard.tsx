@@ -6,6 +6,7 @@ import { Calendar, MapPin, Clock, CheckCircle, XCircle, AlertCircle, User } from
 import { Badge } from '@/components/ui/badge';
 import { bookingService } from '@/services/bookingServices';
 import { getImageUrl, getPrimaryImage } from '@/lib/imageUtils';
+import { encodeId } from '@/lib/idCodec';
 import Image from 'next/image';
 
 interface OwnerBookingCardProps {
@@ -65,8 +66,8 @@ export const OwnerBookingCard: React.FC<OwnerBookingCardProps> = ({
   };
 
   const handleCardClick = () => {
-    // Navigate to owner booking details page
-    window.location.href = `/owner/bookings/booking-details/${booking.booking_id}`;
+    // Navigate to owner booking details page with encoded ID
+    window.location.href = `/owner/bookings/booking-details/${encodeId(booking.booking_id.toString())}`;
   };
 
 

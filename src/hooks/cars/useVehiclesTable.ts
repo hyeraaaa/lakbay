@@ -23,6 +23,8 @@ export type VehicleRow = {
   coding?: string
   description: string
   hasTracker?: boolean
+  daily_mileage_limit?: number | null
+  overage_fee_per_km?: number | null
 }
 
 type Params = {
@@ -54,6 +56,8 @@ export function useVehiclesTable({ vehicles, onChange }: Params) {
     features: v.features || [],
     coding: v.coding,
     description: v.description,
+    daily_mileage_limit: v.daily_mileage_limit,
+    overage_fee_per_km: v.overage_fee_per_km,
   })
 
   const mappedVehicles: VehicleRow[] = useMemo(

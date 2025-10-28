@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useJWT } from "@/contexts/JWTContext";
 import { BookingFilters, BookingStatus, bookingService } from "@/services/bookingServices";
 import { useOwnerBookings } from "@/hooks/booking/useOwnerBookings";
 import { useNotification } from "@/components/NotificationProvider";
+import { encodeId } from "@/lib/idCodec";
 
 export type AlertVariant = "default" | "destructive" | "success" | "warning" | "info";
 
@@ -44,21 +45,6 @@ export const useOwnerBookingsPage = () => {
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
   }, []);
-
-  // Debounce search filter updates (apply only after user stops typing)
-  // Skip on initial mount to avoid a second refetch flicker
-  const didMountRef = useRef(false);
-  useEffect(() => {
-    if (!didMountRef.current) {
-      didMountRef.current = true;
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      updateFilters({ q: searchQuery || undefined, page: 1 } as Partial<BookingFilters>);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery, updateFilters]);
 
   const handleStatusFilter = useCallback(
     (status: BookingStatus | "all") => {
@@ -100,7 +86,7 @@ export const useOwnerBookingsPage = () => {
             updateBookingLocal(bookingId, (b) => ({ ...b, status: BookingStatus.COMPLETED }));
             break;
           case "view":
-            router.push(`/owner/bookings/booking-details/${bookingId}`);
+            router.push(`/owner/bookings/booking-details/${encodeId(bookingId.toString())}`);
             break;
           default:
             break;
@@ -119,6 +105,12 @@ export const useOwnerBookingsPage = () => {
   const handleAlert = useCallback((message: string, _variant: AlertVariant) => {
     success(message);
   }, [success]);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    clearFilters();
+  }, [clearFilters]);
 
   const statusCounts = useMemo(() => {
     // Use full dataset for stats (not filtered by UI filters)
@@ -187,7 +179,7 @@ export const useOwnerBookingsPage = () => {
     updateFilters,
     refreshBookings,
     goToPage,
-    clearFilters,
+    clearFilters: handleClearFilters,
     setError,
   };
 };

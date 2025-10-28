@@ -175,14 +175,6 @@ const VehicleMapInner: React.FC<VehicleMapProps> = ({ vehicles, isLoading, class
             )}
           </>
         )}
-        {/* Empty state overlay when no coordinates */}
-        {validCoords.length === 0 && !internalUserLocation && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-white/85 backdrop-blur-sm px-4 py-3 rounded-md text-sm text-gray-700 shadow">
-              No vehicles found for the selected location and dates
-            </div>
-          </div>
-        )}
 
       </MapContainer>
 

@@ -9,20 +9,23 @@ import TitleAndBadges from "@/components/vehicle-booking/TitleAndBadges"
 import HostSection from "@/components/vehicle-booking/HostSection"
 import VehicleFeatures from "@/components/vehicle-booking/VehicleFeatures"
 import BookingSidebar from "@/components/vehicle-booking/BookingSidebar"
-import { MapPin } from "lucide-react"
+import { MapPin, Flag } from "lucide-react"
 import ReviewsSection from "@/components/vehicle-booking/ReviewsSection"
 import LocationSection from "@/components/map/LocationSection"
 import { useVehicleDetails } from "@/hooks/booking/useVehicleDetails"
 import VehicleDetailsSkeleton from "@/components/vehicle-booking/VehicleDetailsSkeleton"
+import VehicleReportDialog from "@/components/vehicle-booking/VehicleReportDialog"
 import Link from "next/link"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { transformVehicleData } from "@/lib/transformVehicleData"
 
 
 export default function CarBookingInterface() {
   const [selectedImage, setSelectedImage] = useState(0)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
   const { vehicle, isLoading, reviews, reviewsError, tripCount } = useVehicleDetails()
 
   const carImages = useMemo(() => {
@@ -71,15 +74,29 @@ export default function CarBookingInterface() {
 
           {/* Main Content (below gallery) */}
           <div id="overview" className="lg:col-span-2 space-y-6 scroll-mt-24">
+              <div className="flex items-start justify-between gap-4">
               <TitleAndBadges
-              title={vehicle ? `${vehicle.brand} ${vehicle.model} ${vehicle.year}` : "Vehicle"}
-              seats={vehicle?.seats}
-              fuelType={vehicle?.fuel_type}
-              transmission={vehicle?.transmission}
-              coding={vehicle?.coding}
-              rating={reviews && reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : null}
-              tripCount={tripCount}
-            />
+                title={vehicle ? `${vehicle.brand} ${vehicle.model} ${vehicle.year}` : "Vehicle"}
+                seats={vehicle?.seats}
+                fuelType={vehicle?.fuel_type}
+                transmission={vehicle?.transmission}
+                carType={vehicle?.type}
+                coding={vehicle?.coding}
+                rating={reviews && reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : null}
+                tripCount={tripCount}
+              />
+              {vehicle && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsReportDialogOpen(true)}
+                  className="flex items-center gap-2 shrink-0"
+                >
+                  <Flag className="h-4 w-4" />
+                  Report
+                </Button>
+              )}
+            </div>
                 <HostSection 
               hostFirstName={vehicle?.users?.first_name} 
               hostLastName={vehicle?.users?.last_name} 
@@ -108,6 +125,15 @@ export default function CarBookingInterface() {
       <div id="location" className="scroll-mt-24">
         <LocationSection vehicle={vehicle} />
       </div>
+
+      {vehicle && (
+        <VehicleReportDialog
+          vehicleId={vehicle.vehicle_id.toString()}
+          vehicleName={`${vehicle.brand} ${vehicle.model} ${vehicle.year}`}
+          open={isReportDialogOpen}
+          onOpenChange={setIsReportDialogOpen}
+        />
+      )}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { Fuel, Settings, Star, Users, Calendar } from "lucide-react"
+import { Fuel, Settings, Star, Users, Calendar, Car } from "lucide-react"
 import { normalizeTransmissionLabel } from "@/lib/vehicleNormalizers"
 
 type TitleAndBadgesProps = {
@@ -9,6 +9,7 @@ type TitleAndBadgesProps = {
   seats?: number | null
   fuelType?: string | null
   transmission?: string | null
+  carType?: string | null
   rating?: number | null
   tripCount?: number | null
   coding?: string | null
@@ -16,7 +17,7 @@ type TitleAndBadgesProps = {
 
 // using shared normalizer from lib
 
-export default function TitleAndBadges({ title, seats, fuelType, transmission, rating, tripCount, coding }: TitleAndBadgesProps) {
+export default function TitleAndBadges({ title, seats, fuelType, transmission, carType, rating, tripCount, coding }: TitleAndBadgesProps) {
   const codingLabel = (() => {
     const v = (coding || "").trim()
     if (!v || v.toUpperCase() === "NONE") return ""
@@ -43,9 +44,13 @@ export default function TitleAndBadges({ title, seats, fuelType, transmission, r
           <Fuel className="h-3 w-3" />
           {fuelType || "Gas (Regular)"}
         </Badge>
-          <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-gray-50 border-gray-300">
+          <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-white border-gray-300">
           <Settings className="h-3 w-3" />
           {normalizeTransmissionLabel(transmission)}
+        </Badge>
+        <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-white border-gray-300">
+          <Car className="h-3 w-3" />
+          {carType || "Unknown"}
         </Badge>
         {codingLabel && (
           <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-blue-50 border-blue-300 text-blue-700">

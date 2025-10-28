@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 export default function BookingDetailsSkeleton() {
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header Skeleton */}
       <div className="flex items-center gap-4 mb-6">
         <Skeleton className="h-10 w-20" />

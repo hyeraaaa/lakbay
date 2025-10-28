@@ -37,6 +37,7 @@ export function useBookingDetails({ bookingId }: UseBookingDetailsProps): UseBoo
       try {
         setLoading(true);
         setError('');
+        // bookingId is already decoded from the URL, so we can use it directly
         const bookingData = await bookingService.getBookingDetails(parseInt(bookingId));
         setBooking(bookingData);
       } catch (err: unknown) {
@@ -94,6 +95,13 @@ export function useBookingDetails({ bookingId }: UseBookingDetailsProps): UseBoo
         case 'reviewed':
           {
             // Review completed in UI component; refresh to update eligibility and status
+            const refreshed = await bookingService.getBookingDetails(booking.booking_id);
+            setBooking(refreshed);
+          }
+          break;
+        case 'refund_requested':
+          {
+            // Refund request submitted in UI component; refresh to update eligibility and status
             const refreshed = await bookingService.getBookingDetails(booking.booking_id);
             setBooking(refreshed);
           }

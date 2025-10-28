@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, User, AlertCircle, Loader2 } from 'lucide-react';
+import { User, AlertCircle, Loader2 } from 'lucide-react';
 import { Booking, BookingStatus } from '@/services/bookingServices';
 import { bookingService } from '@/services/bookingServices';
 import {
@@ -18,6 +18,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useNotification } from '@/components/NotificationProvider';
+import CheckInForm from './CheckInForm';
+import CheckOutForm from './CheckOutForm';
 
 interface OwnerBookingActionsCardProps {
   booking: Booking;
@@ -30,15 +32,25 @@ export default function OwnerBookingActionsCard({ booking, onAction }: OwnerBook
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [showCheckInForm, setShowCheckInForm] = useState(false);
+  const [showCheckOutForm, setShowCheckOutForm] = useState(false);
   const { success, error: notifyError } = useNotification();
   const isCancellationPending = booking.cancellation_status === 'pending_owner_approval';
 
-  // Don't show actions if booking is cancelled
-  if (booking.status === BookingStatus.CANCELED) {
+  // Don't show actions if booking is cancelled or completed
+  if (booking.status === BookingStatus.CANCELED || booking.status === BookingStatus.COMPLETED) {
     return null;
   }
 
   const handleActionClick = (action: string) => {
+    if (action === 'checkin') {
+      setShowCheckInForm(true);
+      return;
+    }
+    if (action === 'checkout') {
+      setShowCheckOutForm(true);
+      return;
+    }
     setActionType(action);
     setIsActionOpen(true);
   };
@@ -65,12 +77,10 @@ export default function OwnerBookingActionsCard({ booking, onAction }: OwnerBook
           success('Booking rejected');
           break;
         case 'checkout':
-          await bookingService.checkOut(booking.booking_id);
-          success('Checked out successfully');
+          // This case is now handled by the CheckOutForm component
           break;
         case 'checkin':
-          await bookingService.checkIn(booking.booking_id);
-          success('Checked in successfully');
+          // This case is now handled by the CheckInForm component
           break;
         case 'endEarly':
           await bookingService.endEarly(booking.booking_id);
@@ -85,6 +95,40 @@ export default function OwnerBookingActionsCard({ booking, onAction }: OwnerBook
       await onAction(actionType);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : `Failed to ${actionType} booking`);
+      notifyError(e instanceof Error ? e.message : 'Something went wrong');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCheckIn = async (checkinData: { odometer_reading?: number; odometer_photo_url?: string }) => {
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await bookingService.checkIn(booking.booking_id, checkinData);
+      success('Checked in successfully');
+      setShowCheckInForm(false);
+      // Call onAction to trigger data refresh in the parent component
+      await onAction('checkin');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to check in');
+      notifyError(e instanceof Error ? e.message : 'Something went wrong');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCheckOut = async (checkoutData: { odometer_reading?: number; odometer_photo_url?: string }) => {
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await bookingService.checkOut(booking.booking_id, checkoutData);
+      success('Checked out successfully');
+      setShowCheckOutForm(false);
+      // Call onAction to trigger data refresh in the parent component
+      await onAction('checkout');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to check out');
       notifyError(e instanceof Error ? e.message : 'Something went wrong');
     } finally {
       setIsSubmitting(false);
@@ -172,6 +216,30 @@ export default function OwnerBookingActionsCard({ booking, onAction }: OwnerBook
     );
   };
 
+  // Show check-in form if requested
+  if (showCheckInForm) {
+    return (
+      <CheckInForm
+        bookingId={booking.booking_id}
+        onCheckIn={handleCheckIn}
+        onCancel={() => setShowCheckInForm(false)}
+        isLoading={isSubmitting}
+      />
+    );
+  }
+
+  // Show check-out form if requested
+  if (showCheckOutForm) {
+    return (
+      <CheckOutForm
+        bookingId={booking.booking_id}
+        onCheckOut={handleCheckOut}
+        onCancel={() => setShowCheckOutForm(false)}
+        isLoading={isSubmitting}
+      />
+    );
+  }
+
   return (
     <>
       <Card>
@@ -200,8 +268,8 @@ export default function OwnerBookingActionsCard({ booking, onAction }: OwnerBook
           )}
           {renderActionButton('approve', booking.status === BookingStatus.AWAITING_OWNER_APPROVAL && !isCancellationPending)}
           {renderActionButton('reject', booking.status === BookingStatus.AWAITING_OWNER_APPROVAL && !isCancellationPending)}
-          {renderActionButton('approveCancellation', isCancellationPending && booking.status !== BookingStatus.ON_GOING && booking.status !== BookingStatus.COMPLETED)}
-          {renderActionButton('rejectCancellation', isCancellationPending && booking.status !== BookingStatus.ON_GOING && booking.status !== BookingStatus.COMPLETED)}
+          {renderActionButton('approveCancellation', isCancellationPending && booking.status !== BookingStatus.ON_GOING)}
+          {renderActionButton('rejectCancellation', isCancellationPending && booking.status !== BookingStatus.ON_GOING)}
           {renderActionButton('checkout', booking.status === BookingStatus.CONFIRMED && !isCancellationPending)}
           {renderActionButton('checkin', booking.status === BookingStatus.ON_GOING && !isCancellationPending)}
           {renderActionButton('endEarly', booking.status === BookingStatus.ON_GOING && !isCancellationPending)}
@@ -211,15 +279,6 @@ export default function OwnerBookingActionsCard({ booking, onAction }: OwnerBook
               <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
               <p className="text-sm text-gray-600">
                 Waiting for customer payment
-              </p>
-            </div>
-          )}
-
-          {booking.status === BookingStatus.COMPLETED && (
-            <div className="text-center py-4">
-              <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
-              <p className="text-sm text-gray-600">
-                Booking completed successfully
               </p>
             </div>
           )}

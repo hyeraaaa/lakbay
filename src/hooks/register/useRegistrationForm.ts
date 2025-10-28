@@ -29,7 +29,16 @@ export const useRegistrationForm = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Handle phone number specially - add +63 prefix and limit to 10 digits
+    if (name === 'phone') {
+      const digitsOnly = value.replace(/\D/g, "");
+      const limitedDigits = digitsOnly.slice(0, 10);
+      const fullWithCountry = limitedDigits ? `+63${limitedDigits}` : "";
+      setFormData(prev => ({ ...prev, [name]: fullWithCountry }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
 
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: undefined }));
     if (serverError) setServerError("");

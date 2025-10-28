@@ -51,11 +51,20 @@ export interface GoogleUserInfo {
 }
 
 export interface LoginResponse {
-  accessToken: string;
-  user: User;
+  accessToken?: string;
+  user?: User;
   message?: string;
   isNewUser?: boolean;
   requires2FA?: boolean;
+  requiresReactivation?: boolean;
+  flow?: 'self' | 'admin_approval';
+  reactivationToken?: string;
+  emailMasked?: string;
+  next?: {
+    submit_to: string;
+    body: Record<string, string>;
+    expires_in_minutes: number;
+  };
 }
 
 export interface ResetPasswordData {
@@ -267,6 +276,35 @@ export const authService = {
       ok: response.ok, 
       data,
       message: data.message || (response.ok ? undefined : 'Failed to deactivate account')
+    };
+  },
+
+  completeReactivation: async (userId: string, verificationCode: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/reactivate/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verification_code: verificationCode }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    return { 
+      ok: response.ok, 
+      data,
+      message: data.message || (response.ok ? undefined : 'Failed to reactivate account')
+    };
+  },
+
+  resendReactivationCode: async (userId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/reactivate/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const data = await response.json().catch(() => ({}));
+    return { 
+      ok: response.ok, 
+      data,
+      message: data.message || (response.ok ? undefined : 'Failed to resend reactivation code')
     };
   },
 };

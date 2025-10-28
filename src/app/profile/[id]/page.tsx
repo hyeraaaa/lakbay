@@ -36,7 +36,7 @@ export default function Page() {
     4,
   )
   const { reviews, reviewsAll, reviewsError } = useAggregatedReviews(userId)
-  const { mapVehicle } = useMapVehicle(userId)
+  const { mapVehicle, profileLocation } = useMapVehicle(userId)
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -74,7 +74,10 @@ export default function Page() {
 
               {/* Business Hours & Chat Section */}
               <div className="space-y-6">
-                <BusinessHours isOwner={String(user?.id ?? '') === String(userId ?? '') && (user?.user_type?.toLowerCase?.() === 'owner')} />
+                <BusinessHours 
+                  isOwner={String(user?.id ?? '') === String(userId ?? '') && (user?.user_type?.toLowerCase?.() === 'owner')} 
+                  ownerId={userId ? (isNaN(parseInt(userId)) ? undefined : parseInt(userId)) : undefined}
+                />
               </div>
             </div>
           </TabsContent>
@@ -90,7 +93,7 @@ export default function Page() {
 
           <TabsContent value="location">
             <div>
-              <LocationSection vehicle={mapVehicle} />
+              <LocationSection vehicle={mapVehicle} profileLocation={profileLocation} />
             </div>
           </TabsContent>
         </Tabs>

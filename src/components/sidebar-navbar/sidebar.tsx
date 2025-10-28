@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { LayoutDashboard, Settings, User, ShieldCheck, Users as UsersIcon, MessageSquare, Calendar, Car, ScrollText } from "lucide-react"
+import { LayoutDashboard, Settings, User, ShieldCheck, Users as UsersIcon, MessageSquare, Calendar, Car, ScrollText, Flag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useNavbarAuth } from "@/hooks/navbar"
@@ -16,6 +16,7 @@ const getNavItemsByRole = (userType?: string, currentUserId?: string) => {
     return [
       { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
       { icon: ShieldCheck, label: "Verification Requests", href: "/admin/verification-requests" },
+      { icon: Flag, label: "Reports", href: "/admin/reports" },
       { icon: ScrollText, label: "Logs", href: "/admin/logs" },
       { icon: MessageSquare, label: "Chat", href: "/admin/chat" },
       { icon: UsersIcon, label: "Account Management", href: "/admin/account-management" },

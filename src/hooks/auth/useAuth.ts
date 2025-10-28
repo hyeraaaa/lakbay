@@ -84,6 +84,26 @@ export const useAuth = () => {
 
       if (!ok) throw new Error(message || data.message || 'Login failed');
 
+      // Check if account reactivation is required
+      if (data.requiresReactivation) {
+        if (data.flow === 'self') {
+          // Store reactivation data for verification step
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('reactivation_userId', data.next?.submit_to?.match(/\/(\d+)\//)?.[1] || '');
+            sessionStorage.setItem('reactivation_flow', data.flow);
+            sessionStorage.setItem('reactivation_emailMasked', data.emailMasked || '');
+            if (data.reactivationToken) {
+              sessionStorage.setItem('reactivation_token', data.reactivationToken);
+            }
+          }
+          router.push('/reactivate');
+          return { success: true, requiresReactivation: true, flow: data.flow };
+        } else if (data.flow === 'admin_approval') {
+          setAuthError('Your account requires admin approval for reactivation. Please contact support.');
+          return { success: false, error: 'Admin approval required' };
+        }
+      }
+
       // Check if 2FA is required
       if (data.requires2FA) {
         // Store email for 2FA verification and redirect to verify-login page
@@ -95,11 +115,11 @@ export const useAuth = () => {
       }
 
       login(
-        { accessToken: data.accessToken },
-        data.user
+        { accessToken: data.accessToken! },
+        data.user!
       );
 
-      redirectBasedOnUserType(data.user);
+      redirectBasedOnUserType(data.user!);
       return { success: true, user: data.user };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
@@ -149,30 +169,50 @@ export const useAuth = () => {
 
       if (!ok) throw new Error(message || data.message || 'Google authentication failed');
 
+      // Check if account reactivation is required
+      if (data.requiresReactivation) {
+        if (data.flow === 'self') {
+          // Store reactivation data for verification step
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('reactivation_userId', data.next?.submit_to?.match(/\/(\d+)\//)?.[1] || '');
+            sessionStorage.setItem('reactivation_flow', data.flow);
+            sessionStorage.setItem('reactivation_emailMasked', data.emailMasked || '');
+            if (data.reactivationToken) {
+              sessionStorage.setItem('reactivation_token', data.reactivationToken);
+            }
+          }
+          router.push('/reactivate');
+          return { success: true, requiresReactivation: true, flow: data.flow };
+        } else if (data.flow === 'admin_approval') {
+          setAuthError('Your account requires admin approval for reactivation. Please contact support.');
+          return { success: false, error: 'Admin approval required' };
+        }
+      }
+
       // Check if 2FA is required
       if (data.requires2FA) {
         // Store email for 2FA verification and redirect to verify-login page
         if (typeof window !== 'undefined') {
-          sessionStorage.setItem('2fa_email', data.user.email);
+          sessionStorage.setItem('2fa_email', data.user!.email);
         }
         router.push('/verify-login');
-        return { success: true, requires2FA: true, email: data.user.email };
+        return { success: true, requires2FA: true, email: data.user!.email };
       }
 
       login(
-        { accessToken: data.accessToken },
-        data.user
+        { accessToken: data.accessToken! },
+        data.user!
       );
 
       // Check if this was a new user (auto-registered)
       const isNewUser = data.isNewUser || false;
       if (isNewUser) {
-        console.log('New user auto-registered via Google:', data.user.email);
+        console.log('New user auto-registered via Google:', data.user!.email);
         // You could show a welcome message here if needed
       }
 
-      redirectBasedOnUserType(data.user);
-      return { success: true, user: data.user, isNewUser };
+      redirectBasedOnUserType(data.user!);
+      return { success: true, user: data.user!, isNewUser };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Google authentication failed';
       setAuthError(errorMessage);
@@ -236,6 +276,56 @@ export const useAuth = () => {
     }
   }, []);
 
+  const handleReactivation = useCallback(async (userId: string, verificationCode: string) => {
+    setIsProcessing(true);
+    setAuthError('');
+
+    try {
+      const { ok, data, message } = await authService.completeReactivation(userId, verificationCode);
+      
+      if (!ok) {
+        throw new Error(message || 'Failed to reactivate account');
+      }
+
+      // Clear session storage
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('reactivation_userId');
+        sessionStorage.removeItem('reactivation_flow');
+        sessionStorage.removeItem('reactivation_emailMasked');
+        sessionStorage.removeItem('reactivation_token');
+      }
+
+      // Automatically try to login after successful reactivation
+      // Redirect to login page where user can enter their credentials
+      router.push('/login?reactivated=true');
+      return { success: true, message: 'Account reactivated successfully. Please log in.' };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reactivate account';
+      setAuthError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [router]);
+
+  const handleResendReactivation = useCallback(async (userId: string) => {
+    setAuthError('');
+
+    try {
+      const { ok, data, message } = await authService.resendReactivationCode(userId);
+      
+      if (!ok) {
+        throw new Error(message || 'Failed to resend reactivation code');
+      }
+
+      return { success: true, message: data.message };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to resend reactivation code';
+      setAuthError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  }, []);
+
   const clearError = useCallback(() => setAuthError(''), []);
 
   return {
@@ -250,6 +340,8 @@ export const useAuth = () => {
     googleLogin: handleGoogleLogin,
     verify2FA: handle2FAVerification,
     resend2FA: handleResend2FA,
+    reactivateAccount: handleReactivation,
+    resendReactivation: handleResendReactivation,
     clearError,
     redirectBasedOnUserType,
     checkDeviceRemembered,

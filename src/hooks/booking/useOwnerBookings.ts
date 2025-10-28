@@ -118,7 +118,12 @@ export const useOwnerBookings = (): UseOwnerBookingsReturn => {
   const clearFilters = useCallback(() => {
     setFilters({
       page: 1,
-      limit: 10
+      limit: 10,
+      q: undefined,
+      status: undefined,
+      start_date: undefined,
+      end_date: undefined,
+      vehicle_id: undefined
     });
   }, []);
 

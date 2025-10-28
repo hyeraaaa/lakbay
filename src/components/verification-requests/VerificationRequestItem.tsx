@@ -14,6 +14,7 @@ interface VerificationRequest {
   doc_type: string
   status: string
   submitted_at: string
+  error_message?: string
 }
 
 interface VerificationRequestItemProps {
@@ -59,7 +60,7 @@ export default function VerificationRequestItem({
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="font-medium text-sm text-foreground w-40 truncate">
             {request.doc_type === "payout_failed" 
-              ? `Owner ${request.user_id}` 
+              ? "Stripe"
               : request.user?.name || `User ${request.user_id}`}
           </div>
 

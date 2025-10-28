@@ -74,7 +74,7 @@ export default function ReviewsSection({ reviews, reviewsError, reviewsAll }: Re
       : null
 
   return (
-    <div className="border-gray-300">
+    <div className="border-gray-300 py-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-lg">Ratings and Reviews</h3>
         <Popover>
@@ -172,7 +172,7 @@ export default function ReviewsSection({ reviews, reviewsError, reviewsAll }: Re
               : ""
             return (
               <div key={r.review_id}>
-                <div className="flex items-start gap-4 border-t border-neutral-300 pt-5">
+                <div className="flex items-start gap-4 pt-5">
                   <Avatar className="h-10 w-10">
                     <AvatarImage
                       src={getProfileImageUrl(r.users?.profile_picture) || "/placeholder.svg"}

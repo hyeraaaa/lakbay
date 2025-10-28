@@ -44,6 +44,9 @@ export interface VehicleResponse {
   coding?: string;
   mileage?: number;
   vehicle_images?: VehicleImage[];
+  // Mileage settings
+  daily_mileage_limit?: number | null;
+  overage_fee_per_km?: number | null;
   // Coordinates from latest owner enrollment request (flattened on response)
   garage_latitude?: number | null;
   garage_longitude?: number | null;
@@ -592,6 +595,28 @@ class VehicleService {
     } catch (error) {
       console.error('Error fetching vehicle last location:', error);
       return null;
+    }
+  }
+
+  async updateVehicleMileageSettings(vehicleId: number, mileageSettings: { daily_mileage_limit?: number | null; overage_fee_per_km?: number | null }): Promise<VehicleResponse> {
+    try {
+      const response = await apiRequest(`${API_BASE_URL}/api/vehicles/${vehicleId}/mileage-settings`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(mileageSettings),
+      });
+
+      if (!response.ok) {
+        return this.throwVehicleError(response, 'update', 'Failed to update mileage settings');
+      }
+
+      const data = await response.json();
+      return data.vehicle;
+    } catch (error) {
+      console.error('Error updating vehicle mileage settings:', error);
+      throw error;
     }
   }
 }

@@ -18,6 +18,22 @@ interface PersonalInfoSectionProps {
   onTogglePassword: () => void;
 }
 
+const handlePhoneKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Allow backspace, delete, tab, escape, enter, and arrow keys
+  if ([8, 9, 27, 13, 46, 35, 36, 37, 38, 39, 40].indexOf(e.keyCode) !== -1 ||
+    // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+    (e.keyCode === 65 && e.ctrlKey === true) ||
+    (e.keyCode === 67 && e.ctrlKey === true) ||
+    (e.keyCode === 86 && e.ctrlKey === true) ||
+    (e.keyCode === 88 && e.ctrlKey === true)) {
+    return
+  }
+  // Ensure that it is a number and stop the keypress
+  if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+    e.preventDefault()
+  }
+}
+
 const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   formData,
   errors,
@@ -162,22 +178,28 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
           <label htmlFor="phone" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Phone Number
           </label>
-          <div className="relative">
-            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <div className="flex">
+            <span className="inline-flex items-center rounded-l-md border border-r-0 px-3 text-sm text-muted-foreground bg-muted">
+              +63
+            </span>
             <Input
               id="phone"
               name="phone"
               type="tel"
-              placeholder="Enter your phone number"
-              value={formData.phone}
+              placeholder="9XXXXXXXXX"
+              value={formData.phone.replace(/^\+63/, '')}
               onChange={onInputChange}
-              className={`pl-10 ${errors.phone ? 'border-red-500 focus-visible:ring-red-500/50' : ''}`}
+              onKeyDown={handlePhoneKeyDown}
+              className={`rounded-l-none ${errors.phone ? 'border-red-500 focus-visible:ring-red-500/50' : ''}`}
               disabled={isLoading}
             />
           </div>
           {errors.phone && (
             <p className="text-sm text-red-600 dark:text-red-400">{errors.phone}</p>
           )}
+          <p className="text-xs text-muted-foreground">
+            Format: 9XXXXXXXXX (10 digits)
+          </p>
         </div>
       </div>
     </div>

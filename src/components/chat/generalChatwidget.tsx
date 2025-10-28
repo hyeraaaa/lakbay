@@ -109,8 +109,8 @@ export function GeneralChatWidget() {
         </div>
       )}
 
-      {/* Chat Window - Only show for authenticated non-owners */}
-      {isAuthenticated && !isOwner && (
+      {/* Shared Chat Window for Both Customers and Owners */}
+      {isAuthenticated && (
       <div
         className={`fixed bottom-4 right-4 w-[95vw] h-[80vh] max-w-[700px] max-h-[600px] sm:w-[500px] sm:h-[500px] lg:w-[700px] lg:h-[600px] bg-card rounded-lg shadow-2xl flex flex-col z-50 border-2 border-border transition-all duration-300 origin-bottom-right ${
           isOpen ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-4 pointer-events-none"
@@ -257,8 +257,25 @@ export function GeneralChatWidget() {
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {messages.map((m) => {
                     const isUser = m.user_id === Number(user?.id)
+                    const messageSender = m.users || (isUser ? null : ownerProfile ? {
+                      user_id: ownerProfile.user_id,
+                      first_name: ownerProfile.first_name || '',
+                      last_name: ownerProfile.last_name || '',
+                      profile_picture: ownerProfile.profile_picture || null,
+                      user_type: ownerProfile.user_type
+                    } : null)
                     return (
-                      <div key={m.message_id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                      <div key={m.message_id} className={`flex items-start gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                        {!isUser && messageSender && (
+                          <Avatar className="h-8 w-8 mt-1">
+                            {messageSender.profile_picture ? (
+                              <AvatarImage src={messageSender.profile_picture} alt={`${messageSender.first_name} ${messageSender.last_name}`} />
+                            ) : null}
+                            <AvatarFallback>
+                              {(messageSender.first_name?.[0] || 'U')}{(messageSender.last_name?.[0] || 'N')}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
                         <div className={`max-w-[75%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap break-words ${isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
                           {wrapMessage(m.message)}
                         </div>
@@ -266,7 +283,17 @@ export function GeneralChatWidget() {
                     )
                   })}
                   {isOtherTyping && (
-                    <div className="flex justify-start">
+                    <div className="flex items-start gap-2 justify-start">
+                      {ownerProfile && (
+                        <Avatar className="h-8 w-8 mt-1">
+                          {ownerProfile.profile_picture ? (
+                            <AvatarImage src={ownerProfile.profile_picture} alt={`${ownerProfile.first_name} ${ownerProfile.last_name}`} />
+                          ) : null}
+                          <AvatarFallback>
+                            {(ownerProfile.first_name?.[0] || 'U')}{(ownerProfile.last_name?.[0] || 'N')}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
                       <div className="max-w-[75%] px-3 py-2 rounded-lg text-sm text-black">
                         <div className="flex items-center space-x-1">
                           <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>

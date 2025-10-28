@@ -1,13 +1,16 @@
 "use client"
 
 import React, { useEffect, useState, useCallback } from 'react'
-import UsersDataTable from '@/components/admin/UsersDataTable'
+import { UsersDataTable, AdminRegistrationDialog, UserStatsCards, UsersPagination } from '@/components/admin/account-management'
 import { adminUserService, type AdminUserSummary } from '@/services/adminUserService'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { UserPlus, Search } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
  
 import { encodeId } from '@/lib/idCodec'
 import { ConfirmationDialog } from '@/components/confirmation-dialog/confimationDialog'
@@ -22,8 +25,19 @@ export default function Page() {
   const [totalItems, setTotalItems] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(false)
   const [search, setSearch] = useState<string>("")
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("")
   const [userType, setUserType] = useState<string>("all")
   const [accountStatus, setAccountStatus] = useState<string>("all")
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1) // Reset to first page when search changes
+    }, 500) // 500ms delay
+
+    return () => clearTimeout(timer)
+  }, [search])
 
   const fetchUsers = useCallback(async (nextPage?: number) => {
     setLoading(true)
@@ -31,7 +45,7 @@ export default function Page() {
       const res = await adminUserService.listUsers({
         page: nextPage ?? page,
         limit,
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         userType: userType !== 'all' ? userType : undefined,
         accountStatus: accountStatus !== 'all' ? accountStatus : undefined,
       })
@@ -41,7 +55,7 @@ export default function Page() {
     } finally {
       setLoading(false)
     }
-  }, [page, limit, search, userType, accountStatus])
+  }, [page, limit, debouncedSearch, userType, accountStatus])
 
   useEffect(() => {
     fetchUsers()
@@ -50,6 +64,7 @@ export default function Page() {
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false)
   const [pendingAction, setPendingAction] = useState<{ action: 'activate' | 'deactivate' | 'ban'; userId: number } | null>(null)
   const [deactivationReason, setDeactivationReason] = useState<string>("")
+  const [registerDialogOpen, setRegisterDialogOpen] = useState<boolean>(false)
 
   const handleAction = async (action: "view" | "activate" | "deactivate" | "ban", userId: number) => {
     if (action === 'view') {
@@ -66,41 +81,111 @@ export default function Page() {
     fetchUsers(1)
   }
 
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    fetchUsers(newPage)
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Input placeholder="Search name, email, username" value={search} onChange={(e) => setSearch(e.target.value)} className="w-64" />
-        <Select value={userType} onValueChange={setUserType}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="All Types" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="customer">Customer</SelectItem>
-            <SelectItem value="owner">Owner</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={accountStatus} onValueChange={setAccountStatus}>
-          <SelectTrigger className="w-48"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="deactivated">Deactivated</SelectItem>
-            <SelectItem value="banned">Banned</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button onClick={applyFilters} disabled={loading}>Apply</Button>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h2 className="text-3xl font-bold tracking-tight text-balance">Account Management</h2>
+        <p className="text-muted-foreground text-pretty">View, manage, and monitor all user accounts across the platform</p>
+      </div>
+      
+      <UserStatsCards totalUsers={totalItems} users={users} loading={loading} />
+      
+      <Card>
+      <CardContent>
+      <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3 justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search name, email, username" value={search} onChange={(e) => setSearch(e.target.value)} className="w-64 border-neutral-300 pl-10" />
+          </div>
+          <Select value={userType} onValueChange={setUserType}>
+            <SelectTrigger className="border-neutral-300"><SelectValue placeholder="All Types" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="customer">Customer</SelectItem>
+              <SelectItem value="owner">Owner</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={accountStatus} onValueChange={setAccountStatus}>
+            <SelectTrigger className="border-neutral-300"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="deactivated">Deactivated</SelectItem>
+              <SelectItem value="banned">Banned</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={() => setRegisterDialogOpen(true)}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Register New Admin
+        </Button>
       </div>
 
-      <UsersDataTable
-        users={users}
-        onAction={handleAction}
-        page={page}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        pageSize={limit}
-        onPageChange={(p) => { setPage(p); fetchUsers(p) }}
-      />
+      {loading ? (
+        <div className="space-y-4">
+          <div className="border border-neutral-300 bg-white">
+            <div className="overflow-x-auto">
+              <div className="min-w-[980px] p-4">
+                {/* Table header skeleton */}
+                <div className="grid grid-cols-7 gap-4 px-2 py-2 border-b">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-28" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+                {/* Rows skeleton */}
+                <div className="space-y-3 mt-2">
+                  {Array.from({ length: 10 }).map((_, idx) => (
+                    <div key={idx} className="grid grid-cols-7 gap-4 items-center px-2 py-3 border-b last:border-0">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-4 w-48" />
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-4 w-28" />
+                      <div className="flex justify-start">
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <UsersDataTable
+          users={users}
+          onAction={handleAction}
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={limit}
+          onPageChange={(p) => { setPage(p); fetchUsers(p) }}
+        />
+      )}
+
+      {!loading && users.length > 0 && (
+        <UsersPagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          limit={limit}
+          loading={loading}
+          onPageChange={handlePageChange}
+        />
+      )}
 
       <ConfirmationDialog
         open={confirmOpen}
@@ -164,6 +249,17 @@ export default function Page() {
           setDeactivationReason("")
         }}
       />
+
+      <AdminRegistrationDialog
+        open={registerDialogOpen}
+        onOpenChange={setRegisterDialogOpen}
+        onSuccess={() => {
+          fetchUsers()
+        }}
+      />
+    </div>
+      </CardContent>
+    </Card>
     </div>
   )
 }

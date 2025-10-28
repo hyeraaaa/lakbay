@@ -25,10 +25,10 @@ export default function VerificationRequestHeader({
   getImageSrc,
 }: VerificationRequestHeaderProps) {
   const displayName = doc_type === "payout_failed" 
-    ? `Owner ${user_id}` 
+    ? "Stripe" 
     : user?.name || `User ${user_id}`
   const initials = doc_type === "payout_failed" 
-    ? "O" 
+    ? "S" 
     : (user?.name?.trim().charAt(0).toUpperCase() || user_id.charAt(0).toUpperCase())
   return (
     <header className="px-6">
@@ -41,16 +41,17 @@ export default function VerificationRequestHeader({
         </Link>
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={getProfileImageUrl(user?.profile_picture) || getImageSrc(user?.profile_picture) || "/profile-avatar.png"} alt={displayName} />
+            <AvatarImage 
+              src={doc_type === "payout_failed" 
+                ? "/stripe.png" 
+                : getProfileImageUrl(user?.profile_picture) || getImageSrc(user?.profile_picture) || "/profile-avatar.png"
+              } 
+              alt={displayName} 
+            />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <div>
             <h1 className="text-base font-medium text-gray-900">{displayName}</h1>
-            <p className="text-sm text-gray-500">
-              {doc_type === "vehicle_registration" 
-                ? "Vehicle Registration Request" 
-                : "Verification Request"}
-            </p>
           </div>
           <div className="ml-auto text-sm text-gray-500">{new Date(submitted_at).toLocaleDateString('en-US', { 
             year: 'numeric', 

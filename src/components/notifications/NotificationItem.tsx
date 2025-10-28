@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import { Check, Clock, AlertCircle, CreditCard, Star, Settings } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useJWT } from '../../contexts/JWTContext';
+import { encodeId } from '../../lib/idCodec';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -43,23 +44,23 @@ const getNotificationPath = (notification: Notification, userType: string): stri
     case 'booking':
       // Route based on user type for proper RBAC
       if (userType === 'customer') {
-        return `/user/bookings/booking-details/${notification.related_id}`;
+        return `/user/bookings/booking-details/${encodeId(notification.related_id.toString())}`;
       } else if (userType === 'owner') {
-        return `/owner/bookings/booking-details/${notification.related_id}`;
+        return `/owner/bookings/booking-details/${encodeId(notification.related_id.toString())}`;
       } else if (userType === 'admin') {
         // Redirect to admin dashboard since admin booking details page doesn't exist yet
         return `/admin`;
       }
       // Fallback for unknown user types
-      return `/user/bookings/booking-details/${notification.related_id}`;
+      return `/user/bookings/booking-details/${encodeId(notification.related_id.toString())}`;
     case 'payment':
       // Route based on user type for proper RBAC
       if (userType === 'customer') {
-        const paymentPath = `/user/bookings/booking-details/${notification.related_id}`;
+        const paymentPath = `/user/bookings/booking-details/${encodeId(notification.related_id.toString())}`;
         console.log('🔔 Payment notification path for customer:', paymentPath);
         return paymentPath;
       } else if (userType === 'owner') {
-        const paymentPath = `/owner/bookings/booking-details/${notification.related_id}`;
+        const paymentPath = `/owner/bookings/booking-details/${encodeId(notification.related_id.toString())}`;
         console.log('🔔 Payment notification path for owner:', paymentPath);
         return paymentPath;
       } else if (userType === 'admin') {
@@ -69,17 +70,17 @@ const getNotificationPath = (notification: Notification, userType: string): stri
         return paymentPath;
       }
       // Fallback for unknown user types
-      const paymentPath = `/user/bookings/booking-details/${notification.related_id}`;
+      const paymentPath = `/user/bookings/booking-details/${encodeId(notification.related_id.toString())}`;
       console.log('🔔 Payment notification path (fallback):', paymentPath);
       return paymentPath;
     case 'review':
       // Route based on user type for proper RBAC
       if (userType === 'customer') {
-        const reviewPath = `/user/bookings/booking-details/${notification.related_id}`;
+        const reviewPath = `/user/bookings/booking-details/${encodeId(notification.related_id.toString())}`;
         console.log('🔔 Review notification path for customer:', reviewPath);
         return reviewPath;
       } else if (userType === 'owner') {
-        const reviewPath = `/owner/bookings/booking-details/${notification.related_id}`;
+        const reviewPath = `/owner/bookings/booking-details/${encodeId(notification.related_id.toString())}`;
         console.log('🔔 Review notification path for owner:', reviewPath);
         return reviewPath;
       } else if (userType === 'admin') {
@@ -89,7 +90,7 @@ const getNotificationPath = (notification: Notification, userType: string): stri
         return reviewPath;
       }
       // Fallback for unknown user types
-      const reviewPath = `/user/bookings/booking-details/${notification.related_id}`;
+      const reviewPath = `/user/bookings/booking-details/${encodeId(notification.related_id.toString())}`;
       console.log('🔔 Review notification path (fallback):', reviewPath);
       return reviewPath;
     case 'system':

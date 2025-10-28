@@ -101,7 +101,7 @@ export function DeactivateAccountCard() {
               <li>• You will be logged out and unable to sign in</li>
               <li>• All your bookings will be cancelled</li>
               <li>• Your vehicles will be removed from the platform</li>
-              <li>• You can request reactivation by contacting support</li>
+              <li>• You can reactivate your account by logging in and entering the verification code sent to your email</li>
             </ul>
           </div>
 
@@ -126,7 +126,7 @@ export function DeactivateAccountCard() {
               Are you sure you want to deactivate your account? This action cannot be undone.
             </p>
             <p className="text-sm text-gray-600">
-              You will lose access to all your data, bookings, and vehicles. You can request reactivation by contacting support.
+              You will lose access to all your data, bookings, and vehicles. You can reactivate your account by logging in and entering the verification code sent to your email.
             </p>
           </div>
         }

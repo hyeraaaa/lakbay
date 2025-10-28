@@ -1,7 +1,7 @@
 "use client"
 import type React from "react"
 import Image from "next/image"
-import { Heart, Star, Users, Fuel, Settings } from "lucide-react"
+import { Heart, Star, Users, Fuel, Settings, Car } from "lucide-react"
 import { normalizeTransmissionLabel } from "@/lib/vehicleNormalizers"
 
 // using shared normalizer from lib
@@ -16,6 +16,7 @@ interface CarCardProps {
   year: number
   transmission: string
   fuelType: string
+  carType: string
   seats: number
   imageUrl: string
   isFavorite: boolean
@@ -33,6 +34,7 @@ const CarCard: React.FC<CarCardProps> = ({
   year,
   transmission,
   fuelType,
+  carType,
   seats,
   imageUrl,
   isFavorite,
@@ -88,6 +90,10 @@ const CarCard: React.FC<CarCardProps> = ({
               <div className="flex items-center gap-1">
                 <Fuel className="w-3 h-3" />
                 <span>{fuelType}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Car className="w-3 h-3" />
+                <span>{carType}</span>
               </div>
               {codingLabel && (
                 <span className="ms-auto inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium text-blue-700 bg-blue-50 border-blue-200">
@@ -148,6 +154,10 @@ const CarCard: React.FC<CarCardProps> = ({
             <div className="flex items-center gap-1">
               <Fuel className="w-4 h-4" />
               <span>{fuelType}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Car className="w-4 h-4" />
+              <span>{carType}</span>
             </div>
           </div>
 

@@ -4,6 +4,7 @@ export { default as BookingDetailsCard } from './BookingDetailsCard';
 export { default as PaymentSummaryCard } from './PaymentSummaryCard';
 export { default as BookingActionsCard } from './BookingActionsCard';
 export { default as BookingReviewCard } from './BookingReviewCard';
+export { default as MileageTrackingCard } from './MileageTrackingCard';
 export { BookingsList } from './BookingsList';
 export { StatsCards } from './StatsCards';
 export { SearchFiltersCard } from './SearchFiltersCard';

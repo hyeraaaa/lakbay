@@ -48,9 +48,11 @@ export default function VerificationRequestsList({
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+    const diffInHours = Math.floor(diffInMinutes / 60)
 
-    if (diffInHours < 1) return "Just now"
+    if (diffInMinutes < 1) return "Just now"
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
     if (diffInHours < 24) return `${diffInHours}h ago`
     if (diffInHours < 48) return "Yesterday"
     return date.toLocaleDateString('en-US', { 
@@ -64,9 +66,8 @@ export default function VerificationRequestsList({
     <div className="flex-1 overflow-auto">
       <div>
         {filteredRequests.map((request, index) => {
-          const key = request.verification_id && request.verification_id.trim() !== ""
-            ? request.verification_id
-            : `req-${request.user_id}-${request.doc_type}-${request.submitted_at}-${index}`
+          // Create a unique key by combining multiple fields to ensure uniqueness
+          const key = `${request.verification_id || 'unknown'}-${request.user_id}-${request.doc_type}-${request.submitted_at}-${index}`
           return (
             <VerificationRequestItem
               key={key}

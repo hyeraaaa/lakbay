@@ -23,6 +23,7 @@ import {
   Eye,
   MapPin,
   Loader2,
+  Settings,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -46,6 +47,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { DocumentUploadDialog } from "@/components/cars/documentUploadDialog"
 import { TrackingDeviceDialog } from "@/components/cars/trackingDeviceDialog"
+import { MileageSettingsDialog } from "@/components/cars/mileageSettingsDialog"
 import { ConfirmationDialog } from "@/components/confirmation-dialog/confimationDialog"
 import { registrationService } from "@/services/registrationService"
 import { AddCarDialog } from "@/components/cars/addCarDialog"
@@ -77,12 +79,15 @@ type VehicleRow = {
   features: string[]
   coding?: string
   description: string
+  daily_mileage_limit?: number | null
+  overage_fee_per_km?: number | null
 }
 
 export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
   const { id, data, pagination, setPagination, sorting, setSorting, isDeletingId, handleDelete, applyUpdate, refreshRow } = useVehiclesTable({ vehicles, onChange })
   const [uploadForId, setUploadForId] = useState<number | null>(null)
   const [trackingForId, setTrackingForId] = useState<number | null>(null)
+  const [mileageSettingsForId, setMileageSettingsForId] = useState<number | null>(null)
   const vehicleIds = useMemo(() => data.map((r) => r.id), [data])
   const { trackerMap, setTrackerMap } = useVehicleTrackers(vehicleIds)
   const { deviceMap } = useTrackingDetails(vehicleIds)
@@ -178,6 +183,29 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
       size: 100,
     },
     {
+      header: "Mileage Settings",
+      accessorKey: "daily_mileage_limit",
+      cell: ({ row }) => {
+        const hasLimit = row.original.daily_mileage_limit !== null && row.original.daily_mileage_limit !== undefined
+        const limit = row.original.daily_mileage_limit
+        const fee = row.original.overage_fee_per_km
+        
+        return (
+          <div className="px-2">
+            {hasLimit ? (
+              <div className="text-xs">
+                <div className="font-medium">{limit} km/day</div>
+                {fee && <div className="text-muted-foreground">₱{fee}/km overage</div>}
+              </div>
+            ) : (
+              <div className="text-xs text-muted-foreground">Unlimited</div>
+            )}
+          </div>
+        )
+      },
+      size: 120,
+    },
+    {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
@@ -208,6 +236,9 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
             )}
             <DropdownMenuItem onSelect={async (e) => { e.preventDefault(); setTrackingForId(row.original.id) }}>
               <MapPin size={16} /> <span>{trackerMap[row.original.id] ? 'Update Tracking Device' : 'Add Tracking Device'}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={async (e) => { e.preventDefault(); setMileageSettingsForId(row.original.id) }}>
+              <Settings size={16} /> <span>Mileage Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={async () => {
@@ -401,7 +432,16 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
           }
         }}
       />
-      <div className="bg-white rounded-md border border-neutral-200 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
+      <MileageSettingsDialog
+        vehicle={vehicles.find(v => v.vehicle_id === mileageSettingsForId) || vehicles[0]}
+        open={mileageSettingsForId !== null}
+        onOpenChange={(open) => setMileageSettingsForId(open ? mileageSettingsForId : null)}
+        onSuccess={() => {
+          onChange?.()
+          setMileageSettingsForId(null)
+        }}
+      />
+      <div className="bg-white border border-neutral-300">
         <div className="overflow-x-auto">
           <Table className="table-fixed min-w-[900px]">
           <TableHeader>

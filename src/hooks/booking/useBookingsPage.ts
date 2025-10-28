@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useJWT } from "@/contexts/JWTContext";
 import { useUserBookings } from "@/hooks/booking/useUserBookings";
 import { BookingFilters, BookingStatus } from "@/services/bookingServices";
+import { encodeId } from "@/lib/idCodec";
 
 export type AlertVariant = "default" | "destructive" | "success" | "warning" | "info";
 
@@ -62,11 +63,11 @@ export const useBookingsPage = () => {
           refreshBookings();
           break;
         case "view":
-          router.push(`/user/bookings/booking-details/${bookingId}`);
+          router.push(`/user/bookings/booking-details/${encodeId(bookingId.toString())}`);
           break;
         case "review":
           // Navigate to booking details with review context
-          router.push(`/user/bookings/booking-details/${bookingId}?tab=review`);
+          router.push(`/user/bookings/booking-details/${encodeId(bookingId.toString())}?tab=review`);
           break;
         case "review":
           // Implement review flow here if needed

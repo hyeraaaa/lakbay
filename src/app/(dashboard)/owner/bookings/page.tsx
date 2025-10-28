@@ -9,6 +9,7 @@ import { OwnerBookingsDataTable } from '@/components/booking/OwnerBookingsDataTa
 import { StatsCards as BookingStatsCards } from '@/components/booking/StatsCards';
 import { useOwnerBookingsPage } from '@/hooks/booking/useOwnerBookingsPage';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
 
 const OwnerBookingsPage = () => {
   const {
@@ -151,8 +152,10 @@ const OwnerBookingsPage = () => {
       {/* Stats */}
       <BookingStatsCards counts={statusCounts} />
 
-
-      <SearchFiltersCard
+      <Card>
+        <CardContent>
+        <div className="space-y-4">
+        <SearchFiltersCard
         searchQuery={searchQuery}
         onSearch={handleSearch}
         statusFilter={statusFilter}
@@ -221,6 +224,9 @@ const OwnerBookingsPage = () => {
           onPageChange={goToPage}
         />
       )}
+        </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

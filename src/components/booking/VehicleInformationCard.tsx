@@ -13,7 +13,7 @@ interface VehicleInformationCardProps {
 
 export default function VehicleInformationCard({ booking }: VehicleInformationCardProps) {
   return (
-    <Card className="border-0 bg-transparent rounded-none shadow-none">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Car className="w-5 h-5" />

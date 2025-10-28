@@ -36,6 +36,19 @@ export type AdminUserSummary = {
   }
 }
 
+export type AdminRegistrationData = {
+  first_name: string
+  last_name: string
+  username: string
+  email: string
+  phone: string
+  address_line1?: string
+  city?: string
+  state?: string
+  postal_code?: string
+  country?: string
+}
+
 export type AdminUserListResponse = {
   users: AdminUserSummary[]
   pagination: {
@@ -91,6 +104,15 @@ export const adminUserService = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ notes })
+    })
+    return res.json().catch(() => ({}))
+  },
+
+  async registerAdmin(adminData: AdminRegistrationData) {
+    const res = await apiRequest(`${API_BASE_URL}/api/admin/users/register-admin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(adminData)
     })
     return res.json().catch(() => ({}))
   },

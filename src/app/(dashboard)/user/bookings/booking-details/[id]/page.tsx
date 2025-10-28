@@ -2,9 +2,16 @@
 
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from '@/components/ui/breadcrumb';
 import { useJWT } from '@/contexts/JWTContext';
 import BookingDetailsSkeleton from '@/components/booking/BookingDetailsSkeleton';
 import { 
@@ -12,18 +19,23 @@ import {
   BookingDetailsCard, 
   PaymentSummaryCard, 
   BookingActionsCard, 
-  BookingReviewCard 
+  BookingReviewCard,
+  MileageTrackingCard
 } from '@/components/booking';
 import { useBookingDetails } from '@/hooks/booking';
+import { decodeId } from '@/lib/idCodec';
 
 
 export default function BookingDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useJWT();
-  const bookingId = params.id as string;
+  const encodedId = params.id as string;
   
-  const { booking, loading, error, handleAction } = useBookingDetails({ bookingId });
+  // Decode the encrypted ID from the URL
+  const bookingId = decodeId(encodedId);
+  
+  const { booking, loading, error, handleAction } = useBookingDetails({ bookingId: bookingId || '' });
 
   if (authLoading) {
     return <BookingDetailsSkeleton />;
@@ -31,6 +43,17 @@ export default function BookingDetailsPage() {
 
   if (!isAuthenticated) {
     return null;
+  }
+
+  if (!bookingId) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>Invalid booking ID</AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   if (loading) {
@@ -61,33 +84,55 @@ export default function BookingDetailsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          onClick={() => router.back()}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Booking Details</h1>
-        </div>
+      {/* Breadcrumbs */}
+      <div className="mb-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="hover:text-primary">
+                Home
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/user/bookings" className="hover:text-primary">
+                Bookings
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Booking Details</BreadcrumbPage>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>
+                {booking.vehicle.brand} {booking.vehicle.model} ({booking.vehicle.year})
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <h1 className="text-2xl font-bold text-gray-900 mt-4">Booking Details</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-0">
+        <div className="lg:col-span-2 space-y-6">
           <VehicleInformationCard booking={booking} />
-          <div className="h-px bg-border mx-6" />
           <BookingDetailsCard booking={booking} />
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
           <PaymentSummaryCard booking={booking} />
-          {booking.reviews && booking.reviews.length > 0 ? (
+          {booking.status === 'on_going' ? (
+            <MileageTrackingCard 
+              booking={booking} 
+              onBookingUpdate={(updatedBooking) => {
+                // Update the booking state in the parent component
+                // This will be handled by the useBookingDetails hook
+              }}
+            />
+          ) : booking.reviews && booking.reviews.length > 0 ? (
             <BookingReviewCard booking={booking} />
           ) : (
             <BookingActionsCard booking={booking} onAction={handleAction} />

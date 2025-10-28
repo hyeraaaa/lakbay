@@ -78,6 +78,8 @@ export interface Vehicle {
   availability: string;
   owner_id: number;
   type?: string;
+  daily_mileage_limit?: number;
+  overage_fee_per_km?: number;
   vehicle_images?: Array<{
     url: string;
     alt_text?: string;
@@ -112,6 +114,25 @@ export interface Review {
   updated_at: string;
 }
 
+export interface Refund {
+  refund_id: number;
+  booking_id: number;
+  payment_detail_id: number;
+  stripe_refund_id?: string;
+  refund_type: string;
+  refund_reason: string;
+  refund_amount: number;
+  original_amount: number;
+  refund_percentage?: number;
+  status: string;
+  requested_by: number;
+  processed_by?: number;
+  admin_notes?: string;
+  created_at: string;
+  processed_at?: string;
+  updated_at: string;
+}
+
 export interface Booking {
   booking_id: number;
   user_id: number;
@@ -128,10 +149,27 @@ export interface Booking {
   cancellation_requested_at?: string;
   cancellation_approved_at?: string;
   cancellation_status?: string;
+  // GPS and mileage tracking fields
+  checkout_timestamp?: string;
+  checkin_timestamp?: string;
+  checkout_odometer_reading?: number;
+  checkout_odometer_photo_url?: string;
+  checkin_odometer_reading?: number;
+  checkin_odometer_photo_url?: string;
+  gps_distance_km?: number;
+  gps_data_points?: number;
+  gps_reliable?: boolean;
+  total_mileage_used?: number;
+  allowed_mileage?: number;
+  overage_mileage?: number;
+  overage_amount?: number;
+  mileage_verification_status?: string;
+  mileage_discrepancy_km?: number;
   users: User;
   vehicle: Vehicle;
   payment_details: PaymentDetails[];
   reviews: Review[];
+  refunds?: Refund[];
 }
 
 export interface CreateBookingResponse {
@@ -303,10 +341,11 @@ export const bookingService = {
   },
 
   // Check out a booking (start the rental)
-  checkOut: async (bookingId: number): Promise<{ message: string }> => {
+  checkOut: async (bookingId: number, checkoutData?: { odometer_reading?: number; odometer_photo_url?: string }): Promise<{ message: string }> => {
     const response = await apiRequest(`${API_BASE_URL}/api/bookings/${bookingId}/check-out`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(checkoutData || {}),
     });
 
     if (!response.ok) {
@@ -318,10 +357,11 @@ export const bookingService = {
   },
 
   // Check in a booking (end the rental)
-  checkIn: async (bookingId: number): Promise<CheckInResponse> => {
+  checkIn: async (bookingId: number, checkinData?: { odometer_reading?: number; odometer_photo_url?: string }): Promise<CheckInResponse> => {
     const response = await apiRequest(`${API_BASE_URL}/api/bookings/${bookingId}/check-in`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(checkinData || {}),
     });
 
     if (!response.ok) {
@@ -485,6 +525,25 @@ export const bookingService = {
     return response.json();
   },
 
+  // Request a refund for a completed booking
+  requestRefund: async (bookingId: number, refundType: string, reason: string): Promise<{ message: string; refund: Refund }> => {
+    const response = await apiRequest(`${API_BASE_URL}/api/refunds-disputes/bookings/${bookingId}/refunds`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        refundType,
+        reason
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to request refund');
+    }
+
+    return response.json();
+  },
+
   // Utility functions
   utils: {
     // Check if booking can be cancelled
@@ -531,6 +590,24 @@ export const bookingService = {
     canEndEarly: (booking: Booking, userId: number): boolean => {
       return booking.status === BookingStatus.ON_GOING &&
              (booking.user_id === userId || booking.vehicle?.owner_id === userId);
+    },
+
+    // Check if booking can be refunded
+    canRequestRefund: (booking: Booking, userId: number): boolean => {
+      const now = new Date();
+      const endDate = new Date(booking.end_date);
+      const daysSinceEnd = (now.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24);
+      
+      // Check if there's already an active refund request
+      const hasActiveRefund = booking.refunds?.some(refund => 
+        refund.status === 'pending' || refund.status === 'processing'
+      );
+      
+      return booking.status === BookingStatus.COMPLETED &&
+             booking.user_id === userId &&
+             daysSinceEnd <= 7 && // Allow refund requests within 7 days of rental end
+             booking.payment_details?.some(pd => pd.payment_status === PaymentStatus.COMPLETED) &&
+             !hasActiveRefund; // No active refund request exists
     },
 
     // Get booking status display text

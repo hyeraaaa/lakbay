@@ -285,7 +285,7 @@ export function OwnerBookingsDataTable({
     <div className="space-y-4">
       {table.getRowModel().rows?.length ? (
         <>
-          <div className="bg-background rounded-md border">
+          <div className="bg-background border border-neutral-300">
             <div className="overflow-x-auto">
               <Table className="table-fixed min-w-[880px]">
                 <TableHeader>

@@ -14,6 +14,7 @@ export type CarCardData = {
   year: number
   transmission: string
   fuelType: string
+  carType: string
   seats: number
   imageUrl: string
   isFavorite: boolean
@@ -49,6 +50,7 @@ export const transformVehicleData = (vehicle: VehicleResponse): CarCardData => {
     year: vehicle.year,
     transmission: normalizeTransmissionLabel(vehicle.transmission || "Automatic"),
     fuelType: vehicle.fuel_type || "Gasoline",
+    carType: vehicle.type || "Unknown",
     seats: vehicle.seats,
     imageUrl: getVehiclePrimaryImageUrl(vehicle),
     isFavorite: false,

@@ -31,6 +31,7 @@ export default function VehicleList({ vehicles }: Props) {
               year={carData.year}
               transmission={carData.transmission}
               fuelType={carData.fuelType}
+              carType={carData.carType}
               seats={carData.seats}
               imageUrl={carData.imageUrl}
               isFavorite={carData.isFavorite}

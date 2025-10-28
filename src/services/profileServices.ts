@@ -18,6 +18,9 @@ export interface UserProfileResponse {
   user_type: string
   is_verified: boolean
   profile_picture?: string | null
+  garage_location_name?: string | null
+  garage_latitude?: number | null
+  garage_longitude?: number | null
 }
 
 export interface ProfileFormData {

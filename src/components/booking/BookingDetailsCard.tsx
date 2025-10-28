@@ -50,7 +50,7 @@ export default function BookingDetailsCard({ booking }: BookingDetailsCardProps)
   };
 
   return (
-    <Card className="border-0 bg-transparent rounded-none shadow-none">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="w-5 h-5" />

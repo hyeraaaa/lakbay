@@ -20,7 +20,7 @@ export default function SettingsPage() {
   const isCustomer = user?.user_type === 'customer'
   const isAdmin = user?.user_type === 'admin'
 
-  const containerClass = `mx-auto${isAdmin || isOwner ? '' : ' max-w-7xl py-5'}`
+  // const containerClass = `mx-auto${isAdmin || isOwner ? '' : ' max-w-7xl py-5'}`
 
   // Redirect non-owners away from stripe tab
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function SettingsPage() {
     <NotificationProvider>
       <ProtectedRoute requireAuth={true}>
       <div>
-        <div className={containerClass}>
+        <div className="mx-auto max-w-7xl py-5">
           <div>
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tight">Settings</h1>

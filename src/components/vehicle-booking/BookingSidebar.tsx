@@ -1,19 +1,20 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { MapPin, Settings, Calendar as CalendarIcon, Clock, AlertCircle, Loader2 } from "lucide-react"
+import { MapPin, Settings, Calendar as CalendarIcon, Clock, AlertCircle, Loader2, Gauge } from "lucide-react"
 import { format, startOfDay } from "date-fns"
 import { useBooking, BookingFormData } from "@/hooks/booking/useBooking"
 import { useVehicleBookings } from "@/hooks/booking/useVehicleBookings"
 import { formatDateTime } from "@/lib/utils"
 import { useJWT } from "@/contexts/JWTContext"
 import { ConfirmationDialog } from "@/components/confirmation-dialog/confimationDialog"
+import { vehicleService, type VehicleResponse } from "@/services/vehicleServices"
 
 type BookingSidebarProps = {
   pricePerDay: number | null | undefined
@@ -31,12 +32,33 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
   const [pickupLocation, setPickupLocation] = useState<string>("")
   const [dropoffLocation, setDropoffLocation] = useState<string>("")
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [vehicle, setVehicle] = useState<VehicleResponse | null>(null)
+  const [isLoadingVehicle, setIsLoadingVehicle] = useState(false)
   
   const { user, isAuthenticated } = useJWT()
   const { isLoading, error, createBookingAndPay, clearError } = useBooking()
   const { isDateBooked, isLoading: isLoadingBookings, error: bookingsError, refreshBookings } = useVehicleBookings(vehicleId, isAuthenticated)
 
   const shouldHidePaymentButton = user?.user_type === 'owner' || user?.user_type === 'admin'
+
+  // Fetch vehicle data to get mileage settings
+  useEffect(() => {
+    const fetchVehicle = async () => {
+      if (!vehicleId) return
+      
+      try {
+        setIsLoadingVehicle(true)
+        const vehicleData = await vehicleService.getVehicleById(vehicleId)
+        setVehicle(vehicleData)
+      } catch (error) {
+        console.error('Error fetching vehicle:', error)
+      } finally {
+        setIsLoadingVehicle(false)
+      }
+    }
+
+    fetchVehicle()
+  }, [vehicleId])
 
   const disablePastDates = (date: Date) => {
     const today = new Date()
@@ -366,10 +388,39 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
             <p className="text-sm text-muted-foreground">Pay now when you reserve or pay later when you pick up the car. Flexible payment options at checkout.</p>
           </div>
 
-          <div>
-            <h4 className="font-medium text-foreground mb-2">Distance included</h4>
-            <p className="text-sm text-muted-foreground">Unlimited</p>
-          </div>
+
+          {/* Mileage Settings */}
+          {isLoadingVehicle ? (
+            <div>
+              <h4 className="font-medium text-foreground mb-2 flex items-center gap-2">
+                <Gauge className="h-4 w-4" />
+                Daily mileage policy
+              </h4>
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <p className="text-sm text-muted-foreground">Loading mileage policy...</p>
+              </div>
+            </div>
+          ) : vehicle ? (
+            <div>
+              <h4 className="font-medium text-foreground mb-2 flex items-center gap-2">
+                Daily mileage policy
+              </h4>
+              {vehicle.daily_mileage_limit ? (
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• {vehicle.daily_mileage_limit} km per day included</p>
+                  {vehicle.overage_fee_per_km && (
+                    <p>• ₱{vehicle.overage_fee_per_km} per km for excess mileage</p>
+                  )}
+                  <p className="text-xs text-muted-foreground/80">
+                    Overage charges apply if you exceed the daily limit
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Unlimited mileage included</p>
+              )}
+            </div>
+          ) : null}
         </div>
       </CardContent>
     </Card>

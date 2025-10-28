@@ -5,6 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Philippine timezone constant
+export const PHILIPPINE_TIMEZONE = 'Asia/Manila'
+
 /**
  * Formats a date and time string into a consistent ISO format
  * @param date - The date object
@@ -38,4 +41,52 @@ export function formatDateTime(date: Date, time: string): string {
   const secondStr = newDate.getSeconds().toString().padStart(2, '0')
   
   return `${yearStr}-${monthStr}-${dayStr}T${hourStr}:${minuteStr}:${secondStr}`
+}
+
+/**
+ * Formats a date to YYYY-MM-DD format
+ * Uses local date components to preserve the calendar date regardless of timezone
+ * @param date - The date to format (Date object)
+ * @returns Date string in YYYY-MM-DD format
+ */
+export function formatDateToPhilippine(date: Date | string | undefined): string | undefined {
+  if (!date) return undefined
+  
+  let d: Date
+  if (typeof date === 'string') {
+    // If it's already a string in YYYY-MM-DD format, return it
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return date
+    }
+    d = new Date(date)
+  } else {
+    d = date
+  }
+  
+  // Use local date components to preserve the "calendar date" the user sees
+  // This avoids timezone conversion issues
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  
+  return `${year}-${month}-${day}`
+}
+
+/**
+ * Creates a date from YYYY-MM-DD string
+ * Treats the date as a "calendar date" without timezone conversion
+ * @param dateStr - Date string in YYYY-MM-DD format
+ * @returns Date object
+ */
+export function parsePhilippineDate(dateStr: string | undefined): Date | undefined {
+  if (!dateStr) return undefined
+  
+  // Parse the date string and create a Date in local timezone
+  // The time component is set to noon to avoid any date shift issues
+  const [year, month, day] = dateStr.split('-').map(Number)
+  if (year && month && day) {
+    return new Date(year, month - 1, day, 12, 0, 0, 0)
+  }
+  
+  return undefined
 }

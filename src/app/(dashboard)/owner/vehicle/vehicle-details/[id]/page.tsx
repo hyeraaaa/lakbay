@@ -70,6 +70,7 @@ export default function CarBookingInterface() {
               seats={vehicle?.seats}
               fuelType={vehicle?.fuel_type}
               transmission={vehicle?.transmission}
+              carType={vehicle?.type}
               coding={vehicle?.coding}
               rating={reviewsAll && reviewsAll.length > 0 ? reviewsAll.reduce((sum, r) => sum + r.rating, 0) / reviewsAll.length : null}
               tripCount={tripCount}
@@ -94,10 +95,9 @@ export default function CarBookingInterface() {
             </div>
           </div>
         </div>
-
+        <LiveLocationSection vehicle={vehicle} />
       </div>
       )}
-      <LiveLocationSection vehicle={vehicle} />
     </div>
   )
 }
