@@ -5,7 +5,7 @@ import React, { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search } from "lucide-react"
-import type { BookingStatus } from "@/services/bookingServices"
+import type { BookingStatus, BookingFilters } from "@/services/bookingServices"
 
 type StatusOption = { value: BookingStatus | "all"; label: string }
 
@@ -16,8 +16,8 @@ type Props = {
   onStatusChange: (s: BookingStatus | "all") => void
   showFilters: boolean
   setShowFilters: (show: boolean) => void
-  filters: any
-  updateFilters: (f: any) => void
+  filters: BookingFilters
+  updateFilters: (f: Partial<BookingFilters>) => void
   clearFilters: () => void
   statusOptions: StatusOption[]
 }
