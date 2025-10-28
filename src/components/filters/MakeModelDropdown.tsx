@@ -1,142 +1,93 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ChevronDown, Check } from "lucide-react"
-import { useSearchParamHelpers } from "@/hooks/filter/useSearchParamHelpers"
-import { chipBase } from "./constants"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { ChevronDown, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { chipBase } from "./constants";
+import { cn } from "@/lib/utils";
+import { useSearchParamHelpers } from "@/hooks/filter/useSearchParamHelpers";
 
-const BRANDS = ["Toyota", "Honda", "Mitsubishi", "Nissan", "Ford", "Hyundai", "Kia"]
+const BRANDS = ["Toyota","Honda","Mitsubishi","Nissan","Ford","Hyundai","Kia"];
 
 export const MakeModelDropdown = () => {
-  const { current, parseCsvToSet, searchParams, pathname, router } = useSearchParamHelpers()
+  const { current, parseCsvToSet, searchParams, pathname, router } = useSearchParamHelpers();
 
-  const [open, setOpen] = useState(false)
-  const [pendingBrands, setPendingBrands] = useState<Set<string>>(parseCsvToSet(current("brand")))
-  const [pendingModelsText, setPendingModelsText] = useState<string>(current("model") ?? "")
-  const [initialBrands, setInitialBrands] = useState<Set<string>>(parseCsvToSet(current("brand")))
-  const [initialModels, setInitialModels] = useState<string>(current("model") ?? "")
+  const [open, setOpen] = useState(false);
+  const [pendingBrands, setPendingBrands] = useState<Set<string>>(parseCsvToSet(current("brand")));
+  const [pendingModelsText, setPendingModelsText] = useState<string>(current("model") ?? "");
 
   useEffect(() => {
-    const brands = parseCsvToSet(current("brand"))
-    const models = current("model") ?? ""
-    setPendingBrands(brands)
-    setPendingModelsText(models)
-    setInitialBrands(brands)
-    setInitialModels(models)
-  }, [searchParams?.toString()])
-
-  const handleApply = () => {
-    const params = new URLSearchParams(searchParams?.toString() || "")
-    const brandCsv = Array.from(pendingBrands).join(",")
-    const modelCsv = (pendingModelsText || "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .join(",")
-    if (brandCsv) params.set("brand", brandCsv)
-    else params.delete("brand")
-    if (modelCsv) params.set("model", modelCsv)
-    else params.delete("model")
-    params.set("_", String(Date.now()))
-    router.push(`${pathname}?${params.toString()}`)
-    setOpen(false)
-  }
-
-  const handleCancel = () => {
-    setPendingBrands(initialBrands)
-    setPendingModelsText(initialModels)
-    setOpen(false)
-  }
-
-  const handleReset = () => {
-    setPendingBrands(new Set())
-    setPendingModelsText("")
-  }
+    setPendingBrands(parseCsvToSet(current("brand")));
+    setPendingModelsText(current("model") ?? "");
+  }, [current, parseCsvToSet]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
         <Button variant="ghost" className={chipBase}>
           <span className="text-sm">Make & model</span>
           <ChevronDown className="w-4 h-4" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-96 p-4">
-        <div className="space-y-4">
-          {/* Header */}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-80 p-2">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">Make & model</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs text-gray-600 hover:text-gray-900"
-              onClick={handleReset}
-            >
-              Reset
-            </Button>
+            <DropdownMenuLabel>Brand</DropdownMenuLabel>
+            <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => setPendingBrands(new Set())}>Clear</Button>
+          </div>
+          <div className="grid grid-cols-2 gap-1">
+            {BRANDS.map((b) => {
+              const active = pendingBrands.has(b);
+              return (
+                <button
+                  key={b}
+                  type="button"
+                  onClick={() => setPendingBrands(prev => { const next = new Set(prev); if (next.has(b)) next.delete(b); else next.add(b); return next; })}
+                  className={cn("flex items-center gap-2 rounded border px-2 py-1 text-sm", active ? "border-gray-900 bg-gray-50" : "border-gray-300 hover:bg-gray-50")}
+                >
+                  {active ? <Check className="w-4 h-4" /> : <span className="w-4 h-4" />}
+                  <span>{b}</span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Brand Selection */}
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-700">Brand</label>
-            <div className="grid grid-cols-2 gap-2">
-              {BRANDS.map((b) => {
-                const active = pendingBrands.has(b)
-                return (
-                  <button
-                    key={b}
-                    type="button"
-                    onClick={() =>
-                      setPendingBrands((prev) => {
-                        const next = new Set(prev)
-                        if (next.has(b)) next.delete(b)
-                        else next.add(b)
-                        return next
-                      })
-                    }
-                    className={cn(
-                      "flex items-center gap-2 rounded border px-3 py-2 text-sm font-medium transition-all",
-                      active
-                        ? "border-gray-900 bg-gray-900 text-white"
-                        : "border-gray-300 hover:border-gray-400 hover:bg-gray-50",
-                    )}
-                  >
-                    {active ? <Check className="w-4 h-4" /> : <span className="w-4 h-4" />}
-                    <span>{b}</span>
-                  </button>
-                )
-              })}
-            </div>
+          <DropdownMenuSeparator />
+
+          <div className="flex items-center justify-between">
+            <DropdownMenuLabel>Models</DropdownMenuLabel>
+            <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => setPendingModelsText("")}>Clear</Button>
+          </div>
+          <div className="space-y-1">
+            <label className="block text-xs text-gray-500">Comma-separated (e.g., Vios, Civic)</label>
+            <Input value={pendingModelsText} onChange={(e) => setPendingModelsText(e.target.value)} placeholder="e.g., Vios, Civic" />
           </div>
 
-          {/* Model Input */}
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-700">Models</label>
-            <p className="text-xs text-gray-500">Comma-separated (e.g., Vios, Civic)</p>
-            <Input
-              value={pendingModelsText}
-              onChange={(e) => setPendingModelsText(e.target.value)}
-              placeholder="e.g., Vios, Civic"
-            />
-          </div>
-
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200">
-            <Button variant="outline" size="sm" className="h-8 bg-transparent" onClick={handleCancel}>
-              Cancel
-            </Button>
-            <Button size="sm" className="h-8" onClick={handleApply}>
-              Apply
-            </Button>
+          <div className="pt-1 flex items-center justify-end gap-2">
+            <Button variant="outline" onClick={() => {
+              setPendingBrands(parseCsvToSet(current("brand")));
+              setPendingModelsText(current("model") ?? "");
+              setOpen(false);
+            }}>Cancel</Button>
+            <Button onClick={() => {
+              const params = new URLSearchParams(searchParams?.toString() || "");
+              const brandCsv = Array.from(pendingBrands).join(',');
+              const modelCsv = (pendingModelsText || "").split(',').map(s => s.trim()).filter(Boolean).join(',');
+              if (brandCsv) params.set("brand", brandCsv); else params.delete("brand");
+              if (modelCsv) params.set("model", modelCsv); else params.delete("model");
+              params.set("_", String(Date.now()));
+              router.push(`${pathname}?${params.toString()}`);
+              setOpen(false);
+            }}>View results</Button>
           </div>
         </div>
-      </PopoverContent>
-    </Popover>
-  )
-}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
-export default MakeModelDropdown
+export default MakeModelDropdown;
+
+
