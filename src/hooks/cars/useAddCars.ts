@@ -39,6 +39,8 @@ const initialFormData: VehicleFormData = {
 export type VehicleServerFilters = {
   availability?: 'available' | 'unavailable'
   is_registered?: boolean
+  q?: string
+  type?: string
 }
 
 export function useVehicles(initialFilters?: VehicleServerFilters) {
@@ -58,6 +60,8 @@ export function useVehicles(initialFilters?: VehicleServerFilters) {
       const query: Record<string, string | number | boolean | undefined> = {
         availability: filters.availability,
         is_registered: typeof filters.is_registered === 'boolean' ? filters.is_registered : undefined,
+        q: filters.q,
+        type: filters.type,
       }
       const filtered = await vehicleService.getMyVehicles(query)
       setVehicles(filtered)

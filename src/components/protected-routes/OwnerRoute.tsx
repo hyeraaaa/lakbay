@@ -17,7 +17,7 @@ export const OwnerRoute: React.FC<OwnerRouteProps> = ({
   return (
     <ProtectedRoute
       requireAuth={true}
-      allowedUserTypes={['owner']}
+      allowedUserTypes={['owner', 'admin']}
       requireEmailVerification={true}
     >
       {children}

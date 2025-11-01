@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AdminStatsCard, type StatItem } from '@/components/admin/AdminStatsCard'
+import { FileText, Clock, Eye, AlertTriangle } from 'lucide-react'
 
 type Statistics = {
   byStatus: Array<{ status: string; _count: { _all: number } }>
@@ -8,52 +9,35 @@ type Statistics = {
 
 type ReportStatisticsCardsProps = {
   statistics: Statistics | null
+  loading?: boolean
 }
 
-export function ReportStatisticsCards({ statistics }: ReportStatisticsCardsProps) {
-  if (!statistics) return null
+export function ReportStatisticsCards({ statistics, loading = false }: ReportStatisticsCardsProps) {
+  if (!statistics && !loading) return null
 
-  return (
-    <div className="grid gap-4 md:grid-cols-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">New Reports (7d)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{statistics.last7d}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Pending</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {statistics.byStatus.find(s => s.status === 'pending')?._count._all || 0}
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Under Review</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {statistics.byStatus.find(s => s.status === 'under_review')?._count._all || 0}
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Urgent Priority</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {statistics.byPriority.find(p => p.priority === 'urgent')?._count._all || 0}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
+  const stats: StatItem[] = statistics ? [
+    { 
+      label: "New Reports", 
+      value: statistics.last7d, 
+      icon: FileText 
+    },
+    { 
+      label: "Pending", 
+      value: statistics.byStatus.find(s => s.status === 'pending')?._count._all || 0, 
+      icon: Clock 
+    },
+    { 
+      label: "Under Review", 
+      value: statistics.byStatus.find(s => s.status === 'under_review')?._count._all || 0, 
+      icon: Eye 
+    },
+    { 
+      label: "Urgent Priority", 
+      value: statistics.byPriority.find(p => p.priority === 'urgent')?._count._all || 0, 
+      icon: AlertTriangle 
+    },
+  ] : []
+
+  return <AdminStatsCard stats={stats} loading={loading} />
 }
 

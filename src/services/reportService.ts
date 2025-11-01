@@ -111,8 +111,14 @@ export const reportService = {
     return { ok: response.ok, data: result }
   },
 
-  getAdminStatistics: async () => {
-    const response = await apiRequest(`${API_BASE_URL}/api/reports/admin/statistics`, {
+  getAdminStatistics: async (filters?: { status?: string; priority?: string; entity_type?: string }) => {
+    const params = new URLSearchParams()
+    if (filters?.status) params.append('status', filters.status)
+    if (filters?.priority) params.append('priority', filters.priority)
+    if (filters?.entity_type) params.append('entity_type', filters.entity_type)
+    
+    const url = `${API_BASE_URL}/api/reports/admin/statistics${params.toString() ? `?${params.toString()}` : ''}`
+    const response = await apiRequest(url, {
       method: "GET",
     })
     const result = await response.json()

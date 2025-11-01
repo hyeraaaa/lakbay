@@ -99,6 +99,23 @@ export const adminUserService = {
     }
   },
 
+  async getFilteredUserCounts(filters: Omit<AdminUserListFilters, 'page' | 'limit' | 'accountStatus'>): Promise<AdminUserGlobalCounts> {
+    // Use the list endpoint to fetch totals per status using minimal payload with filters applied
+    const [all, active, deactivated, banned] = await Promise.all([
+      this.listUsers({ ...filters, page: 1, limit: 1 }),
+      this.listUsers({ ...filters, page: 1, limit: 1, accountStatus: 'active' }),
+      this.listUsers({ ...filters, page: 1, limit: 1, accountStatus: 'deactivated' }),
+      this.listUsers({ ...filters, page: 1, limit: 1, accountStatus: 'banned' }),
+    ])
+
+    return {
+      total: all.pagination.total,
+      active: active.pagination.total,
+      deactivated: deactivated.pagination.total,
+      banned: banned.pagination.total,
+    }
+  },
+
   async activateUser(userId: number) {
     const res = await apiRequest(`${API_BASE_URL}/api/admin/users/${userId}/activate`, { method: "POST" })
     return res.json().catch(() => ({}))

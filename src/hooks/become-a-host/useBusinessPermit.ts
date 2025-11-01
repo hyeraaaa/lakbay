@@ -175,19 +175,14 @@ export function useBusinessPermit() {
     setMapClicked(true) // Mark that user clicked on map for precise coordinates
   }
 
-  const isLocationProvided = Boolean(coords || province.trim() || city.trim() || barangay.trim())
+  const isLocationProvided = Boolean(province.trim() && city.trim() && barangay.trim() && coords) 
 
   const getLocationString = () => {
-    // Always prefer human-readable address fields for garage_location_name
+    // Always use human-readable address fields for garage_location_name
     const p = province.trim()
     const c = city.trim()
     const b = barangay.trim()
-    const combined = [b, c, p].filter(Boolean).join(", ")
-    if (combined) return combined
-    
-    // Fall back to coordinates only if no address fields are filled
-    if (coords) return `${coords[0]}, ${coords[1]}`
-    return ""
+    return [b, c, p].filter(Boolean).join(", ")
   }
 
   const getLocationForSubmission = () => {

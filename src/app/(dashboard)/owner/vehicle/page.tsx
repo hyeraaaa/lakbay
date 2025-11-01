@@ -12,12 +12,40 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
+
+type VehicleTypeFilter = 'all' | 'sedan' | 'suv' | 'truck' | 'van' | 'luxury' | 'electric' | 'hybrid'
+
+const vehicleTypeLabels: Record<VehicleTypeFilter, string> = {
+  all: 'All',
+  sedan: 'Sedan',
+  suv: 'SUV',
+  truck: 'Truck',
+  van: 'Van',
+  luxury: 'Luxury',
+  electric: 'Electric',
+  hybrid: 'Hybrid',
+}
 export default function CarsPage() {
   const { success, error, info } = useNotification()
   const { vehicles, allVehicles, isLoadingVehicles, isLoadingAllVehicles, isCreating, createVehicle, fetchVehicles, filters, setFilters } = useVehicles()
   const { needsSetup, isLoading: isStripeLoading } = useStripeConnectStatus()
   const [filterValue, setFilterValue] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState<string>("")
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("")
+  const [typeFilter, setTypeFilter] = useState<VehicleTypeFilter>('all')
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  // Debounce search query to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300) // 300ms delay
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   // Show notification when Stripe Connect setup is needed
   useEffect(() => {
@@ -26,18 +54,37 @@ export default function CarsPage() {
     }
   }, [needsSetup, isStripeLoading, info])
 
+  // Update server-side filters when filters change
+  useEffect(() => {
+    const newFilters: VehicleServerFilters = {}
+    
+    // Availability filter
+    if (filterValue === 'all') {
+      // Don't set availability filter
+    } else if (filterValue === 'available') {
+      newFilters.availability = 'available'
+    } else if (filterValue === 'unavailable') {
+      newFilters.availability = 'unavailable'
+    } else if (filterValue === 'registered') {
+      newFilters.is_registered = true
+    }
+    
+    // Type filter
+    if (typeFilter !== 'all') {
+      newFilters.type = typeFilter
+    }
+    
+    // Search query
+    if (debouncedSearchQuery.trim()) {
+      newFilters.q = debouncedSearchQuery.trim()
+    }
+    
+    setFilters(newFilters)
+  }, [filterValue, typeFilter, debouncedSearchQuery, setFilters])
+
   // Update filter based on dropdown selection
   const handleFilterChange = (value: string) => {
     setFilterValue(value)
-    if (value === 'all') {
-      setFilters({})
-    } else if (value === 'available') {
-      setFilters({ availability: 'available' })
-    } else if (value === 'unavailable') {
-      setFilters({ availability: 'unavailable' })
-    } else if (value === 'registered') {
-      setFilters({ is_registered: true })
-    }
   }
 
   const handleCreateVehicle = async (formData: VehicleFormData) => {
@@ -61,30 +108,8 @@ export default function CarsPage() {
   }
   
   const isFiltered = useMemo(() => {
-    return Boolean(filters?.availability) || typeof filters?.is_registered === 'boolean'
+    return Boolean(filters?.availability) || typeof filters?.is_registered === 'boolean' || Boolean(filters?.type) || Boolean(filters?.q)
   }, [filters])
-
-  // Filter vehicles based on search query
-  const filteredVehicles = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return vehicles
-    }
-    
-    const query = searchQuery.toLowerCase().trim()
-    return vehicles.filter(vehicle => {
-      const brand = vehicle.brand?.toLowerCase() || ''
-      const model = vehicle.model?.toLowerCase() || ''
-      const plateNumber = vehicle.plate_number?.toLowerCase() || ''
-      const type = vehicle.type?.toLowerCase() || ''
-      const description = vehicle.description?.toLowerCase() || ''
-      
-      return brand.includes(query) || 
-             model.includes(query) || 
-             plateNumber.includes(query) || 
-             type.includes(query) || 
-             description.includes(query)
-    })
-  }, [vehicles, searchQuery])
 
   return ( 
     <div>
@@ -94,9 +119,9 @@ export default function CarsPage() {
         // Stats cards
       }
       <VehiclesStats 
-        vehiclesCount={allVehicles.length} 
-        vehicles={allVehicles} 
-        isLoading={isLoadingAllVehicles}
+        vehiclesCount={vehicles.length} 
+        vehicles={vehicles} 
+        isLoading={isLoadingVehicles}
       />
 
 
@@ -119,12 +144,39 @@ export default function CarsPage() {
                    <SelectValue placeholder="All Vehicles" />
                  </SelectTrigger>
                  <SelectContent>
-                   <SelectItem value="all">All Vehicles</SelectItem>
+                   <SelectItem value="all">All Status</SelectItem>
                    <SelectItem value="available">Available</SelectItem>
                    <SelectItem value="unavailable">Unavailable</SelectItem>
                    <SelectItem value="registered">Registered</SelectItem>
                  </SelectContent>
                </Select>
+
+               <Button 
+                 onClick={() => setIsDialogOpen(true)}
+                 disabled={!isStripeLoading && needsSetup}
+                 className="ml-auto"
+               >
+                 <Plus className="h-4 w-4 mr-2" />
+                 Add Vehicle
+               </Button>
+             </div>
+
+             {/* Vehicle Type Badge Filters */}
+             <div className={`flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-4 ${!isLoadingVehicles && vehicles.length > 0 ? '' : 'border-b'}`}>
+               {(Object.keys(vehicleTypeLabels) as VehicleTypeFilter[]).map((type) => (
+                 <button
+                   key={type}
+                   onClick={() => setTypeFilter(type)}
+                   className="focus:outline-none"
+                 >
+                   <Badge
+                     className="rounded-sm px-3 py-1"
+                     variant={typeFilter === type ? "black" : "outline"}
+                   >
+                     {vehicleTypeLabels[type]}
+                   </Badge>
+                 </button>
+               ))}
              </div>
             
               {/* Cars Display */}
@@ -179,7 +231,7 @@ export default function CarsPage() {
                     </div>
                   </div>
                 </div>
-              ) : filteredVehicles.length === 0 ? (
+              ) : vehicles.length === 0 ? (
                 isStripeLoading ? (
                   <div className="flex flex-col my-auto items-center justify-center px-4">
                     <div className="bg-muted/50 rounded-full p-6 mb-6">
@@ -189,14 +241,41 @@ export default function CarsPage() {
                     <Skeleton className="h-4 w-80" />
                   </div>
                 ) : (
-                  (isFiltered || searchQuery.trim()) ? (
-                    <div className="bg-background rounded-md border p-8 text-center text-sm text-muted-foreground">No vehicles match the selected filter or search query.</div>
-                  ) : (
-                    <EmptyCarsState needsStripeSetup={needsSetup} />
-                  )
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <svg
+                      className="mb-4 text-muted-foreground/40"
+                      width="120"
+                      height="120"
+                      viewBox="0 0 120 120"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <rect x="25" y="55" width="70" height="35" rx="4" stroke="currentColor" strokeWidth="2" fill="none" />
+                      <path d="M35 55L45 40H75L85 55" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                      <circle cx="45" cy="75" r="8" stroke="currentColor" strokeWidth="2" fill="none" />
+                      <circle cx="75" cy="75" r="8" stroke="currentColor" strokeWidth="2" fill="none" />
+                      <path d="M35 55H85" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <rect x="50" y="60" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.5" />
+                      <path d="M60 60V72" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
+                    </svg>
+                    <h3 className="text-lg font-semibold text-foreground mb-1">
+                      {debouncedSearchQuery.trim() || filterValue !== 'all' || typeFilter !== 'all'
+                        ? 'No vehicles match the selected filter or search query.' 
+                        : needsSetup
+                        ? 'Payment setup required'
+                        : 'No vehicles found.'}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {debouncedSearchQuery.trim() || filterValue !== 'all' || typeFilter !== 'all'
+                        ? 'Try adjusting your filters or search terms' 
+                        : needsSetup
+                        ? 'Please set up your Stripe Connect account in Settings to receive payments before adding vehicles.'
+                        : 'Vehicles will appear here once they are registered'}
+                    </p>
+                  </div>
                 )
               ) : (
-                <VehiclesTable vehicles={filteredVehicles} onChange={fetchVehicles} />
+                <VehiclesTable vehicles={vehicles} onChange={fetchVehicles} />
               )}
         </CardContent>
         </Card>
@@ -207,7 +286,9 @@ export default function CarsPage() {
           onSubmit={handleCreateVehicle} 
           isLoading={isCreating} 
           onAlert={handleAlert}
-          hideTrigger={!isStripeLoading && needsSetup}
+          hideTrigger={true}
+          externalOpen={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
         />
       </div>
   )
@@ -223,7 +304,7 @@ function VehiclesStats({ vehiclesCount, vehicles, isLoading }: VehiclesStatsProp
   const counts = useMemo(() => {
     const total = vehiclesCount
     const available = vehicles.filter(v => (v.availability || "").toLowerCase() === "available").length
-    const unavailable = Math.max(0, total - available)
+    const unavailable = vehicles.filter(v => (v.availability || "").toLowerCase() !== "available").length
     const registered = vehicles.filter(v => !!v.is_registered).length
     return { total, available, unavailable, registered }
   }, [vehiclesCount, vehicles])

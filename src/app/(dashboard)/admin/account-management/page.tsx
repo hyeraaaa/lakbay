@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { UserPlus, Search } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -25,8 +26,7 @@ export default function Page() {
   const [totalItems, setTotalItems] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(false)
   const [statsLoading, setStatsLoading] = useState<boolean>(false)
-  const [hasLoadedStats, setHasLoadedStats] = useState<boolean>(false)
-  const [globalCounts, setGlobalCounts] = useState<{ total: number; active: number; deactivated: number; banned: number }>({ total: 0, active: 0, deactivated: 0, banned: 0 })
+  const [filteredCounts, setFilteredCounts] = useState<{ total: number; active: number; deactivated: number; banned: number }>({ total: 0, active: 0, deactivated: 0, banned: 0 })
   const [search, setSearch] = useState<string>("")
   const [debouncedSearch, setDebouncedSearch] = useState<string>("")
   const [userType, setUserType] = useState<string>("all")
@@ -41,6 +41,11 @@ export default function Page() {
 
     return () => clearTimeout(timer)
   }, [search])
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [userType, accountStatus])
 
   const fetchUsers = useCallback(async (nextPage?: number) => {
     setLoading(true)
@@ -60,20 +65,24 @@ export default function Page() {
     }
   }, [page, limit, debouncedSearch, userType, accountStatus])
 
+  const fetchFilteredCounts = useCallback(async () => {
+    setStatsLoading(true)
+    try {
+      const filters: { search?: string; userType?: string } = {}
+      if (debouncedSearch) filters.search = debouncedSearch
+      if (userType !== 'all') filters.userType = userType
+      
+      const counts = await adminUserService.getFilteredUserCounts(filters)
+      setFilteredCounts(counts)
+    } finally {
+      setStatsLoading(false)
+    }
+  }, [debouncedSearch, userType])
+
   useEffect(() => {
     fetchUsers()
-    // Fetch global counts once on mount
-    ;(async () => {
-      setStatsLoading(true)
-      try {
-        const counts = await adminUserService.getGlobalUserCounts()
-        setGlobalCounts(counts)
-        setHasLoadedStats(true)
-      } finally {
-        setStatsLoading(false)
-      }
-    })()
-  }, [fetchUsers])
+    fetchFilteredCounts()
+  }, [fetchUsers, fetchFilteredCounts])
 
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false)
   const [pendingAction, setPendingAction] = useState<{ action: 'activate' | 'deactivate' | 'ban'; userId: number } | null>(null)
@@ -108,46 +117,91 @@ export default function Page() {
       </div>
       
       <UserStatsCards
-        totalUsers={globalCounts.total}
-        active={globalCounts.active}
-        deactivated={globalCounts.deactivated}
-        banned={globalCounts.banned}
-        loading={statsLoading && !hasLoadedStats}
+        totalUsers={filteredCounts.total}
+        active={filteredCounts.active}
+        deactivated={filteredCounts.deactivated}
+        banned={filteredCounts.banned}
+        loading={statsLoading}
       />
       
       <Card>
-      <CardContent>
-      <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3 justify-between">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search name, email, username" value={search} onChange={(e) => setSearch(e.target.value)} className="w-64 border-neutral-300 pl-10" />
-          </div>
-          <Select value={userType} onValueChange={setUserType}>
-            <SelectTrigger className="border-neutral-300"><SelectValue placeholder="All Types" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="customer">Customer</SelectItem>
-              <SelectItem value="owner">Owner</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={accountStatus} onValueChange={setAccountStatus}>
-            <SelectTrigger className="border-neutral-300"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="deactivated">Deactivated</SelectItem>
-              <SelectItem value="banned">Banned</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <Button onClick={() => setRegisterDialogOpen(true)}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Register New Admin
-        </Button>
-      </div>
+        <CardContent>
+          <div>
+            {/* Search and Status Filter */}
+            <div className="flex items-center gap-3 mb-2">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search name, email, username"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10 bg-white"
+                />
+              </div>
+              <Select value={accountStatus} onValueChange={setAccountStatus}>
+                <SelectTrigger className="bg-white border-neutral-300">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="deactivated">Deactivated</SelectItem>
+                  <SelectItem value="banned">Banned</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={() => setRegisterDialogOpen(true)}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Register New Admin
+              </Button>
+            </div>
+
+            {/* User Type Badge Filters */}
+            <div className={`flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-4 ${!loading && users.length > 0 ? '' : 'border-b'}`}>
+              <button 
+                onClick={() => {
+                  setUserType("all")
+                  setPage(1)
+                }} 
+                className="focus:outline-none"
+              >
+                <Badge className="rounded-sm px-3 py-1" variant={userType === "all" ? "black" : "outline"}>
+                  All
+                </Badge>
+              </button>
+              <button 
+                onClick={() => {
+                  setUserType("customer")
+                  setPage(1)
+                }} 
+                className="focus:outline-none"
+              >
+                <Badge className="rounded-sm px-3 py-1" variant={userType === "customer" ? "black" : "outline"}>
+                  Customer
+                </Badge>
+              </button>
+              <button 
+                onClick={() => {
+                  setUserType("owner")
+                  setPage(1)
+                }} 
+                className="focus:outline-none"
+              >
+                <Badge className="rounded-sm px-3 py-1" variant={userType === "owner" ? "black" : "outline"}>
+                  Owner
+                </Badge>
+              </button>
+              <button 
+                onClick={() => {
+                  setUserType("admin")
+                  setPage(1)
+                }} 
+                className="focus:outline-none"
+              >
+                <Badge className="rounded-sm px-3 py-1" variant={userType === "admin" ? "black" : "outline"}>
+                  Admin
+                </Badge>
+              </button>
+            </div>
 
       {loading ? (
         <div className="space-y-4">
@@ -255,11 +309,8 @@ export default function Page() {
             const message = pendingAction.action === 'activate' ? 'User activated' : pendingAction.action === 'deactivate' ? 'User deactivated' : 'User banned'
             success(message)
             await fetchUsers()
-            // Refresh global counts after a state-changing action
-            setStatsLoading(true)
-            adminUserService.getGlobalUserCounts()
-              .then(setGlobalCounts)
-              .finally(() => setStatsLoading(false))
+            // Refresh filtered counts after a state-changing action
+            await fetchFilteredCounts()
           } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Action failed'
             error(message)
@@ -280,16 +331,13 @@ export default function Page() {
         onOpenChange={setRegisterDialogOpen}
         onSuccess={() => {
           fetchUsers()
-          // Refresh global counts after registration
-          setStatsLoading(true)
-          adminUserService.getGlobalUserCounts()
-            .then(setGlobalCounts)
-            .finally(() => setStatsLoading(false))
+          // Refresh filtered counts after registration
+          fetchFilteredCounts()
         }}
       />
-    </div>
-      </CardContent>
-    </Card>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

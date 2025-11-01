@@ -80,6 +80,9 @@ export interface Vehicle {
   type?: string;
   daily_mileage_limit?: number;
   overage_fee_per_km?: number;
+  garage_latitude?: number | null;
+  garage_longitude?: number | null;
+  garage_location_name?: string | null;
   vehicle_images?: Array<{
     url: string;
     alt_text?: string;

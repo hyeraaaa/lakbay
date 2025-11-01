@@ -15,6 +15,7 @@ import {
   ReportsTable,
   ReportsPagination,
   EditReportDialog,
+  ReportsTableSkeleton,
 } from '@/components/admin/reports'
 
 import { Card, CardContent } from '@/components/ui/card'
@@ -39,7 +40,11 @@ export default function ReportsPage() {
     fetchReports,
   } = useReportsData()
   
-  const { statistics, fetchStatistics } = useReportStatistics()
+  const { statistics, fetchStatistics } = useReportStatistics({
+    status: statusFilter,
+    priority: priorityFilter,
+    entity_type: entityTypeFilter,
+  })
   
   const {
     selectedReport,
@@ -60,12 +65,16 @@ export default function ReportsPage() {
 
   useEffect(() => {
     fetchReports(undefined, error)
+  }, [fetchReports, error])
+
+  useEffect(() => {
     fetchStatistics()
-  }, [fetchReports, fetchStatistics, error])
+  }, [fetchStatistics])
 
   const handleApplyFilters = () => {
     setPage(1) // Reset to page 1 when applying filters
     fetchReports(1, error)
+    fetchStatistics()
   }
 
   const handlePageChange = (newPage: number) => {
@@ -117,7 +126,7 @@ export default function ReportsPage() {
         <p className="text-muted-foreground text-pretty">Review, manage, and resolve user reports and complaints</p>
       </div>
       
-      <ReportStatisticsCards statistics={statistics} />
+      <ReportStatisticsCards statistics={statistics} loading={loading} />
       <Card>
         <CardContent>
         <div className="space-y-4">
@@ -132,12 +141,16 @@ export default function ReportsPage() {
           onApply={handleApplyFilters}
         />
 
-        <ReportsTable
-          reports={reports}
-          loading={loading}
-          onViewEntity={handleViewEntity}
-          onEditReport={handleEditReport}
-        />
+        {loading ? (
+          <ReportsTableSkeleton />
+        ) : (
+          <ReportsTable
+            reports={reports}
+            loading={loading}
+            onViewEntity={handleViewEntity}
+            onEditReport={handleEditReport}
+          />
+        )}
 
         {reports.length > 0 && !loading && (
           <ReportsPagination

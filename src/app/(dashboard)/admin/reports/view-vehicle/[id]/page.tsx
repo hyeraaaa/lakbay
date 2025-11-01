@@ -9,6 +9,7 @@ import GalleryDialog from "@/components/vehicle-booking/GalleryDialog"
 import TitleAndBadges from "@/components/vehicle-booking/TitleAndBadges"
 import VehicleFeatures from "@/components/vehicle-booking/VehicleFeatures"
 import BookingSidebar from "@/components/vehicle-booking/BookingSidebar"
+import HostSection from "@/components/vehicle-booking/HostSection"
 import { List, X, Trash2, Ban } from "lucide-react"
 import ReviewsSection from "@/components/vehicle-booking/ReviewsSection"
 import LocationSection from "@/components/map/LocationSection"
@@ -211,6 +212,13 @@ export default function CarBookingInterface() {
                 tripCount={tripCount}
               />
             </div>
+
+            <HostSection 
+              hostFirstName={vehicle?.users?.first_name} 
+              hostLastName={vehicle?.users?.last_name} 
+              hostProfilePicture={vehicle?.users?.profile_picture}
+              hostUserId={vehicle?.owner_id}
+            />
 
             <VehicleFeatures description={vehicle?.description} features={vehicle?.features} />
 

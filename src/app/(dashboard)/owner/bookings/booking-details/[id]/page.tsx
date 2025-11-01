@@ -22,6 +22,7 @@ import {
   MileageTrackingCard
 } from '@/components/booking';
 import OwnerBookingActionsCard from '@/components/booking/OwnerBookingActionsCard';
+import BookingRouteMap from '@/components/booking/BookingRouteMap';
 import { useBookingDetails } from '@/hooks/booking';
 import { decodeId } from '@/lib/idCodec';
 
@@ -121,6 +122,7 @@ export default function OwnerBookingDetailsPage() {
         <div className="lg:col-span-2 space-y-6">
           <VehicleInformationCard booking={booking} />
           <BookingDetailsCard booking={booking} />
+          <BookingRouteMap booking={booking} />
           <BookingReviewCard booking={booking} />
         </div>
 

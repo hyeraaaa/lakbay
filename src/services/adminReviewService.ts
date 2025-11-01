@@ -263,11 +263,40 @@ export interface PaginationData {
 }
 
 export const adminReviewService = {
-  async getAll(page?: number, limit?: number, status?: string): Promise<{ items: AdminReviewItem[], pagination?: PaginationData }> {
+  async getAll(page?: number, limit?: number, status?: string, typeFilter?: string, search?: string): Promise<{ items: AdminReviewItem[], pagination?: PaginationData }> {
     const params = new URLSearchParams()
     if (page !== undefined) params.append('page', String(page))
     if (limit !== undefined) params.append('limit', String(limit))
     if (status && status !== 'all') params.append('status', status)
+    if (search && search.trim().length > 0) params.append('search', search.trim())
+    // Map UI type filter to backend 'type' param
+    if (typeFilter && typeFilter !== 'all') {
+      const t = String(typeFilter)
+      let backendType: string | undefined
+      switch (t) {
+        case 'account_verification':
+          backendType = 'verification'
+          break
+        case 'vehicle_registration':
+          backendType = 'registration'
+          break
+        case 'business_license':
+          backendType = 'owner_enrollment'
+          break
+        case 'payout_failed':
+          backendType = 'payouts'
+          break
+        case 'refund_request':
+          backendType = 'refunds'
+          break
+        case 'reactivation_request':
+          backendType = 'reactivation_requests'
+          break
+        default:
+          backendType = undefined
+      }
+      if (backendType) params.append('type', backendType)
+    }
     
     const url = `${API_BASE_URL}/api/admin/reviews${params.toString() ? `?${params.toString()}` : ''}`
     
@@ -282,12 +311,31 @@ export const adminReviewService = {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || "Failed to fetch admin reviews")
     }
-    const data = await response.json().catch(() => ({} as { items?: RawReviewItem[]; reviews?: RawReviewItem[]; pagination?: PaginationData }))
+    const data = await response.json().catch(() => ({} as { 
+      items?: RawReviewItem[]; 
+      reviews?: RawReviewItem[]; 
+      registrations?: RawReviewItem[];
+      verifications?: RawReviewItem[];
+      owner_enrollments?: RawReviewItem[];
+      failed_payouts?: RawReviewItem[];
+      refunds?: RawReviewItem[];
+      pagination?: PaginationData 
+    }))
     
     // Debug logging to see what we're getting
     console.log("Admin reviews response:", data)
     
-    const list: RawReviewItem[] = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : Array.isArray(data?.reviews) ? data.reviews : []
+    // Backend returns different property names based on type filter
+    // Check all possible property names
+    const list: RawReviewItem[] = 
+      Array.isArray(data?.items) ? data.items :
+      Array.isArray(data?.registrations) ? data.registrations :
+      Array.isArray(data?.verifications) ? data.verifications :
+      Array.isArray(data?.owner_enrollments) ? data.owner_enrollments :
+      Array.isArray(data?.failed_payouts) ? data.failed_payouts :
+      Array.isArray(data?.refunds) ? data.refunds :
+      Array.isArray(data?.reviews) ? data.reviews :
+      Array.isArray(data) ? data : []
     
     // Debug logging to see the mapped items
     const mapped = list.map(mapItem)

@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en"> 
       <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID as string}>
-        <body className={`${poppins.variable} antialiased bg-[#fafafc]`}>
+        <body className={`${poppins.variable} antialiased bg-[#fafafa]`}>
           <ClientLayout>
             {children}
           </ClientLayout>

@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Star, MessageCircle } from "lucide-react"
+import { MessageCircle } from "lucide-react"
 import { getImageUrl } from "@/lib/imageUtils"
 import { encodeId } from "@/lib/idCodec"
 import { useJWT } from "@/contexts/JWTContext"
@@ -18,6 +18,7 @@ type HostSectionProps = {
 export default function HostSection({ hostFirstName, hostLastName, hostProfilePicture, hostUserId }: HostSectionProps) {
   const { user, isAuthenticated } = useJWT()
   const isOwnerViewingOwnListing = user?.user_type === 'owner' && String(user.id) === String(hostUserId || '')
+  const isAdmin = user?.user_type === 'admin'
 
   const handleChatClick = () => {
     if (!hostUserId) return
@@ -41,7 +42,7 @@ export default function HostSection({ hostFirstName, hostLastName, hostProfilePi
             <span className="font-semibold text-lg">{hostFirstName && hostLastName ? `${hostFirstName} ${hostLastName}` : "Host"}</span>
           </div>
         </Link>
-        {!isOwnerViewingOwnListing && isAuthenticated && (
+        {!isOwnerViewingOwnListing && isAuthenticated && !isAdmin && (
           <Button variant="default" size="sm" className="bg-black hover:bg-gray-800" onClick={handleChatClick}>
             <MessageCircle className="h-4 w-4 mr-2" />
             Chat with Owner

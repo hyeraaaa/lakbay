@@ -43,7 +43,7 @@ export const SearchFiltersCard: React.FC<Props> = ({
       </div>
 
       <Select value={statusFilter} onValueChange={onStatusChange}>
-        <SelectTrigger className="w-48 bg-white">
+        <SelectTrigger className="bg-white">
           <SelectValue placeholder="All Statuses" />
         </SelectTrigger>
         <SelectContent>

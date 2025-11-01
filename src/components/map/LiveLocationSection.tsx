@@ -63,7 +63,7 @@ export default function LiveLocationSection({ vehicle }: LiveLocationSectionProp
             markerVariant="pin"
             interactiveMarkers={false}
             showMarkerPopups={false}
-            singleMarkerZoom={17}
+            singleMarkerZoom={14}
             autoFitOnUpdate={true}
           />
         </div>

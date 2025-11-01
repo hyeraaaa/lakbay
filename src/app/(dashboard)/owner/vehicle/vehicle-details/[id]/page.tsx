@@ -17,6 +17,16 @@ import LiveLocationSection from "@/components/map/LiveLocationSection"
 import { useVehicleDetails } from "@/hooks/booking/useVehicleDetails"
 import VehicleDetailsSkeleton from "@/components/vehicle-booking/VehicleDetailsSkeleton"
 import { vehicleService } from "@/services/vehicleServices"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertTriangle } from "lucide-react"
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 export default function CarBookingInterface() {
   const [selectedImage, setSelectedImage] = useState(0)
@@ -50,12 +60,48 @@ export default function CarBookingInterface() {
     return urls
   }, [vehicle])
 
+  const needsDocuments = vehicle?.availability === "pending_registration"
+
   return (
     <div className="min-h-screen">
       {isLoading ? (
         <VehicleDetailsSkeleton />
       ) : (
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Breadcrumbs */}
+        <div className="mb-6">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/owner" className="hover:text-primary">
+                  Home
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/owner/vehicle" className="hover:text-primary">
+                  Vehicles
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>
+                  {vehicle ? `${vehicle.brand} ${vehicle.model} ${vehicle.year}` : "Vehicle Details"}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        
+        {needsDocuments && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Documents Required</AlertTitle>
+            <AlertDescription>
+              This vehicle requires registration documents to be submitted before it can be listed for booking.
+            </AlertDescription>
+          </Alert>
+        )}
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Full-width Image Gallery */}
           <div className="lg:col-span-3">
@@ -74,6 +120,13 @@ export default function CarBookingInterface() {
               coding={vehicle?.coding}
               rating={reviewsAll && reviewsAll.length > 0 ? reviewsAll.reduce((sum, r) => sum + r.rating, 0) / reviewsAll.length : null}
               tripCount={tripCount}
+            />
+            
+            <HostSection
+              hostFirstName={vehicle?.users?.first_name}
+              hostLastName={vehicle?.users?.last_name}
+              hostProfilePicture={vehicle?.users?.profile_picture}
+              hostUserId={vehicle?.owner_id}
             />
 
             <VehicleFeatures description={vehicle?.description} features={vehicle?.features} />

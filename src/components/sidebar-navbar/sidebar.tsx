@@ -1,32 +1,51 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { LayoutDashboard, Settings, User, ShieldCheck, Users as UsersIcon, MessageSquare, Calendar, Car, ScrollText, Flag } from "lucide-react"
+import { LayoutDashboard, Settings, User, ShieldCheck, Users as UsersIcon, MessageSquare, Calendar, Car, ScrollText, Flag, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useNavbarAuth } from "@/hooks/navbar"
 import { usePathname, useRouter } from "next/navigation"
+import Link from "next/link"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Image from "next/image"
 import { encodeId } from "@/lib/idCodec"
 
-const getNavItemsByRole = (userType?: string, currentUserId?: string) => {
+type NavItem = {
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  href: string
+  openInNewTab?: boolean
+}
+
+const getShortLabel = (label: string) => {
+  const map: Record<string, string> = {
+    "Account Management": "Accounts",
+    "Verification Requests": "Verify",
+    "Browse Vehicle": "Browse",
+  }
+  return map[label] ?? label
+}
+
+const getNavItemsByRole = (userType?: string, currentUserId?: string): NavItem[] => {
   const isAdmin = userType?.toLowerCase() === "admin"
   if (isAdmin) {
     return [
       { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
       { icon: ShieldCheck, label: "Verification Requests", href: "/admin/verification-requests" },
       { icon: Flag, label: "Reports", href: "/admin/reports" },
-      { icon: ScrollText, label: "Logs", href: "/admin/logs" },
-      { icon: MessageSquare, label: "Chat", href: "/admin/chat" },
+      { icon: Car, label: "Vehicles", href: "/admin/vehicles" },
       { icon: UsersIcon, label: "Account Management", href: "/admin/account-management" },
+      { icon: MessageSquare, label: "Chat", href: "/admin/chat" },
+      { icon: ScrollText, label: "Logs", href: "/admin/logs" },
       
       { icon: Settings, label: "Settings", href: "/settings" },
     ]
   }
   return [
     { icon: LayoutDashboard, label: "Dashboard", href: "/owner" },
-    { icon: Car, label: "Vehicles", href: "/owner/vehicle" },
+    { icon: Search, label: "Browse Vehicle", href: "/user", openInNewTab: true },
+    { icon: Car, label: "Vehicles", href: "/owner/vehicle"},
     { icon: Calendar, label: "Bookings", href: "/owner/bookings" },
     { icon: User, label: "Profile", href: `/profile/${currentUserId ? encodeId(String(currentUserId)) : ''}` },
     { icon: Settings, label: "Settings", href: "/settings" },
@@ -75,23 +94,50 @@ export function Sidebar() {
           {navigationItems.map((item) => {
             const Icon = item.icon
             const active = isRouteActive(pathname, item.href)
+            const shouldOpenInNewTab = item.openInNewTab
 
             return (
               <Tooltip key={item.href} delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-10 w-10 rounded-lg transition-colors",
-                      active
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  <div className="flex flex-col items-center">
+                    {shouldOpenInNewTab ? (
+                      <Link 
+                        href={item.href} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className={cn(
+                          "inline-flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
+                          active
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        )}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </Link>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "h-10 w-10 rounded-lg transition-colors",
+                          active
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        )}
+                        onClick={() => router.push(item.href)}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </Button>
                     )}
-                    onClick={() => router.push(item.href)}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </Button>
+                    <span
+                      className={cn(
+                        "mt-1 text-[10px] leading-none",
+                        active ? "text-sidebar-primary" : "text-muted-foreground",
+                      )}
+                    >
+                      {getShortLabel(item.label)}
+                    </span>
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="py-1 px-2 text-xs">
                   {item.label}

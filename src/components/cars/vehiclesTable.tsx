@@ -55,6 +55,7 @@ import { useNotification } from "@/components/NotificationProvider"
 import { useVehicleTrackers } from "@/hooks/cars/useVehicleTrackers"
 import { useRegistrationMap } from "@/hooks/cars/useRegistrationMap"
 import { useTrackingDetails } from "@/hooks/cars/useTrackingDetails"
+import { useJWT } from "@/contexts/JWTContext"
 
 type VehiclesTableProps = {
   vehicles: VehicleResponse[]
@@ -85,6 +86,8 @@ type VehicleRow = {
 
 export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
   const { id, data, pagination, setPagination, sorting, setSorting, isDeletingId, handleDelete, applyUpdate, refreshRow } = useVehiclesTable({ vehicles, onChange })
+  const { user } = useJWT()
+  const isAdmin = user?.user_type === 'admin'
   const [uploadForId, setUploadForId] = useState<number | null>(null)
   const [trackingForId, setTrackingForId] = useState<number | null>(null)
   const [mileageSettingsForId, setMileageSettingsForId] = useState<number | null>(null)
@@ -221,7 +224,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
                 <Eye size={16} /> View Details
               </Link>
             </DropdownMenuItem>
-            {row.original.availability === "pending_registration" && (
+            {row.original.availability === "pending_registration" && !isAdmin && (
               <DropdownMenuItem
                 onSelect={(e) => { e.preventDefault(); setUploadForId(row.original.id) }}
                 disabled={registrationMap[row.original.id]?.status === 'pending'}
@@ -237,9 +240,11 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
             <DropdownMenuItem onSelect={async (e) => { e.preventDefault(); setTrackingForId(row.original.id) }}>
               <MapPin size={16} /> <span>{trackerMap[row.original.id] ? 'Update Tracking Device' : 'Add Tracking Device'}</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={async (e) => { e.preventDefault(); setMileageSettingsForId(row.original.id) }}>
-              <Settings size={16} /> <span>Mileage Settings</span>
-            </DropdownMenuItem>
+            {!isAdmin && (
+              <DropdownMenuItem onSelect={async (e) => { e.preventDefault(); setMileageSettingsForId(row.original.id) }}>
+                <Settings size={16} /> <span>Mileage Settings</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={async () => {
               try {

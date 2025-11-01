@@ -18,7 +18,7 @@ import {
   BookingDetailsCard, 
   PaymentSummaryCard, 
   BookingReviewCard,
-  MileageTrackingCard
+  MileageTrackingCard,
 } from '@/components/booking'
 import { useBookingDetails } from '@/hooks/booking'
 import { decodeId } from '@/lib/idCodec'
