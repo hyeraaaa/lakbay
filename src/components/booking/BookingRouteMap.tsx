@@ -145,6 +145,12 @@ export default function BookingRouteMap({ booking }: BookingRouteMapProps) {
     return "bg-gray-100 text-gray-600";
   };
 
+  // Don't render if there's no route history (tracking points)
+  // Only render when we have actual tracking points - don't show during loading if no points exist yet
+  if (trackingPoints.length === 0) {
+    return null;
+  }
+
   return (
     <div className="mt-10">
       <div className="flex items-center justify-between mb-4">
