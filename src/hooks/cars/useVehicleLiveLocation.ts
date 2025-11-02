@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { io, type Socket } from "socket.io-client"
 import { vehicleService } from "@/services/vehicleServices"
 
@@ -16,13 +16,78 @@ type LocationPayload = {
   }
 }
 
+// Throttle location updates to prevent excessive re-renders (max once per 500ms)
+function useThrottledUpdate(callback: (location: LiveLocation) => void, delay: number = 500) {
+  const lastUpdateRef = useRef<number>(0)
+  const pendingUpdateRef = useRef<LiveLocation | null>(null)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const callbackRef = useRef(callback)
+
+  // Keep callback ref updated
+  useEffect(() => {
+    callbackRef.current = callback
+  }, [callback])
+
+  const throttledFn = useCallback((location: LiveLocation) => {
+    const now = Date.now()
+    pendingUpdateRef.current = location
+
+    if (now - lastUpdateRef.current >= delay) {
+      lastUpdateRef.current = now
+      callbackRef.current(location)
+      pendingUpdateRef.current = null
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+    } else if (!timeoutRef.current) {
+      const remaining = delay - (now - lastUpdateRef.current)
+      timeoutRef.current = setTimeout(() => {
+        if (pendingUpdateRef.current) {
+          lastUpdateRef.current = Date.now()
+          callbackRef.current(pendingUpdateRef.current)
+          pendingUpdateRef.current = null
+        }
+        timeoutRef.current = null
+      }, remaining)
+    }
+  }, [delay])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+    }
+  }, [])
+
+  return throttledFn
+}
+
 export function useVehicleLiveLocation(vehicleId?: number | null) {
   const [hasTrackingDevice, setHasTrackingDevice] = useState<boolean | null>(null)
   const [liveLocation, setLiveLocation] = useState<LiveLocation | null>(null)
   const [lastKnownLocation, setLastKnownLocation] = useState<LiveLocation | null>(null)
   const [initialLoading, setInitialLoading] = useState(false)
   const socketRef = useRef<Socket | null>(null)
-  
+  const handlersRef = useRef<{
+    handleLocationPayload: (payload: LocationPayload) => void
+    handleConnect: () => void
+    handleDisconnect: () => void
+    handleConnectError: () => void
+  } | null>(null)
+
+  // Throttled update function to prevent excessive state updates
+  const throttledUpdateLocation = useThrottledUpdate((location) => {
+    setLiveLocation(location)
+    setLastKnownLocation(location)
+  }, 500) // Update max once per 500ms
+
+  // Store throttled update ref for cleanup
+  const throttledUpdateRef = useRef<ReturnType<typeof useThrottledUpdate> | null>(null)
+  throttledUpdateRef.current = throttledUpdateLocation
 
   useEffect(() => {
     let cancelled = false
@@ -57,10 +122,13 @@ export function useVehicleLiveLocation(vehicleId?: number | null) {
             const lng = Number(trackingData.longitude)
             
             if (Number.isFinite(lat) && Number.isFinite(lng)) {
-              setLastKnownLocation({
+              const initialLocation = {
                 latitude: lat,
                 longitude: lng
-              })
+              }
+              setLastKnownLocation(initialLocation)
+              // Also set as live location initially
+              setLiveLocation(initialLocation)
             }
           }
         }
@@ -70,6 +138,15 @@ export function useVehicleLiveLocation(vehicleId?: number | null) {
           return
         }
 
+        // Clean up any existing socket connection first
+        if (socketRef.current) {
+          try {
+            socketRef.current.removeAllListeners()
+            socketRef.current.disconnect()
+          } catch {}
+          socketRef.current = null
+        }
+
         // Then establish socket connection for live updates
         const baseApi = process.env.NEXT_PUBLIC_API_BASE_URL || ""
         const socketBase = baseApi.replace(/\/?api\/?$/, "")
@@ -77,45 +154,81 @@ export function useVehicleLiveLocation(vehicleId?: number | null) {
         const socket = io(`${socketBase}/tracking`, {
           transports: ["websocket", "polling"],
           auth: { token },
+          // Add connection options to prevent memory leaks
+          forceNew: true,
+          reconnection: true,
+          reconnectionAttempts: 5,
+          reconnectionDelay: 1000,
         })
         socketRef.current = socket
 
-        socket.on("connect", () => {
-          socket.emit("join_vehicle_tracking", { vehicleId })
-        })
-
-        const handleLocationPayload = (payload: LocationPayload) => {
-          const loc = payload?.location
-          const lat = Number(loc?.latitude)
-          const lng = Number(loc?.longitude)
-          if (Number.isFinite(lat) && Number.isFinite(lng)) {
-            setLiveLocation({ latitude: lat, longitude: lng })
-            // Also update last known location with the new data
-            setLastKnownLocation({ latitude: lat, longitude: lng })
+        // Create handler functions
+        const handleConnect = () => {
+          if (!cancelled && socketRef.current) {
+            socketRef.current.emit("join_vehicle_tracking", { vehicleId })
           }
         }
 
+        const handleLocationPayload = (payload: LocationPayload) => {
+          if (cancelled) return
+          const loc = payload?.location
+          const lat = Number(loc?.latitude)
+          const lng = Number(loc?.longitude)
+          if (Number.isFinite(lat) && Number.isFinite(lng) && throttledUpdateRef.current) {
+            throttledUpdateRef.current({ latitude: lat, longitude: lng })
+          }
+        }
+
+        const handleDisconnect = () => {
+          // Connection lost - keep last known location
+        }
+
+        const handleConnectError = () => {
+          // Connection error - keep last known location
+        }
+
+        // Store handlers for cleanup
+        handlersRef.current = {
+          handleLocationPayload,
+          handleConnect,
+          handleDisconnect,
+          handleConnectError
+        }
+
+        // Attach event listeners
+        socket.on("connect", handleConnect)
         socket.on("current_location", handleLocationPayload)
         socket.on("tracking_update", handleLocationPayload)
-
-        // Optional: surface socket availability state via hasTrackingDevice if needed
-        socket.on("disconnect", () => {})
-        socket.on("connect_error", () => {})
+        socket.on("disconnect", handleDisconnect)
+        socket.on("connect_error", handleConnectError)
         
         setInitialLoading(false)
       } catch (err) {
-        setHasTrackingDevice(false)
-        setInitialLoading(false)
+        if (!cancelled) {
+          setHasTrackingDevice(false)
+          setInitialLoading(false)
+        }
       }
     }
 
     connect()
+    
+    // Cleanup function - properly remove all listeners before disconnecting
     return () => {
       cancelled = true
       if (socketRef.current) {
-        try { socketRef.current.disconnect() } catch {}
+        try {
+          // Remove all event listeners to prevent memory leaks
+          socketRef.current.removeAllListeners("connect")
+          socketRef.current.removeAllListeners("current_location")
+          socketRef.current.removeAllListeners("tracking_update")
+          socketRef.current.removeAllListeners("disconnect")
+          socketRef.current.removeAllListeners("connect_error")
+          socketRef.current.disconnect()
+        } catch {}
         socketRef.current = null
       }
+      handlersRef.current = null
     }
   }, [vehicleId])
 

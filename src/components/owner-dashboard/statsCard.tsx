@@ -34,28 +34,58 @@ export function StatsCards({ overview, isLoading, averageRating, ratingCount, ea
   const sortedPoints = Array.isArray(earnings) ? [...earnings].sort((a, b) => getPointIndex(a) - getPointIndex(b)) : []
   const earningsSeries = sortedPoints.filter(p => typeof p?.earnings === 'number')
   const bookingsSeries = sortedPoints.filter(p => typeof p?.bookings === 'number')
-  // Align total earnings with chart: sum of normalized yearly earnings series
+  
+  // Calculate total earnings (cumulative sum)
   const totalEarnings = (earningsSeries.length
     ? earningsSeries.reduce((sum, p) => sum + Number(p.earnings || 0), 0)
     : 0)
+  
+  // Calculate monthly trend for Monthly Income card
   const currEarnings = earningsSeries.length > 0 ? (earningsSeries[earningsSeries.length - 1].earnings || 0) : 0
   const prevEarnings = earningsSeries.length > 1 ? (earningsSeries[earningsSeries.length - 2].earnings || 0) : 0
-  const earningsTrend = currEarnings >= prevEarnings ? 'up' as const : 'down' as const
-  const earningsChangePct = prevEarnings === 0 ? (currEarnings > 0 ? 100 : 0) : ((currEarnings - prevEarnings) / prevEarnings) * 100
-  const earningsChangeLabel = `${(isFinite(earningsChangePct) ? earningsChangePct : 0).toFixed(1)}%`
+  
+  // Helper function to calculate percentage change safely
+  const calculateChangePct = (current: number, previous: number): { pct: number; trend: 'up' | 'down' } => {
+    if (previous === 0) {
+      // If previous is 0, only show trend if current > 0, otherwise no change
+      if (current > 0) {
+        // Going from 0 to positive is an increase, but we can't calculate exact percentage
+        // Show as "New" or large increase indicator
+        return { pct: Infinity, trend: 'up' }
+      }
+      // Both are 0, no change
+      return { pct: 0, trend: 'up' }
+    }
+    const pct = ((current - previous) / previous) * 100
+    return {
+      pct: isFinite(pct) ? pct : 0,
+      trend: current >= previous ? 'up' : 'down'
+    }
+  }
+  
+  const earningsChange = calculateChangePct(currEarnings, prevEarnings)
+  const earningsChangeLabel = earningsChange.pct === Infinity 
+    ? "New" 
+    : earningsChange.pct === 0 
+      ? "" 
+      : `${Math.abs(earningsChange.pct).toFixed(1)}%`
 
+  // Calculate bookings trend
   const currBookings = bookingsSeries.length > 0 ? (bookingsSeries[bookingsSeries.length - 1].bookings || 0) : 0
   const prevBookings = bookingsSeries.length > 1 ? (bookingsSeries[bookingsSeries.length - 2].bookings || 0) : 0
-  const bookingsTrend = currBookings >= prevBookings ? 'up' as const : 'down' as const
-  const bookingsChangePct = prevBookings === 0 ? (currBookings > 0 ? 100 : 0) : ((currBookings - prevBookings) / prevBookings) * 100
-  const bookingsChangeLabel = `${(isFinite(bookingsChangePct) ? bookingsChangePct : 0).toFixed(1)}%`
+  const bookingsChange = calculateChangePct(currBookings, prevBookings)
+  const bookingsChangeLabel = bookingsChange.pct === Infinity 
+    ? "New" 
+    : bookingsChange.pct === 0 
+      ? "" 
+      : `${Math.abs(bookingsChange.pct).toFixed(1)}%`
 
   const stats = [
     {
       title: "Total Earnings",
       value: `₱${totalEarnings.toLocaleString()}`,
-      change: earningsSeries.length ? earningsChangeLabel : "",
-      trend: earningsSeries.length ? earningsTrend : ("up" as const),
+      change: "", // Total earnings is cumulative, no month-over-month trend
+      trend: "up" as const,
       icon: DollarSign,
     },
     {
@@ -68,15 +98,15 @@ export function StatsCards({ overview, isLoading, averageRating, ratingCount, ea
     {
       title: "Active Bookings",
       value: String(activeBookings),
-      change: bookingsSeries.length ? bookingsChangeLabel : "",
-      trend: bookingsSeries.length ? bookingsTrend : ("up" as const),
+      change: bookingsSeries.length >= 2 ? bookingsChangeLabel : "",
+      trend: bookingsSeries.length >= 2 ? bookingsChange.trend : ("up" as const),
       icon: Calendar,
     },
     {
       title: "Monthly Income",
       value: `₱${thisMonthEarnings.toLocaleString()}`,
-      change: earningsSeries.length ? earningsChangeLabel : "",
-      trend: earningsSeries.length ? earningsTrend : ("up" as const),
+      change: earningsSeries.length >= 2 ? earningsChangeLabel : "",
+      trend: earningsSeries.length >= 2 ? earningsChange.trend : ("up" as const),
       icon: TrendingUp,
     },
   ]
@@ -109,11 +139,13 @@ export function StatsCards({ overview, isLoading, averageRating, ratingCount, ea
               ) : (
                 <>
                   <div className="text-2xl font-bold text-card-foreground">{stat.value}</div>
-                  <p className="flex items-center text-xs text-muted-foreground mt-1">
-                    <TrendIcon className={`mr-1 h-4 w-4 ${stat.trend === "up" ? "text-green-500" : "text-red-500"}`} />
-                    <span className={stat.trend === "up" ? "text-green-500" : "text-red-500"}>{stat.change}</span>
-                    <span className="ml-1">from last month</span>
-                  </p>
+                  {stat.change && (
+                    <p className="flex items-center text-xs text-muted-foreground mt-1">
+                      <TrendIcon className={`mr-1 h-4 w-4 ${stat.trend === "up" ? "text-green-500" : "text-red-500"}`} />
+                      <span className={stat.trend === "up" ? "text-green-500" : "text-red-500"}>{stat.change}</span>
+                      <span className="ml-1">from last month</span>
+                    </p>
+                  )}
                 </>
               )}
             </CardContent>

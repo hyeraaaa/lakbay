@@ -1,8 +1,9 @@
 import Image from "next/image";
+import Link from "next/link";
 
 const Logo = () => {
   return (
-    <div className="flex items-center space-x-1">
+    <Link href="/" className="flex items-center space-x-1 cursor-pointer hover:opacity-80 transition-opacity">
       <Image
         src="/logo.png"
         alt="lakbay"
@@ -14,7 +15,7 @@ const Logo = () => {
       <span className="text-2xl text-primary font-medium tracking-[.1em] lg:block hidden">
         Lakbay
       </span>
-    </div>
+    </Link>
   );
 };
 

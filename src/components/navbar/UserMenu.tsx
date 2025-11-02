@@ -1,11 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, LogOut, Settings, Home, Car, Calendar, MessageCircle } from "lucide-react";
+import { User, LogOut, Settings, Home, Car, Calendar, MessageCircle, ShieldCheck, Flag, Users as UsersIcon, ScrollText, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ConfirmationDialog } from "@/components/confirmation-dialog/confimationDialog";
 import { encodeId } from "@/lib/idCodec";
 import { User as UserType } from "@/lib/jwt";
+
+type MenuItem = {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  href: string;
+  openInNewTab?: boolean;
+};
 
 interface UserMenuProps {
   user: UserType;
@@ -17,9 +24,57 @@ interface UserMenuProps {
   handleLogout: () => void;
 }
 
-const showProfileLink = (userType: string) => {
-  return userType === 'owner'
-}
+// Helper functions for role-based menu items
+const getBookingsRoute = (userType: string): string | null => {
+  switch (userType.toLowerCase()) {
+    case 'owner':
+      return '/owner/bookings';
+    case 'user':
+    case 'customer':
+      return '/user/bookings';
+    case 'admin':
+    default:
+      return null; // Admins don't have a bookings page
+  }
+};
+
+const getChatRoute = (userType: string): string => {
+  switch (userType.toLowerCase()) {
+    case 'admin':
+      return '/admin/chat';
+    case 'owner':
+    case 'user':
+    case 'customer':
+    default:
+      return '/?openChat=true';
+  }
+};
+
+const getChatLabel = (userType: string): string => {
+  return userType.toLowerCase() === 'admin' ? 'Chat' : 'Customer Support';
+};
+
+const shouldShowBecomeAHost = (userType: string): boolean => {
+  const type = userType.toLowerCase();
+  return type === 'user' || type === 'customer';
+};
+
+const getAdminMenuItems = (): MenuItem[] => {
+  return [
+    { icon: ShieldCheck, label: "Verification Requests", href: "/admin/verification-requests" },
+    { icon: Flag, label: "Reports", href: "/admin/reports" },
+    { icon: Car, label: "Vehicles", href: "/admin/vehicles" },
+    { icon: UsersIcon, label: "Account Management", href: "/admin/account-management" },
+    { icon: ScrollText, label: "Logs", href: "/admin/logs" },
+  ];
+};
+
+const getOwnerMenuItems = (): MenuItem[] => {
+  return [
+    { icon: Search, label: "Browse Vehicle", href: "/user", openInNewTab: true },
+    { icon: Car, label: "Vehicles", href: "/owner/vehicle" },
+  ];
+};
 
 const UserMenu = ({
   user,
@@ -83,7 +138,7 @@ const UserMenu = ({
             </button>
           </Link>
           
-          {showProfileLink(user.user_type) && (
+          {/* Profile - Show for all user types */}
           <Link href={`/profile/${encodeId(String(user.id))}`}>
             <button
               className="w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-gray-100 flex items-center space-x-3 cursor-pointer"
@@ -93,17 +148,92 @@ const UserMenu = ({
               <span>Profile</span>
             </button>
           </Link>
+          
+          {/* Admin-specific menu items */}
+          {user.user_type?.toLowerCase() === 'admin' && (
+            <>
+              {getAdminMenuItems().map((item) => {
+                const Icon = item.icon;
+                return item.openInNewTab ? (
+                  <Link 
+                    key={item.href}
+                    href={item.href} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    <button
+                      className="w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-gray-100 flex items-center space-x-3 cursor-pointer"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  </Link>
+                ) : (
+                  <Link key={item.href} href={item.href}>
+                    <button
+                      className="w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-gray-100 flex items-center space-x-3 cursor-pointer"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  </Link>
+                );
+              })}
+            </>
           )}
           
-          <Link href="/user/bookings">
-            <button
-              className="w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-gray-100 flex items-center space-x-3 cursor-pointer"
-              onClick={() => setIsUserMenuOpen(false)}
-            >
-              <Calendar className="h-5 w-5" />
-              <span>Bookings</span>
-            </button>
-          </Link>
+          {/* Owner-specific menu items */}
+          {user.user_type?.toLowerCase() === 'owner' && (
+            <>
+              {getOwnerMenuItems().map((item) => {
+                const Icon = item.icon;
+                return item.openInNewTab ? (
+                  <Link 
+                    key={item.href}
+                    href={item.href} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    <button
+                      className="w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-gray-100 flex items-center space-x-3 cursor-pointer"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  </Link>
+                ) : (
+                  <Link key={item.href} href={item.href}>
+                    <button
+                      className="w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-gray-100 flex items-center space-x-3 cursor-pointer"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </button>
+                  </Link>
+                );
+              })}
+            </>
+          )}
+          
+          {/* Bookings - Show only for owners and users, not admins */}
+          {(() => {
+            const bookingsRoute = getBookingsRoute(user.user_type);
+            return bookingsRoute ? (
+              <Link href={bookingsRoute}>
+                <button
+                  className="w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-gray-100 flex items-center space-x-3 cursor-pointer"
+                  onClick={() => setIsUserMenuOpen(false)}
+                >
+                  <Calendar className="h-5 w-5" />
+                  <span>Bookings</span>
+                </button>
+              </Link>
+            ) : null;
+          })()}
           
           <Link href="/settings">
             <button
@@ -115,17 +245,19 @@ const UserMenu = ({
             </button>
           </Link>
           
-          <Link href="/?openChat=true">
+          {/* Chat/Customer Support - Different routes and labels based on role */}
+          <Link href={getChatRoute(user.user_type)}>
             <button
               className="w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-gray-100 flex items-center space-x-3 cursor-pointer"
               onClick={() => setIsUserMenuOpen(false)}
             >
               <MessageCircle className="h-5 w-5" />
-              <span>Customer Support</span>
+              <span>{getChatLabel(user.user_type)}</span>
             </button>
           </Link>
           
-          {user.user_type !== 'owner' && user.user_type !== 'admin' && (
+          {/* Become a Host - Show only for regular users */}
+          {shouldShowBecomeAHost(user.user_type) && (
             <Link href="/user/become-a-host">
               <div className="border-t border-border">
                 <button

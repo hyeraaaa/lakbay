@@ -33,19 +33,8 @@ export default function CarBookingInterface() {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
   const { vehicle, isLoading, reviews, reviewsAll, reviewsError, tripCount } = useVehicleDetails()
 
-  // Priority prefetch: kick off location-related data fetch ASAP using route id
-  const params = useParams()
-  useEffect(() => {
-    const rawId = (params as { id?: string | string[] })?.id
-    const idStr = Array.isArray(rawId) ? rawId[0] : rawId
-    const vehicleId = idStr ? Number(idStr) : undefined
-    if (!vehicleId || Number.isNaN(vehicleId)) return
-    ;(async () => {
-      try {
-        await vehicleService.getVehicleGPSDevices(vehicleId)
-      } catch {}
-    })()
-  }, [params])
+  // Note: GPS device fetching is handled by useVehicleLiveLocation hook in LiveLocationSection
+  // No need to prefetch here as it would cause duplicate API calls and potential memory issues
 
   const carImages = useMemo(() => {
     const urls = (vehicle?.vehicle_images || [])

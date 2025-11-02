@@ -156,8 +156,8 @@ export default function CarsPage() {
                  disabled={!isStripeLoading && needsSetup}
                  className="ml-auto"
                >
-                 <Plus className="h-4 w-4 mr-2" />
-                 Add Vehicle
+                 <Plus className="h-4 w-4 md:mr-2" />
+                 <span className="hidden lg:inline">Add Vehicle</span>
                </Button>
              </div>
 

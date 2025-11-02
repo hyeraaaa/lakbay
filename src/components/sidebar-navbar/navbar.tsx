@@ -21,6 +21,7 @@ import { encodeId } from "@/lib/idCodec"
 import { useIsMobile } from "@/hooks/use-mobile"
 import Link from "next/link"
 import Image from "next/image"
+import { ConfirmationDialog } from "@/components/confirmation-dialog/confimationDialog"
 
 export function Navbar() {
   const { user, fullName, logout } = useNavbarAuth()
@@ -30,6 +31,7 @@ export function Navbar() {
   const [isGeneralChatOpen, setIsGeneralChatOpen] = useState(false)
   const socketRef = useRef<Socket | null>(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const isMobile = useIsMobile()
@@ -217,11 +219,15 @@ export function Navbar() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => {
+                    router.push('/?openChat=true')
+                  }}
+                >
+                  Support
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>
+                <DropdownMenuItem onClick={() => setIsLogoutDialogOpen(true)}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Log out
                 </DropdownMenuItem>
@@ -297,7 +303,7 @@ export function Navbar() {
             className="w-full justify-start text-lg py-6 transition-all duration-200 hover:bg-red-50 text-red-600"
             onClick={() => {
               setIsMenuOpen(false)
-              logout()
+              setIsLogoutDialogOpen(true)
             }}
           >
             <LogOut className="h-5 w-5 mr-3" />
@@ -315,6 +321,20 @@ export function Navbar() {
     
     {/* General Chat Widget for Owners */}
     {isOwner && <GeneralChatWidget />}
+    
+    {/* Logout Confirmation Dialog */}
+    <ConfirmationDialog
+      open={isLogoutDialogOpen}
+      onOpenChange={setIsLogoutDialogOpen}
+      title="Log out"
+      description="Are you sure you want to log out? You'll need to sign in again to access your account."
+      confirmText="Log out"
+      cancelText="Cancel"
+      variant="destructive"
+      onConfirm={() => {
+        logout()
+      }}
+    />
     </>
   )
 }

@@ -85,7 +85,9 @@ export function Sidebar() {
       <div className="flex h-full flex-col items-center py-4">
         {/* Logo */}
         <div className="mb-8">
-          <Image src="/logo.png" alt="Lakbay" width={32} height={32} className="rounded" />
+          <Link href="/">
+            <Image src="/logo.png" alt="Lakbay" width={32} height={32} className="rounded" />
+          </Link>
         </div>
 
         {/* Navigation Items */}

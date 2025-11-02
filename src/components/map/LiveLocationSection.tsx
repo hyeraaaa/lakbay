@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, memo } from "react"
 import VehicleMap from "@/components/map/VehicleMap"
 import type { VehicleResponse } from "@/services/vehicleServices"
 import { useVehicleLiveLocation } from "@/hooks/cars/useVehicleLiveLocation"
@@ -14,19 +14,25 @@ type LiveLocation = {
   longitude: number
 }
 
-export default function LiveLocationSection({ vehicle }: LiveLocationSectionProps) {
+function LiveLocationSection({ vehicle }: LiveLocationSectionProps) {
   const vehicleId = vehicle?.vehicle_id
   const { hasTrackingDevice, liveLocation, initialLoading, isLive } = useVehicleLiveLocation(vehicleId)
 
+  // Memoize vehicles array to prevent unnecessary map re-renders
+  // Only update when vehicle or liveLocation coordinates actually change
   const vehiclesForMap = useMemo(() => {
     if (!vehicle) return [] as VehicleResponse[]
     if (liveLocation) {
       // Reuse VehicleMap by overriding garage coordinates with live coords
-      const v: VehicleResponse = { ...vehicle, garage_latitude: liveLocation.latitude, garage_longitude: liveLocation.longitude }
+      const v: VehicleResponse = { 
+        ...vehicle, 
+        garage_latitude: liveLocation.latitude, 
+        garage_longitude: liveLocation.longitude 
+      }
       return [v]
     }
     return vehicle ? [vehicle] : []
-  }, [vehicle, liveLocation])
+  }, [vehicle, liveLocation?.latitude, liveLocation?.longitude])
 
   const getStatusText = () => {
     if (initialLoading) return "Loading location..."
@@ -71,5 +77,8 @@ export default function LiveLocationSection({ vehicle }: LiveLocationSectionProp
     </div>
   )
 }
+
+// Memoize component to prevent unnecessary re-renders when parent updates
+export default memo(LiveLocationSection)
 
 
