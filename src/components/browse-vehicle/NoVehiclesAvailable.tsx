@@ -4,8 +4,26 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
 import { Car, Search, RefreshCw } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 
-export default function NoVehiclesAvailable() {
+function NoVehiclesAvailableContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // Check if there are any active filters
+  const hasFilters = searchParams.toString().length > 0
+  
+  // Reset all filters by clearing URL params and dispatching a reset event
+  // This allows components to reset their state without a full page reload
+  const handleResetFilters = () => {
+    // Dispatch custom event to reset component states
+    window.dispatchEvent(new CustomEvent('lakbay:reset-filters'))
+    
+    // Navigate to /user without any search params
+    router.replace('/user')
+  }
+
   return (
     <div className="h-full flex items-center justify-center p-4">
       <div className="max-w-lg mx-auto text-center">
@@ -40,6 +58,20 @@ export default function NoVehiclesAvailable() {
           </p>
         </div>
 
+        {/* Reset Filters Button */}
+        {hasFilters && (
+          <div className="mb-4">
+            <Button
+              onClick={handleResetFilters}
+              variant="outline"
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Reset Filters & Search
+            </Button>
+          </div>
+        )}
+
         {/* Fun Fact */}
         <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg backdrop-blur-sm">
           <p className="text-xs text-gray-600 dark:text-gray-400">
@@ -49,5 +81,22 @@ export default function NoVehiclesAvailable() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function NoVehiclesAvailable() {
+  return (
+    <Suspense fallback={
+      <div className="h-full flex items-center justify-center p-4">
+        <div className="max-w-lg mx-auto text-center">
+          <div className="mb-4">
+            <h1 className="text-6xl font-bold text-gray-900 dark:text-gray-100 mb-2">0</h1>
+            <div className="w-16 h-1 bg-gray-700 dark:bg-gray-300 mx-auto rounded-full"></div>
+          </div>
+        </div>
+      </div>
+    }>
+      <NoVehiclesAvailableContent />
+    </Suspense>
   )
 }

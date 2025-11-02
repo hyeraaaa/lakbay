@@ -68,6 +68,9 @@ const SearchbarSmContent = ({ className }: SearchbarSmProps) => {
       setFromLocation(`${city}, ${province}`)
     } else if (city) {
       setFromLocation(city)
+    } else {
+      // Clear location if no params
+      setFromLocation("")
     }
 
     // Set date range if both dates exist
@@ -76,8 +79,27 @@ const SearchbarSmContent = ({ className }: SearchbarSmProps) => {
         from: new Date(startDate),
         to: new Date(endDate)
       })
+    } else {
+      // Clear dates if no params
+      setDateRange(undefined)
     }
   }, [searchParams, setFromLocation, setDateRange])
+
+  // Listen for reset event
+  useEffect(() => {
+    const handleReset = () => {
+      setFromLocation("")
+      setDateRange(undefined)
+      setShowSuggestions(false)
+      setIsStartPopoverOpen(false)
+      setIsEndPopoverOpen(false)
+    }
+
+    window.addEventListener('lakbay:reset-filters', handleReset)
+    return () => {
+      window.removeEventListener('lakbay:reset-filters', handleReset)
+    }
+  }, [setFromLocation, setDateRange])
 
   const handleClearInput = () => {
     setFromLocation("")

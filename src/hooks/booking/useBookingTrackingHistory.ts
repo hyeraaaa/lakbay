@@ -98,26 +98,30 @@ export function useBookingTrackingHistory({
           // Map the tracking history to GPSPoint format
           const points: GPSPoint[] = trackingHistory
             .map((point: TrackingHistoryPoint) => {
-              const lat = parseFloat(point.latitude);
-              const lng = parseFloat(point.longitude);
+              const lat = parseFloat(String(point.latitude));
+              const lng = parseFloat(String(point.longitude));
+              const timestamp = point.gps_timestamp || point.timestamp || new Date().toISOString();
               
               return {
                 latitude: lat,
                 longitude: lng,
-                timestamp: point.gps_timestamp || point.timestamp,
-                speed: point.speed ? parseFloat(point.speed) : undefined,
-                heading: point.heading ? parseFloat(point.heading) : undefined,
+                timestamp: timestamp,
+                speed: point.speed ? parseFloat(String(point.speed)) : undefined,
+                heading: point.heading ? parseFloat(String(point.heading)) : undefined,
               };
             })
-            .filter((point: GPSPoint) => {
-              const isValid = Number.isFinite(point.latitude) && Number.isFinite(point.longitude);
+            .filter((point) => {
+              const isValid = 
+                Number.isFinite(point.latitude) && 
+                Number.isFinite(point.longitude) &&
+                point.timestamp != null;
               if (!isValid) {
                 console.warn('Invalid GPS point filtered out:', point);
               }
               return isValid;
             })
             // Sort by timestamp ascending for proper polyline order
-            .sort((a: GPSPoint, b: GPSPoint) => 
+            .sort((a, b) => 
               new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
             );
 
