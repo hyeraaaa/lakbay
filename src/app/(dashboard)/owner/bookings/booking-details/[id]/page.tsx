@@ -122,7 +122,6 @@ export default function OwnerBookingDetailsPage() {
         <div className="lg:col-span-2 space-y-6">
           <VehicleInformationCard booking={booking} />
           <BookingDetailsCard booking={booking} />
-          <BookingRouteMap booking={booking} />
           <BookingReviewCard booking={booking} />
         </div>
 
@@ -133,6 +132,8 @@ export default function OwnerBookingDetailsPage() {
           <OwnerBookingActionsCard booking={booking} onAction={handleAction} />
         </div>
       </div>
+
+      <BookingRouteMap booking={booking} />
     </div>
   );
 }
