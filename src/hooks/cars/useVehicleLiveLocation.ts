@@ -91,16 +91,18 @@ export function useVehicleLiveLocation(vehicleId?: number | null) {
 
   useEffect(() => {
     let cancelled = false
+    let currentVehicleId: number | null = null
 
     const connect = async () => {
       if (!vehicleId) return
+      currentVehicleId = vehicleId
       
       setInitialLoading(true)
       
       try {
         // First, check if GPS devices exist and get their last tracking data
         const devices = await vehicleService.getVehicleGPSDevices(vehicleId)
-        if (cancelled) return
+        if (cancelled || currentVehicleId !== vehicleId) return
         const activeExists = Array.isArray(devices) && devices.some(d => d.is_active !== false)
         setHasTrackingDevice(activeExists)
         
@@ -141,6 +143,8 @@ export function useVehicleLiveLocation(vehicleId?: number | null) {
         // Clean up any existing socket connection first
         if (socketRef.current) {
           try {
+            // Explicitly leave any previous room before disconnecting to help backend cleanup
+            // Note: We can't know previous vehicleId, but socket.io will clean up automatically
             socketRef.current.removeAllListeners()
             socketRef.current.disconnect()
           } catch {}
@@ -154,23 +158,25 @@ export function useVehicleLiveLocation(vehicleId?: number | null) {
         const socket = io(`${socketBase}/tracking`, {
           transports: ["websocket", "polling"],
           auth: { token },
-          // Add connection options to prevent memory leaks
-          forceNew: true,
+          // Remove forceNew to allow connection reuse and prevent memory leaks
+          // Only reconnect if connection is truly dead
           reconnection: true,
           reconnectionAttempts: 5,
           reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          timeout: 20000,
         })
         socketRef.current = socket
 
         // Create handler functions
         const handleConnect = () => {
-          if (!cancelled && socketRef.current) {
+          if (!cancelled && socketRef.current && currentVehicleId === vehicleId) {
             socketRef.current.emit("join_vehicle_tracking", { vehicleId })
           }
         }
 
         const handleLocationPayload = (payload: LocationPayload) => {
-          if (cancelled) return
+          if (cancelled || currentVehicleId !== vehicleId) return
           const loc = payload?.location
           const lat = Number(loc?.latitude)
           const lng = Number(loc?.longitude)
@@ -204,7 +210,7 @@ export function useVehicleLiveLocation(vehicleId?: number | null) {
         
         setInitialLoading(false)
       } catch (err) {
-        if (!cancelled) {
+        if (!cancelled && currentVehicleId === vehicleId) {
           setHasTrackingDevice(false)
           setInitialLoading(false)
         }
@@ -218,6 +224,10 @@ export function useVehicleLiveLocation(vehicleId?: number | null) {
       cancelled = true
       if (socketRef.current) {
         try {
+          // Explicitly leave the room before disconnecting to help backend cleanup
+          if (currentVehicleId) {
+            socketRef.current.emit("leave_vehicle_tracking", { vehicleId: currentVehicleId })
+          }
           // Remove all event listeners to prevent memory leaks
           socketRef.current.removeAllListeners("connect")
           socketRef.current.removeAllListeners("current_location")
