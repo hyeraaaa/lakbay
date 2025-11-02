@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo, memo } from "react";
+import React, { useMemo } from "react";
 import dynamic from 'next/dynamic';
 import { Booking } from "@/services/bookingServices";
 import { useVehicleLiveLocation } from "@/hooks/cars/useVehicleLiveLocation";
@@ -40,21 +40,15 @@ interface BookingRouteMapProps {
   booking: Booking;
 }
 
-function BookingRouteMap({ booking }: BookingRouteMapProps) {
+export default function BookingRouteMap({ booking }: BookingRouteMapProps) {
   const vehicleId = booking.vehicle.vehicle_id;
-  const isCompleted = booking.status === 'completed';
-  const isOngoing = booking.status === 'on_going';
-  
-  // Only use live location for ongoing bookings to prevent unnecessary socket connections
-  const { hasTrackingDevice, liveLocation, initialLoading, isLive } = useVehicleLiveLocation(
-    isOngoing ? vehicleId : null
-  );
+  const { hasTrackingDevice, liveLocation, initialLoading, isLive } = useVehicleLiveLocation(vehicleId);
 
   // Track from checkout_timestamp when GPS tracking actually begins
   // If no checkout_timestamp, fall back to start_date (but GPS data may not exist)
   const startDate = booking.checkout_timestamp || booking.start_date;
   // For ongoing bookings, use current time as end date; for completed, use checkin timestamp or end_date
-  const endDate = isOngoing 
+  const endDate = booking.status === 'on_going' 
     ? undefined // Will default to current time in the hook
     : booking.checkin_timestamp || booking.end_date;
 
@@ -66,14 +60,22 @@ function BookingRouteMap({ booking }: BookingRouteMapProps) {
     enabled: Boolean(startDate && vehicleId),
   });
 
-  // Prepare polyline coordinates from tracking points - memoized to prevent unnecessary recalculations
+  // Prepare polyline coordinates from tracking points
   const routeCoordinates = useMemo(() => {
     if (trackingPoints.length === 0) {
+      console.log('No tracking points available for polyline');
       return [];
     }
     
-    // Only create coordinates array - removed expensive logging
-    return trackingPoints.map(point => [point.latitude, point.longitude] as [number, number]);
+    const coords = trackingPoints.map(point => [point.latitude, point.longitude] as [number, number]);
+    console.log('Route Coordinates for Polyline:', {
+      totalPoints: coords.length,
+      firstCoord: coords[0],
+      lastCoord: coords[coords.length - 1],
+      sampleCoords: coords.slice(0, 5)
+    });
+    
+    return coords;
   }, [trackingPoints]);
 
   // Get map center - prioritize live location, then last tracking point, then vehicle garage location
@@ -92,7 +94,11 @@ function BookingRouteMap({ booking }: BookingRouteMapProps) {
       ] as [number, number];
     }
     return null;
-  }, [liveLocation, trackingPoints, booking.vehicle.garage_latitude, booking.vehicle.garage_longitude]);
+  }, [liveLocation, trackingPoints, booking.vehicle]);
+
+  // Determine status text based on booking status
+  const isCompleted = booking.status === 'completed';
+  const isOngoing = booking.status === 'on_going';
 
   const getStatusText = () => {
     if (initialLoading || trackingLoading) return "Loading location...";
@@ -171,7 +177,4 @@ function BookingRouteMap({ booking }: BookingRouteMapProps) {
     </div>
   );
 }
-
-// Memoize component to prevent unnecessary re-renders
-export default memo(BookingRouteMap);
 

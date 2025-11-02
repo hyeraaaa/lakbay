@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, useMap, Polyline, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { Vehicle } from '@/services/bookingServices';
@@ -29,97 +29,80 @@ interface BookingRouteMapInnerProps {
   hasTrackingDevice?: boolean | null;
 }
 
-// Memoize icons to prevent recreation on every render
-const liveLocationIcon = L.divIcon({
-  className: 'custom-live-marker',
-  html: `
-    <div style="
-      width: 20px;
-      height: 20px;
-      background-color: #22c55e;
-      border: 3px solid white;
-      border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    "></div>
-  `,
-  iconSize: [20, 20],
-  iconAnchor: [10, 10],
-});
+// Custom icon for live location (green marker)
+const createLiveLocationIcon = () => {
+  return L.divIcon({
+    className: 'custom-live-marker',
+    html: `
+      <div style="
+        width: 20px;
+        height: 20px;
+        background-color: #22c55e;
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      "></div>
+    `,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  });
+};
 
-const startIcon = L.divIcon({
-  className: 'custom-start-marker',
-  html: `
-    <div style="
-      width: 18px;
-      height: 18px;
-      background-color: #3b82f6;
-      border: 2px solid white;
-      border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    "></div>
-  `,
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-});
+// Custom icon for start location (blue marker)
+const createStartIcon = () => {
+  return L.divIcon({
+    className: 'custom-start-marker',
+    html: `
+      <div style="
+        width: 18px;
+        height: 18px;
+        background-color: #3b82f6;
+        border: 2px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      "></div>
+    `,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+  });
+};
 
-const endIcon = L.divIcon({
-  className: 'custom-end-marker',
-  html: `
-    <div style="
-      width: 18px;
-      height: 18px;
-      background-color: #ef4444;
-      border: 2px solid white;
-      border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    "></div>
-  `,
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-});
+// Custom icon for end location (red marker)
+const createEndIcon = () => {
+  return L.divIcon({
+    className: 'custom-end-marker',
+    html: `
+      <div style="
+        width: 18px;
+        height: 18px;
+        background-color: #ef4444;
+        border: 2px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      "></div>
+    `,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+  });
+};
 
-// Component to fit map to bounds with throttling to prevent excessive updates
+// Component to fit map to bounds
 const FitBounds: React.FC<{ coordinates: [number, number][] }> = ({ coordinates }) => {
   const map = useMap();
-  const lastFitRef = useRef<string>('');
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
-    // Create a simple hash of coordinates to detect actual changes
-    const coordsHash = coordinates.length > 0 
-      ? `${coordinates[0][0]}-${coordinates[0][1]}-${coordinates[coordinates.length - 1][0]}-${coordinates[coordinates.length - 1][1]}-${coordinates.length}`
-      : '';
-    
-    // Only fit bounds if coordinates actually changed
-    if (coordsHash && coordsHash !== lastFitRef.current && coordinates.length > 0) {
-      // Clear any pending timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+    if (coordinates.length > 0) {
+      try {
+        const bounds = L.latLngBounds(coordinates);
+        map.fitBounds(bounds, { 
+          padding: [40, 40], 
+          animate: true, 
+          maxZoom: 17 
+        });
+      } catch (error) {
+        console.error('Error fitting bounds:', error);
       }
-      
-      // Throttle map updates to prevent excessive re-renders
-      timeoutRef.current = setTimeout(() => {
-        try {
-          const bounds = L.latLngBounds(coordinates);
-          map.fitBounds(bounds, { 
-            padding: [40, 40], 
-            animate: true, 
-            maxZoom: 17 
-          });
-          lastFitRef.current = coordsHash;
-        } catch (error) {
-          // Silently handle errors (invalid coordinates, etc.)
-        }
-        timeoutRef.current = null;
-      }, 300); // Wait 300ms before fitting bounds
     }
-    
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
   }, [coordinates, map]);
   
   return null;
@@ -139,7 +122,17 @@ export default function BookingRouteMapInner({
     setIsClient(true);
   }, []);
 
-  // Removed expensive debug logging that caused memory issues
+  // Debug: Log polyline coordinates when they change
+  useEffect(() => {
+    if (routeCoordinates.length > 1) {
+      console.log('Polyline GPS Coordinates:', {
+        totalPoints: routeCoordinates.length,
+        firstPoint: `Lat: ${routeCoordinates[0][0]}, Lng: ${routeCoordinates[0][1]}`,
+        lastPoint: `Lat: ${routeCoordinates[routeCoordinates.length - 1][0]}, Lng: ${routeCoordinates[routeCoordinates.length - 1][1]}`,
+        sampleCoords: routeCoordinates.slice(0, 5).map(([lat, lng]) => `[${lat}, ${lng}]`)
+      });
+    }
+  }, [routeCoordinates]);
 
   if (!isClient) {
     return (
@@ -222,7 +215,7 @@ export default function BookingRouteMapInner({
       {routeCoordinates.length > 0 && (
         <Marker
           position={routeCoordinates[0]}
-          icon={startIcon}
+          icon={createStartIcon()}
         >
           <Popup>
             <div className="text-sm">
@@ -240,7 +233,7 @@ export default function BookingRouteMapInner({
       {liveLocation ? (
         <Marker
           position={[liveLocation.latitude, liveLocation.longitude]}
-          icon={liveLocationIcon}
+          icon={createLiveLocationIcon()}
         >
           <Popup>
             <div className="text-sm">
@@ -255,7 +248,7 @@ export default function BookingRouteMapInner({
       ) : routeCoordinates.length > 0 && (
         <Marker
           position={routeCoordinates[routeCoordinates.length - 1]}
-          icon={endIcon}
+          icon={createEndIcon()}
         >
           <Popup>
             <div className="text-sm">
