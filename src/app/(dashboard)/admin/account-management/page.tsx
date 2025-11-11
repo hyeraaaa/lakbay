@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { UsersDataTable, AdminRegistrationDialog, UserStatsCards, UsersPagination } from '@/components/admin/account-management'
+import { UsersDataTable, AdminRegistrationDialog, EditUserDialog, UserStatsCards, UsersPagination } from '@/components/admin/account-management'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -35,6 +35,8 @@ export default function Page() {
     pendingAction,
     deactivationReason,
     registerDialogOpen,
+    editDialogOpen,
+    editingUser,
     
     // Setters
     setSearch,
@@ -44,6 +46,8 @@ export default function Page() {
     setConfirmOpen,
     setDeactivationReason,
     setRegisterDialogOpen,
+    setEditDialogOpen,
+    setEditingUser,
     
     // Handlers
     handleAction,
@@ -51,9 +55,10 @@ export default function Page() {
     handleConfirmAction,
     handleCancelAction,
     handleRegistrationSuccess,
+    handleEditSuccess,
   } = useAccountManagement()
 
-  const onAction = (action: "view" | "activate" | "deactivate" | "ban", userId: number) => {
+  const onAction = (action: "view" | "edit" | "activate" | "deactivate" | "ban", userId: number) => {
     handleAction(action, userId, encodeId)
   }
 
@@ -235,6 +240,13 @@ export default function Page() {
         open={registerDialogOpen}
         onOpenChange={setRegisterDialogOpen}
         onSuccess={handleRegistrationSuccess}
+      />
+
+      <EditUserDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        user={editingUser}
+        onSuccess={handleEditSuccess}
       />
           </div>
         </CardContent>

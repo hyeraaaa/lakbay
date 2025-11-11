@@ -239,7 +239,9 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
             </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-30">
             <DropdownMenuItem asChild>
-              <Link href={`/owner/vehicle/vehicle-details/${encodeId(row.original.id.toString())}`}>
+              <Link href={isAdmin 
+                ? `/admin/reports/view-vehicle/${encodeId(row.original.id.toString())}`
+                : `/owner/vehicle/vehicle-details/${encodeId(row.original.id.toString())}`}>
                 <Eye size={16} /> View Details
               </Link>
             </DropdownMenuItem>

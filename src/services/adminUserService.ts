@@ -68,6 +68,12 @@ export type AdminUserGlobalCounts = {
   banned: number
 }
 
+type ValidationError = {
+  param?: string
+  msg?: string
+  message?: string
+}
+
 export const adminUserService = {
   async listUsers(filters: AdminUserListFilters = {}): Promise<AdminUserListResponse> {
     const params = new URLSearchParams()
@@ -156,6 +162,48 @@ export const adminUserService = {
       body: JSON.stringify(adminData)
     })
     return res.json().catch(() => ({}))
+  },
+
+  async getUserById(userId: number) {
+    const res = await apiRequest(`${API_BASE_URL}/api/users/${userId}`, { method: "GET" })
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: 'Failed to fetch user' }))
+      throw new Error(errorData.message || `Failed to fetch user: ${res.status}`)
+    }
+    
+    return res.json()
+  },
+
+  async updateUser(userId: number, updateData: Partial<AdminUserSummary & {
+    address_line1?: string | null
+    address_line2?: string | null
+    city?: string | null
+    state?: string | null
+    postal_code?: string | null
+    country?: string | null
+    username?: string | null
+    phone?: string | null
+  }>) {
+    const res = await apiRequest(`${API_BASE_URL}/api/users/admin/${userId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updateData)
+    })
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: 'Failed to update user' }))
+      // Handle validation errors (422) - they have an 'errors' array
+      if (res.status === 422 && errorData.errors) {
+        const validationMessages = errorData.errors.map((err: ValidationError) => 
+          `${err.param || 'field'}: ${err.msg || err.message || 'Invalid value'}`
+        ).join(', ')
+        throw new Error(`Validation failed: ${validationMessages}`)
+      }
+      throw new Error(errorData.message || `Failed to update user: ${res.status}`)
+    }
+    
+    return res.json()
   },
 }
 

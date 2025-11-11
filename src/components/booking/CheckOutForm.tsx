@@ -17,74 +17,14 @@ interface CheckOutFormProps {
 
 export default function CheckOutForm({ bookingId, onCheckOut, onCancel, isLoading = false }: CheckOutFormProps) {
   const [odometerReading, setOdometerReading] = useState<string>('');
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setError('Please select a valid image file');
-        return;
-      }
-      
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image file size must be less than 5MB');
-        return;
-      }
-
-      setPhotoFile(file);
-      setError(null);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPhotoPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const uploadPhoto = async (file: File): Promise<string> => {
-    setIsUploadingPhoto(true);
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-      formData.append('folder', 'odometer-photos');
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload photo');
-      }
-
-      const data = await response.json();
-      return data.url;
-    } finally {
-      setIsUploadingPhoto(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     try {
-      let finalPhotoUrl = photoUrl;
-
-      // Upload photo if file is selected
-      if (photoFile && !photoUrl) {
-        finalPhotoUrl = await uploadPhoto(photoFile);
-      }
-
       // Validate odometer data if provided
       const odometer = odometerReading.trim();
       if (odometer && isNaN(Number(odometer))) {
@@ -92,15 +32,15 @@ export default function CheckOutForm({ bookingId, onCheckOut, onCancel, isLoadin
         return;
       }
 
-      // If odometer is provided, photo is required
-      if (odometer && !finalPhotoUrl) {
-        setError('Photo is required when providing odometer reading');
+      // If odometer is provided, photo URL is required
+      if (odometer && !photoUrl.trim()) {
+        setError('Photo URL is required when providing odometer reading');
         return;
       }
 
-      // If photo is provided, odometer is required
-      if (finalPhotoUrl && !odometer) {
-        setError('Odometer reading is required when providing photo');
+      // If photo URL is provided, odometer is required
+      if (photoUrl.trim() && !odometer) {
+        setError('Odometer reading is required when providing photo URL');
         return;
       }
 
@@ -110,8 +50,8 @@ export default function CheckOutForm({ bookingId, onCheckOut, onCancel, isLoadin
         checkoutData.odometer_reading = Number(odometer);
       }
       
-      if (finalPhotoUrl) {
-        checkoutData.odometer_photo_url = finalPhotoUrl;
+      if (photoUrl.trim()) {
+        checkoutData.odometer_photo_url = photoUrl.trim();
       }
 
       await onCheckOut(checkoutData);
@@ -154,7 +94,7 @@ export default function CheckOutForm({ bookingId, onCheckOut, onCancel, isLoadin
               placeholder="Enter current odometer reading"
               value={odometerReading}
               onChange={(e) => setOdometerReading(e.target.value)}
-              disabled={isLoading || isUploadingPhoto}
+              disabled={isLoading}
             />
             <p className="text-xs text-gray-500">
               GPS tracking will be the primary method. Odometer reading is optional for verification.
@@ -162,66 +102,30 @@ export default function CheckOutForm({ bookingId, onCheckOut, onCancel, isLoadin
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="photo">Odometer Photo - Optional</Label>
-            <div className="space-y-2">
-              <Input
-                id="photo"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                disabled={isLoading || isUploadingPhoto}
-              />
-              {photoPreview && (
-                <div className="relative">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photoPreview}
-                    alt="Odometer preview"
-                    className="w-full h-32 object-cover rounded-md border"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => {
-                      setPhotoFile(null);
-                      setPhotoPreview(null);
-                    }}
-                    disabled={isLoading || isUploadingPhoto}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-gray-500">
-              Take a clear photo of the odometer reading. Required if providing odometer reading.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="photoUrl">Or enter photo URL</Label>
+            <Label htmlFor="photoUrl">Odometer Photo URL - Optional</Label>
             <Input
               id="photoUrl"
               type="url"
               placeholder="https://example.com/photo.jpg"
               value={photoUrl}
               onChange={(e) => setPhotoUrl(e.target.value)}
-              disabled={isLoading || isUploadingPhoto || !!photoFile}
+              disabled={isLoading}
             />
+            <p className="text-xs text-gray-500">
+              Enter the URL of the odometer photo. Required if providing odometer reading.
+            </p>
           </div>
 
           <div className="flex flex-col gap-2 pt-4">
             <Button
               type="submit"
-              disabled={isLoading || isUploadingPhoto}
+              disabled={isLoading}
               className="w-full"
             >
-              {(isLoading || isUploadingPhoto) ? (
+              {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isUploadingPhoto ? 'Uploading...' : 'Checking Out...'}
+                  Checking Out...
                 </>
               ) : (
                 'Check Out with Odometer Data'
@@ -232,7 +136,7 @@ export default function CheckOutForm({ bookingId, onCheckOut, onCancel, isLoadin
               type="button"
               variant="outline"
               onClick={handleSkipOdometer}
-              disabled={isLoading || isUploadingPhoto}
+              disabled={isLoading}
               className="w-full"
             >
               Check Out with GPS Only
@@ -242,7 +146,7 @@ export default function CheckOutForm({ bookingId, onCheckOut, onCancel, isLoadin
               type="button"
               variant="ghost"
               onClick={onCancel}
-              disabled={isLoading || isUploadingPhoto}
+              disabled={isLoading}
               className="w-full"
             >
               Cancel

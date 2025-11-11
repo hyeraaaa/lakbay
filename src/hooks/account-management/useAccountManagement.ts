@@ -21,6 +21,8 @@ export const useAccountManagement = () => {
   const [pendingAction, setPendingAction] = useState<{ action: 'activate' | 'deactivate' | 'ban'; userId: number } | null>(null)
   const [deactivationReason, setDeactivationReason] = useState<string>("")
   const [registerDialogOpen, setRegisterDialogOpen] = useState<boolean>(false)
+  const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false)
+  const [editingUser, setEditingUser] = useState<AdminUserSummary | null>(null)
 
   // Debounce search input
   useEffect(() => {
@@ -146,15 +148,24 @@ export const useAccountManagement = () => {
     }
   }, [fetchUsers, initialLoading])
 
-  const handleAction = useCallback(async (action: "view" | "activate" | "deactivate" | "ban", userId: number, encodeId: (id: string) => string) => {
+  const handleAction = useCallback(async (action: "view" | "edit" | "activate" | "deactivate" | "ban", userId: number, encodeId: (id: string) => string) => {
     if (action === 'view') {
       // Navigate to encoded profile page
       window.location.href = `/profile/${encodeId(String(userId))}`
       return
     }
+    if (action === 'edit') {
+      // Find the user in the current list
+      const user = users.find(u => u.user_id === userId)
+      if (user) {
+        setEditingUser(user)
+        setEditDialogOpen(true)
+      }
+      return
+    }
     setPendingAction({ action, userId })
     setConfirmOpen(true)
-  }, [])
+  }, [users])
 
   const applyFilters = useCallback(() => {
     setPage(1)
@@ -206,6 +217,14 @@ export const useAccountManagement = () => {
     fetchFilteredCounts()
   }, [fetchUsers, fetchFilteredCounts])
 
+  const handleEditSuccess = useCallback(() => {
+    fetchUsers()
+    // Refresh filtered counts after edit
+    fetchFilteredCounts()
+    setEditDialogOpen(false)
+    setEditingUser(null)
+  }, [fetchUsers, fetchFilteredCounts])
+
   return {
     // State
     users,
@@ -224,6 +243,8 @@ export const useAccountManagement = () => {
     pendingAction,
     deactivationReason,
     registerDialogOpen,
+    editDialogOpen,
+    editingUser,
     
     // Setters
     setSearch,
@@ -233,6 +254,8 @@ export const useAccountManagement = () => {
     setConfirmOpen,
     setDeactivationReason,
     setRegisterDialogOpen,
+    setEditDialogOpen,
+    setEditingUser,
     
     // Handlers
     handleAction,
@@ -240,6 +263,7 @@ export const useAccountManagement = () => {
     handleConfirmAction,
     handleCancelAction,
     handleRegistrationSuccess,
+    handleEditSuccess,
   }
 }
 

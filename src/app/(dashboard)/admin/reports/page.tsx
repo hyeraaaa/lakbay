@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { reportService } from '@/services/reportService'
 import { useNotification } from '@/components/NotificationProvider'
@@ -15,6 +15,7 @@ import {
   ReportsTable,
   ReportsPagination,
   EditReportDialog,
+  ViewProofsDialog,
   ReportsTableSkeleton,
 } from '@/components/admin/reports'
 
@@ -59,6 +60,9 @@ export default function ReportsPage() {
     closeDialog,
   } = useReportDialog()
 
+  const [showProofsDialog, setShowProofsDialog] = useState(false)
+  const [selectedProofReport, setSelectedProofReport] = useState<Report | null>(null)
+
   useEffect(() => {
     fetchReports(undefined, error)
   }, [fetchReports, error])
@@ -88,6 +92,11 @@ export default function ReportsPage() {
 
   const handleEditReport = (report: Report) => {
     openDialog(report)
+  }
+
+  const handleViewProofs = (report: Report) => {
+    setSelectedProofReport(report)
+    setShowProofsDialog(true)
   }
 
   const handleUpdateReport = async () => {
@@ -145,6 +154,7 @@ export default function ReportsPage() {
             loading={loading}
             onViewEntity={handleViewEntity}
             onEditReport={handleEditReport}
+            onViewProofs={handleViewProofs}
           />
         )}
 
@@ -176,6 +186,15 @@ export default function ReportsPage() {
         onAdminNotesChange={setEditAdminNotes}
         onResolutionNotesChange={setEditResolutionNotes}
         onUpdate={handleUpdateReport}
+      />
+
+      <ViewProofsDialog
+        report={selectedProofReport}
+        open={showProofsDialog}
+        onOpenChange={(open) => {
+          setShowProofsDialog(open)
+          if (!open) setSelectedProofReport(null)
+        }}
       />
     </div>
   )

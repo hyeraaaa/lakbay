@@ -32,9 +32,14 @@ export const useBusinessHours = (options: UseBusinessHoursOptions = {}): UseBusi
   // Get current user to determine user type
   const currentUser = getCurrentUser();
   const userType = currentUser?.user_type || 'customer';
+  const currentUserId = currentUser?.id ? parseInt(currentUser.id) : null;
+  
+  // Check if ownerId matches current user (viewing own profile)
+  const isViewingOwnProfile = ownerId !== undefined && currentUserId !== null && ownerId === currentUserId;
   
   // Determine if this is owner mode (can edit) or customer mode (read-only)
-  const isOwner = !ownerId && userType === 'owner';
+  // Allow editing if: no ownerId provided (own hours) OR ownerId matches current user (viewing own profile)
+  const isOwner = (!ownerId || isViewingOwnProfile) && userType === 'owner';
 
   const fetchBusinessHours = useCallback(async () => {
     if (!autoFetch) return;
@@ -45,11 +50,12 @@ export const useBusinessHours = (options: UseBusinessHoursOptions = {}): UseBusi
     try {
       let hours: BusinessHour[];
       
-      if (ownerId) {
-        // Fetch for specific owner (public view - works for customers)
+      if (ownerId && !isViewingOwnProfile) {
+        // Fetch for specific owner (public view - works for customers viewing other owners)
         hours = await businessHoursService.getBusinessHoursByOwnerId(ownerId);
       } else if (userType === 'owner') {
         // Fetch own business hours (authenticated owner)
+        // This handles both: no ownerId OR viewing own profile with ownerId
         hours = await businessHoursService.getOwnBusinessHours();
       } else {
         // Customer trying to view without specific owner - show empty state
@@ -66,10 +72,11 @@ export const useBusinessHours = (options: UseBusinessHoursOptions = {}): UseBusi
     } finally {
       setLoading(false);
     }
-  }, [ownerId, autoFetch, userType]);
+  }, [ownerId, autoFetch, userType, isViewingOwnProfile]);
 
   const updateBusinessHours = useCallback(async (hours: BusinessHour[]): Promise<BusinessHour[]> => {
-    if (ownerId) {
+    // Allow update if: no ownerId (own hours) OR ownerId matches current user (viewing own profile)
+    if (ownerId && !isViewingOwnProfile) {
       throw new Error('Cannot update business hours for another owner');
     }
     
@@ -92,14 +99,15 @@ export const useBusinessHours = (options: UseBusinessHoursOptions = {}): UseBusi
     } finally {
       setLoading(false);
     }
-  }, [ownerId, userType]);
+  }, [ownerId, userType, isViewingOwnProfile]);
 
   const updateDayHours = useCallback(async (dayOfWeek: string, updateData: {
     is_open: boolean;
     opening_time?: string | null;
     closing_time?: string | null;
   }) => {
-    if (ownerId) {
+    // Allow update if: no ownerId (own hours) OR ownerId matches current user (viewing own profile)
+    if (ownerId && !isViewingOwnProfile) {
       throw new Error('Cannot update business hours for another owner');
     }
     
@@ -127,10 +135,11 @@ export const useBusinessHours = (options: UseBusinessHoursOptions = {}): UseBusi
     } finally {
       setLoading(false);
     }
-  }, [ownerId, userType]);
+  }, [ownerId, userType, isViewingOwnProfile]);
 
   const deleteBusinessHours = useCallback(async () => {
-    if (ownerId) {
+    // Allow delete if: no ownerId (own hours) OR ownerId matches current user (viewing own profile)
+    if (ownerId && !isViewingOwnProfile) {
       throw new Error('Cannot delete business hours for another owner');
     }
     
@@ -152,10 +161,11 @@ export const useBusinessHours = (options: UseBusinessHoursOptions = {}): UseBusi
     } finally {
       setLoading(false);
     }
-  }, [ownerId, userType]);
+  }, [ownerId, userType, isViewingOwnProfile]);
 
   const deleteDayHours = useCallback(async (dayOfWeek: string) => {
-    if (ownerId) {
+    // Allow delete if: no ownerId (own hours) OR ownerId matches current user (viewing own profile)
+    if (ownerId && !isViewingOwnProfile) {
       throw new Error('Cannot delete business hours for another owner');
     }
     
@@ -181,7 +191,7 @@ export const useBusinessHours = (options: UseBusinessHoursOptions = {}): UseBusi
     } finally {
       setLoading(false);
     }
-  }, [ownerId, userType]);
+  }, [ownerId, userType, isViewingOwnProfile]);
 
   const refetch = useCallback(async () => {
     await fetchBusinessHours();

@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Edit, User, Car } from 'lucide-react'
+import { MoreHorizontal, Edit, User, Car, FileText } from 'lucide-react'
 import type { Report } from '@/types/report'
 import type { VariantProps } from 'class-variance-authority'
 import { badgeVariants } from '@/components/ui/badge'
@@ -21,6 +21,7 @@ type ReportsTableProps = {
   loading: boolean
   onViewEntity: (report: Report) => void
   onEditReport: (report: Report) => void
+  onViewProofs: (report: Report) => void
 }
 
 const getPriorityColor = (priority: string): ColorResult => {
@@ -125,7 +126,7 @@ const getCategoryColor = (category: string | null | undefined): ColorResult => {
   return { variant: 'outline', className: colors[colorIndex] }
 }
 
-export function ReportsTable({ reports, loading, onViewEntity, onEditReport }: ReportsTableProps) {
+export function ReportsTable({ reports, loading, onViewEntity, onEditReport, onViewProofs }: ReportsTableProps) {
   const columns: ColumnDef<Report>[] = useMemo(() => [
     {
       header: "Type",
@@ -244,6 +245,13 @@ export function ReportsTable({ reports, loading, onViewEntity, onEditReport }: R
                 </>
               )}
             </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => onViewProofs(row.original)}
+              disabled={!row.original.evidence_urls || row.original.evidence_urls.length === 0}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              View Proofs
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEditReport(row.original)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit Status
@@ -253,7 +261,7 @@ export function ReportsTable({ reports, loading, onViewEntity, onEditReport }: R
       ),
       size: 80,
     },
-  ], [onViewEntity, onEditReport])
+  ], [onViewEntity, onEditReport, onViewProofs])
 
   const table = useReactTable({
     data: reports,

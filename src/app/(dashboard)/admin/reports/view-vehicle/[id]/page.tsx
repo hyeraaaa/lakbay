@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { getVehiclePrimaryImageUrl, getImageUrl } from "@/lib/imageUtils"
-import { decodeId } from "@/lib/idCodec"
+import { decodeId, encodeId } from "@/lib/idCodec"
 import ImageGallery from "@/components/vehicle-booking/ImageGallery"
 import GalleryDialog from "@/components/vehicle-booking/GalleryDialog"
 import TitleAndBadges from "@/components/vehicle-booking/TitleAndBadges"
@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge"
 import { ConfirmationDialog } from "@/components/confirmation-dialog/confimationDialog"
 
 export default function CarBookingInterface() {
+  const router = useRouter()
   const [selectedImage, setSelectedImage] = useState(0)
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
   const [isBookingsDialogOpen, setIsBookingsDialogOpen] = useState(false)
@@ -301,7 +302,13 @@ export default function CarBookingInterface() {
                         </TableHeader>
                         <TableBody>
                           {bookings.map((booking) => (
-                            <TableRow key={booking.booking_id} className="hover:bg-gray-50">
+                            <TableRow 
+                              key={booking.booking_id} 
+                              className="hover:bg-gray-50 cursor-pointer"
+                              onClick={() => {
+                                router.push(`/admin/verification-requests/booking-details/${encodeId(booking.booking_id.toString())}`)
+                              }}
+                            >
                               <TableCell className="font-medium">
                                 {booking.users?.first_name} {booking.users?.last_name}
                               </TableCell>
@@ -339,7 +346,7 @@ export default function CarBookingInterface() {
                                    booking.status}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                 {(() => {
                                   const status = booking.status?.toLowerCase();
                                   const isCompleted = status === 'completed';
@@ -354,7 +361,8 @@ export default function CarBookingInterface() {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                          e.stopPropagation()
                                           setBookingToCancel(booking.booking_id)
                                           setCancelDialogOpen(true)
                                         }}

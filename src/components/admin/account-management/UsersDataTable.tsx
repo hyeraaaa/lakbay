@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
  
-import { MoreHorizontal, CheckCircle, XCircle, Ban } from 'lucide-react'
+import { MoreHorizontal, CheckCircle, XCircle, Ban, Edit } from 'lucide-react'
 import type { AdminUserSummary } from '@/services/adminUserService'
 
 type UsersDataTableProps = {
   users: AdminUserSummary[]
-  onAction: (action: 'view' | 'activate' | 'deactivate' | 'ban', userId: number) => void
+  onAction: (action: 'view' | 'edit' | 'activate' | 'deactivate' | 'ban', userId: number) => void
   page: number
   totalPages: number
   totalItems: number
@@ -118,6 +118,10 @@ export default function UsersDataTable({ users, onAction, page, totalPages, tota
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onAction('edit', row.original.user_id)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
             {row.original.account_status.toLowerCase() !== 'active' && (
               <DropdownMenuItem onClick={() => onAction('activate', row.original.user_id)}>
                 <CheckCircle className="mr-2 h-4 w-4" />

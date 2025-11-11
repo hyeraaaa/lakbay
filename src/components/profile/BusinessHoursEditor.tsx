@@ -1,16 +1,16 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Clock, Save, X, Plus, Trash2 } from "lucide-react"
+import { Clock, Save, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useBusinessHours } from "@/hooks/business-hours/useBusinessHours"
-import { BusinessHour, getAllDays, getDayDisplayName, convertTo24Hour, convertTo12Hour } from "@/services/businessHoursService"
+import { BusinessHour, getAllDays, getDayDisplayName } from "@/services/businessHoursService"
 import { toast } from "sonner"
+import TimePicker from "./TimePicker"
 
 interface BusinessHoursEditorProps {
   children: React.ReactNode
@@ -61,8 +61,8 @@ const BusinessHoursEditor: React.FC<BusinessHoursEditorProps> = ({
           ? { 
               ...hour, 
               is_open: isOpen,
-              opening_time: isOpen ? hour.opening_time || "09:00" : null,
-              closing_time: isOpen ? hour.closing_time || "17:00" : null
+              opening_time: isOpen ? (hour.opening_time || "09:00") : null,
+              closing_time: isOpen ? (hour.closing_time || "17:00") : null
             }
           : hour
       )
@@ -71,13 +71,11 @@ const BusinessHoursEditor: React.FC<BusinessHoursEditorProps> = ({
   }
 
   const handleTimeChange = (dayOfWeek: string, field: 'opening_time' | 'closing_time', value: string) => {
-    // Convert 12-hour format to 24-hour format
-    const time24 = convertTo24Hour(value)
-    
+    // Time input already provides 24-hour format (HH:MM)
     setEditingHours(prev => 
       prev.map(hour => 
         hour.day_of_week === dayOfWeek 
-          ? { ...hour, [field]: time24 }
+          ? { ...hour, [field]: value || null }
           : hour
       )
     )
@@ -107,10 +105,6 @@ const BusinessHoursEditor: React.FC<BusinessHoursEditorProps> = ({
     return editingHours.find(hour => hour.day_of_week === dayOfWeek)
   }
 
-  const formatTimeForInput = (time24: string | null): string => {
-    if (!time24) return ""
-    return convertTo12Hour(time24)
-  }
 
   if (loading) {
     return (
@@ -181,28 +175,23 @@ const BusinessHoursEditor: React.FC<BusinessHoursEditorProps> = ({
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor={`open-${day}`}>Opening Time</Label>
-                        <Input
+                        <TimePicker
                           id={`open-${day}`}
-                          type="text"
-                          placeholder="9:00 AM"
-                          value={formatTimeForInput(dayHours.opening_time)}
-                          onChange={(e) => handleTimeChange(day, 'opening_time', e.target.value)}
+                          value={dayHours.opening_time}
+                          onChange={(value) => handleTimeChange(day, 'opening_time', value)}
+                          placeholder="Select opening time"
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor={`close-${day}`}>Closing Time</Label>
-                        <Input
+                        <TimePicker
                           id={`close-${day}`}
-                          type="text"
-                          placeholder="5:00 PM"
-                          value={formatTimeForInput(dayHours.closing_time)}
-                          onChange={(e) => handleTimeChange(day, 'closing_time', e.target.value)}
+                          value={dayHours.closing_time}
+                          onChange={(value) => handleTimeChange(day, 'closing_time', value)}
+                          placeholder="Select closing time"
                         />
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Use 12-hour format (e.g., 9:00 AM, 1:30 PM)
-                    </p>
                   </CardContent>
                 )}
               </Card>
