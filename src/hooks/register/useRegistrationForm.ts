@@ -36,6 +36,10 @@ export const useRegistrationForm = () => {
       const limitedDigits = digitsOnly.slice(0, 10);
       const fullWithCountry = limitedDigits ? `+63${limitedDigits}` : "";
       setFormData(prev => ({ ...prev, [name]: fullWithCountry }));
+    } else if (name === 'first_name' || name === 'last_name') {
+      // Remove numeric characters from first and last name
+      const lettersOnly = value.replace(/[0-9]/g, "");
+      setFormData(prev => ({ ...prev, [name]: lettersOnly }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -47,7 +51,9 @@ export const useRegistrationForm = () => {
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
     if (!formData.first_name) newErrors.first_name = "First name is required";
+    else if (/[0-9]/.test(formData.first_name)) newErrors.first_name = "First name cannot contain numbers";
     if (!formData.last_name) newErrors.last_name = "Last name is required";
+    else if (/[0-9]/.test(formData.last_name)) newErrors.last_name = "Last name cannot contain numbers";
     if (!formData.username) newErrors.username = "Username is required";
     if (!formData.email) newErrors.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Please enter a valid email";

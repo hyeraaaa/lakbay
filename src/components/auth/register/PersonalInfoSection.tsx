@@ -34,6 +34,22 @@ const handlePhoneKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
   }
 }
 
+const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Allow backspace, delete, tab, escape, enter, and arrow keys
+  if ([8, 9, 27, 13, 46, 35, 36, 37, 38, 39, 40].indexOf(e.keyCode) !== -1 ||
+    // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+    (e.keyCode === 65 && e.ctrlKey === true) ||
+    (e.keyCode === 67 && e.ctrlKey === true) ||
+    (e.keyCode === 86 && e.ctrlKey === true) ||
+    (e.keyCode === 88 && e.ctrlKey === true)) {
+    return
+  }
+  // Prevent numeric keys (0-9) from both main keyboard and numpad
+  if ((e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 96 && e.keyCode <= 105)) {
+    e.preventDefault()
+  }
+}
+
 const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   formData,
   errors,
@@ -60,6 +76,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
               placeholder="Enter your first name"
               value={formData.first_name}
               onChange={onInputChange}
+              onKeyDown={handleNameKeyDown}
               className={`pl-10 ${errors.first_name ? 'border-red-500 focus-visible:ring-red-500/50' : ''}`}
               disabled={isLoading}
             />
@@ -83,6 +100,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
               placeholder="Enter your last name"
               value={formData.last_name}
               onChange={onInputChange}
+              onKeyDown={handleNameKeyDown}
               className={`pl-10 ${errors.last_name ? 'border-red-500 focus-visible:ring-red-500/50' : ''}`}
               disabled={isLoading}
             />

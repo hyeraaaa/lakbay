@@ -11,7 +11,40 @@ import { useSearchParamHelpers } from "@/hooks/filter/useSearchParamHelpers";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
-const BRANDS = ["Toyota","Honda","Mitsubishi","Nissan","Ford","Hyundai","Kia"];
+const BRANDS = [
+  "Toyota",
+  "Honda",
+  "Mitsubishi",
+  "Nissan",
+  "Ford",
+  "Hyundai",
+  "Kia",
+  "Mazda",
+  "Suzuki",
+  "Isuzu",
+  "Chevrolet",
+  "BMW",
+  "Mercedes-Benz",
+  "Audi",
+  "Volkswagen",
+  "Subaru",
+  "Volvo",
+  "Lexus",
+  "Jeep",
+  "Dodge",
+  "Chrysler",
+  "Mini",
+  "Peugeot",
+  "Renault",
+  "MG",
+  "Geely",
+  "Chery",
+  "BYD",
+  "Foton",
+  "SsangYong",
+  "Tata",
+  "Mahindra"
+];
 
 export const MakeModelDropdown = () => {
   const { current, parseCsvToSet, searchParams, pathname, router } = useSearchParamHelpers();

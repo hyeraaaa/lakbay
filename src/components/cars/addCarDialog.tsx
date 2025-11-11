@@ -277,7 +277,10 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
               <Input
                 id="year"
                 value={formData.year}
-                onChange={(e) => setField("year", e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, '')
+                  setField("year", value)
+                }}
                 placeholder="e.g., 2022"
                 aria-invalid={!!errors.year}
               />
@@ -288,7 +291,10 @@ export function AddCarDialog({ onSubmit, isLoading, onAlert, externalOpen, onOpe
               <Input
                 id="seats"
                 value={formData.seats}
-                onChange={(e) => setField("seats", e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, '')
+                  setField("seats", value)
+                }}
                 placeholder="e.g., 5 or 7"
                 aria-invalid={!!errors.seats}
               />
