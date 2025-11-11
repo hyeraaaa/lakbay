@@ -31,6 +31,7 @@ export default function RequestDetailPage() {
   } = useVerificationRequest(decodedId)
 
   const relatedBookingId = (request as unknown as { related_booking_id?: number })?.related_booking_id
+  const vehicleId = (request as unknown as { vehicle_id?: number })?.vehicle_id
 
   const handleApprove = async (options?: { refundPercentage?: number }) => {
     if (!request) return
@@ -74,11 +75,23 @@ export default function RequestDetailPage() {
         <div className="space-y-4">
           {/* Only show document count for document-based requests */}
           {!["payout_failed", "refund_request", "reactivation_request"].includes(request.doc_type) && (
-            <div className="text-sm text-gray-600">
-              {request.doc_type === "vehicle_registration" 
-                ? `${docUrls.length} vehicle registration documents` 
-                : `${docUrls.length} attachments`} • 
-              <DocumentTypeBadge docType={request.doc_type} />
+            <div className="text-sm text-gray-600 space-y-2">
+              <div>
+                {request.doc_type === "vehicle_registration" 
+                  ? `${docUrls.length} vehicle registration documents` 
+                  : `${docUrls.length} attachments`} • 
+                <DocumentTypeBadge docType={request.doc_type} />
+              </div>
+              {request.doc_type === "vehicle_registration" && vehicleId && (
+                <Link
+                  href={`/admin/reports/view-vehicle/${encodeId(String(vehicleId))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  View car
+                </Link>
+              )}
             </div>
           )}
           

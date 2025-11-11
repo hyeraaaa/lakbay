@@ -13,6 +13,7 @@ interface RawUser {
 }
 
 interface RawVehicle {
+  vehicle_id?: string | number
   brand?: string
   model?: string
   year?: number
@@ -24,6 +25,7 @@ interface RawReviewItem {
   itemType?: string
   item_type?: string
   registration_id?: string | number
+  vehicle_id?: string | number
   verification_id?: string | number
   request_id?: string | number
   id?: string | number
@@ -83,10 +85,12 @@ interface RawReviewItem {
 // Unified review item coming from the backend. We normalize it to VerificationRequest-compatible shape.
 export type AdminReviewItem = VerificationRequest & {
   vehicle?: {
+    vehicle_id?: number
     brand: string
     model: string
     year: number
   }
+  vehicle_id?: number
   isRegistration?: boolean
 }
 
@@ -114,7 +118,7 @@ function mapItem(it: RawReviewItem): AdminReviewItem {
     console.warn('⚠️ Item missing itemType:', it)
   }
   
-  let userInfo: RawUser | undefined, reviewerInfo: RawUser | undefined, docType: string, docUrl: string, docUrls: string[] | undefined, vehicleInfo: RawVehicle | undefined, verificationId: string, userId: string, status: string, submittedAt: string, reviewedAt: string | undefined, reviewedBy: string | undefined, notes: string | undefined
+  let userInfo: RawUser | undefined, reviewerInfo: RawUser | undefined, docType: string, docUrl: string, docUrls: string[] | undefined, vehicleInfo: RawVehicle | undefined, verificationId: string, userId: string, status: string, submittedAt: string, reviewedAt: string | undefined, reviewedBy: string | undefined, notes: string | undefined, vehicleId: number | undefined
 
   if (itemType === 'registration') {
     // Vehicle registration data structure
@@ -131,6 +135,9 @@ function mapItem(it: RawReviewItem): AdminReviewItem {
     reviewedAt = it.reviewed_at
     reviewedBy = it.reviewed_by ? String(it.reviewed_by) : undefined
     notes = it.review_notes
+    // Extract vehicle_id from registration or vehicle object
+    const rawVehicleId = it.vehicle_id || it.vehicle?.vehicle_id
+    vehicleId = rawVehicleId ? Number(rawVehicleId) : undefined
   } else if (itemType === 'verification') {
     // Account verification data structure
     userInfo = it.users_verification_user_idTousers
@@ -279,11 +286,17 @@ function mapItem(it: RawReviewItem): AdminReviewItem {
 
   if (vehicleInfo) {
     base.vehicle = {
+      vehicle_id: vehicleInfo.vehicle_id ? Number(vehicleInfo.vehicle_id) : undefined,
       brand: vehicleInfo.brand || '',
       model: vehicleInfo.model || '',
       year: vehicleInfo.year || 0,
     }
     base.isRegistration = true
+  }
+
+  // Set vehicle_id at the top level if available
+  if (vehicleId) {
+    ;(base as unknown as { vehicle_id?: number }).vehicle_id = vehicleId
   }
 
   return base
