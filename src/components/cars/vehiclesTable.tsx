@@ -24,6 +24,7 @@ import {
   MapPin,
   Loader2,
   Settings,
+  Wrench,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -82,6 +83,7 @@ type VehicleRow = {
   description: string
   daily_mileage_limit?: number | null
   overage_fee_per_km?: number | null
+  is_registered?: boolean
 }
 
 export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
@@ -101,6 +103,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
   const [editExistingImages, setEditExistingImages] = useState<Array<{ vehicle_image_id: number; url: string }>>([])
   const [editLoading, setEditLoading] = useState<boolean>(false)
   const [editVehicleId, setEditVehicleId] = useState<number | null>(null)
+  const [updatingAvailabilityId, setUpdatingAvailabilityId] = useState<number | null>(null)
   const { success, error } = useNotification()
 
   const toTransmissionOption = (raw?: string | null): string => {
@@ -123,8 +126,15 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
     switch (key) {
       case "available":
         return "bg-emerald-50 text-emerald-700 border-emerald-200"
+      case "maintenance":
+        return "bg-amber-50 text-amber-700 border-amber-200"
       case "pending_registration":
         return "bg-blue-50 text-blue-700 border-blue-200"
+      case "rented":
+        return "bg-purple-50 text-purple-700 border-purple-200"
+      case "on_hold":
+      case "on hold":
+        return "bg-orange-50 text-orange-700 border-orange-200"
       case "unavailable":
         return "bg-red-50 text-red-700 border-red-200"
       default:
@@ -252,6 +262,49 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
             {!isAdmin && (
               <DropdownMenuItem onSelect={async (e) => { e.preventDefault(); setMileageSettingsForId(row.original.id) }}>
                 <Settings size={16} /> <span>Mileage Settings</span>
+              </DropdownMenuItem>
+            )}
+            {/* Only allow status changes for registered vehicles that are available or maintenance (excludes pending_registration, on_hold, rented, etc.) */}
+            {row.original.is_registered && 
+             (row.original.availability === 'available' || row.original.availability === 'maintenance') && (
+              <DropdownMenuItem
+                onSelect={async (e) => {
+                  e.preventDefault()
+                  const vehicleId = row.original.id
+                  const currentStatus = row.original.availability
+                  // Only toggle between available and maintenance (excludes pending_registration, on_hold, rented, etc.)
+                  const newStatus = currentStatus === 'available' ? 'maintenance' : 'available'
+                  
+                  try {
+                    setUpdatingAvailabilityId(vehicleId)
+                    await vehicleService.updateVehicleAvailability(vehicleId, newStatus)
+                    success(`Vehicle status updated to ${formatAvailability(newStatus)}`)
+                    applyUpdate(vehicleId, { availability: newStatus })
+                    await refreshRow(vehicleId)
+                    onChange?.()
+                  } catch (err) {
+                    error(err instanceof Error ? err.message : 'Failed to update vehicle status')
+                  } finally {
+                    setUpdatingAvailabilityId(null)
+                  }
+                }}
+                disabled={updatingAvailabilityId === row.original.id}
+              >
+                {updatingAvailabilityId === row.original.id ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Updating…</span>
+                  </>
+                ) : (
+                  <>
+                    <Wrench size={16} />
+                    <span>
+                      {row.original.availability === 'available'
+                        ? 'Set to Maintenance'
+                        : 'Set to Available'}
+                    </span>
+                  </>
+                )}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />

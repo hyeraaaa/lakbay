@@ -619,6 +619,36 @@ class VehicleService {
       throw error;
     }
   }
+
+  async updateVehicleAvailability(vehicleId: number, availability: string, reason?: string): Promise<VehicleResponse> {
+    try {
+      const response = await apiRequest(`${API_BASE_URL}/api/vehicles/${vehicleId}/availability`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ availability, reason }),
+      });
+
+      if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 409) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Cannot change availability. Vehicle may have active bookings or is not registered.');
+        }
+        if (response.status === 400) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Invalid availability status. Owners can only toggle between available and maintenance.');
+        }
+        return this.throwVehicleError(response, 'update', 'Failed to update vehicle availability');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating vehicle availability:', error);
+      throw error;
+    }
+  }
 }
 
 export const vehicleService = new VehicleService();
