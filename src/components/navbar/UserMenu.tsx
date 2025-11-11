@@ -138,16 +138,18 @@ const UserMenu = ({
             </button>
           </Link>
           
-          {/* Profile - Show for all user types */}
-          <Link href={`/profile/${encodeId(String(user.id))}`}>
-            <button
-              className="w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-gray-100 flex items-center space-x-3 cursor-pointer"
-              onClick={() => setIsUserMenuOpen(false)}
-            >
-              <User className="h-5 w-5" />
-              <span>Profile</span>
-            </button>
-          </Link>
+          {/* Profile - Show for all user types except customer */}
+          {user.user_type?.toLowerCase() !== 'customer' && (
+            <Link href={`/profile/${encodeId(String(user.id))}`}>
+              <button
+                className="w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-gray-100 flex items-center space-x-3 cursor-pointer"
+                onClick={() => setIsUserMenuOpen(false)}
+              >
+                <User className="h-5 w-5" />
+                <span>Profile</span>
+              </button>
+            </Link>
+          )}
           
           {/* Admin-specific menu items */}
           {user.user_type?.toLowerCase() === 'admin' && (

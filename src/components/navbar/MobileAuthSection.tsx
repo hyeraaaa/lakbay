@@ -69,17 +69,20 @@ const MobileAuthSection = ({
             </Button>
           </Link>
 
-          <Link href={`/profile/${user.id}`}>
-            <Button
-              variant="ghost"
-              size="lg"
-              className="w-full justify-start text-lg py-6 transition-all duration-200 hover:bg-gray-100"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <User className="h-5 w-5 mr-3" />
-              Profile
-            </Button>
-          </Link>
+          {/* Profile - Show for all user types except customer */}
+          {user.user_type?.toLowerCase() !== 'customer' && (
+            <Link href={`/profile/${user.id}`}>
+              <Button
+                variant="ghost"
+                size="lg"
+                className="w-full justify-start text-lg py-6 transition-all duration-200 hover:bg-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <User className="h-5 w-5 mr-3" />
+                Profile
+              </Button>
+            </Link>
+          )}
 
           <Link href="/user/become-a-host">
             <Button
