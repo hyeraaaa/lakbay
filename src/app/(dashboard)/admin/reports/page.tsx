@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { reportService } from '@/services/reportService'
+import { adminUserService } from '@/services/adminUserService'
 import { useNotification } from '@/components/NotificationProvider'
 import { encodeId } from '@/lib/idCodec'
 import type { Report } from '@/types/report'
@@ -82,9 +83,19 @@ export default function ReportsPage() {
     fetchReports(newPage, error)
   }
 
-  const handleViewEntity = (report: Report) => {
+  const handleViewEntity = async (report: Report) => {
     if (report.reported_entity_type === 'user') {
-      router.push(`/profile/${encodeId(String(report.reported_entity_id))}`)
+      try {
+        // Fetch user details to check if they're an owner
+        const userData = await adminUserService.getUserById(report.reported_entity_id)
+        if (userData.user_type?.toLowerCase() === 'owner') {
+          router.push(`/profile/${encodeId(String(report.reported_entity_id))}`)
+        } else {
+          error('View profile is only available for owner accounts')
+        }
+      } catch (err) {
+        error('Failed to fetch user details')
+      }
     } else if (report.reported_entity_type === 'vehicle') {
       router.push(`/admin/reports/view-vehicle/${encodeId(String(report.reported_entity_id))}`)
     }
