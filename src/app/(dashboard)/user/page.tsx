@@ -75,7 +75,7 @@ const UserPageContent = () => {
       const vlng = v.garage_longitude != null ? Number(v.garage_longitude) : NaN
       return Number.isFinite(vlat) && Number.isFinite(vlng) && Math.abs(vlat - lat) < tol && Math.abs(vlng - lng) < tol
     })
-  }, [vehicles, garageLat, garageLng, ownerIdParam, filterOwner, filterGarage])
+  }, [vehicles, ownerVehicles, garageLat, garageLng, ownerIdParam, filterOwner, filterGarage])
 
   // Map view center/zoom: override geocoded center with exact garage coords if provided
   const mapCenter = useMemo(() => {

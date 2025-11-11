@@ -109,9 +109,15 @@ export function useVerificationRequest(id: string | undefined) {
       }
       // Check if this is a reactivation request
       else if (verificationId.startsWith('reactivation_')) {
-        const userId = verificationId.replace('reactivation_', '')
+        // For reactivation requests, verificationId encodes the reactivation request id,
+        // but the admin API expects the USER ID in the URL. Use the loaded request.user_id.
+        const userIdFromRequest = request?.user_id
+        if (!userIdFromRequest) {
+          console.error("Missing user_id on reactivation request; cannot approve")
+          return false
+        }
         try {
-          await adminUserService.approveReactivation(parseInt(userId))
+          await adminUserService.approveReactivation(parseInt(String(userIdFromRequest)))
           success = true
         } catch (error) {
           console.error("Error approving reactivation:", error)
@@ -193,9 +199,15 @@ export function useVerificationRequest(id: string | undefined) {
       }
       // Check if this is a reactivation request
       else if (verificationId.startsWith('reactivation_')) {
-        const userId = verificationId.replace('reactivation_', '')
+        // For reactivation requests, verificationId encodes the reactivation request id,
+        // but the admin API expects the USER ID in the URL. Use the loaded request.user_id.
+        const userIdFromRequest = request?.user_id
+        if (!userIdFromRequest) {
+          console.error("Missing user_id on reactivation request; cannot reject")
+          return false
+        }
         try {
-          await adminUserService.rejectReactivation(parseInt(userId), "Reactivation request rejected")
+          await adminUserService.rejectReactivation(parseInt(String(userIdFromRequest)), "Reactivation request rejected")
           success = true
         } catch (error) {
           console.error("Error rejecting reactivation:", error)

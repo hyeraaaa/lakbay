@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { User, UserCircle, Shield, CreditCard, type LucideIcon } from "lucide-react"
+import { User, UserCircle, Shield, CreditCard, MapPin, type LucideIcon } from "lucide-react"
 import { getCurrentUser } from "@/lib/jwt"
 
 interface SidebarItem {
@@ -27,6 +27,7 @@ export function SettingsSidebar({ activeTab, onTabChange }: SettingsSidebarProps
 
   const ownerSidebarItems: SidebarItem[] = [
     ...baseSidebarItems,
+    { id: "garage", label: "Garage Location", icon: MapPin },
     { id: "stripe", label: "Stripe Connect", icon: CreditCard },
   ]
 

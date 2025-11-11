@@ -1,87 +1,33 @@
 "use client"
 
-import React, { useMemo, useState, useEffect } from 'react'
+import React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useVehicles } from '@/hooks/useVehicles'
+import { useAdminVehicles, vehicleTypeLabels, type VehicleTypeFilter } from '@/hooks/vehicles/useAdminVehicles'
 import VehiclesTable from '@/components/cars/vehiclesTable'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Search, Car, CheckCircle, CarFront, FileClock } from 'lucide-react'
-import { AdminStatsCard, type StatItem } from '@/components/admin/AdminStatsCard'
-
-type VehicleTypeFilter = 'all' | 'sedan' | 'suv' | 'truck' | 'van' | 'luxury' | 'electric' | 'hybrid'
-
-const vehicleTypeLabels: Record<VehicleTypeFilter, string> = {
-  all: 'All',
-  sedan: 'Sedan',
-  suv: 'SUV',
-  truck: 'Truck',
-  van: 'Van',
-  luxury: 'Luxury',
-  electric: 'Electric',
-  hybrid: 'Hybrid',
-}
+import { Search } from 'lucide-react'
+import { AdminStatsCard } from '@/components/admin/AdminStatsCard'
 
 export default function AdminVehiclesPage() {
-  const [searchQuery, setSearchQuery] = useState<string>("")
-  const [availabilityFilter, setAvailabilityFilter] = useState<string>("all")
-  const [typeFilter, setTypeFilter] = useState<VehicleTypeFilter>('all')
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("")
-
-  // Debounce search query to avoid too many API calls
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery)
-    }, 300) // 300ms delay
-
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-
-  // Build API parameters
-  const apiParams = useMemo(() => {
-    const params: Record<string, string | number | undefined> = {
-      availability: availabilityFilter === 'all' ? 'all' : availabilityFilter,
-    }
-
-    if (typeFilter !== 'all') {
-      params.type = typeFilter
-    }
-
-    if (debouncedSearchQuery.trim()) {
-      params.q = debouncedSearchQuery.trim()
-    }
-
-    return params
-  }, [availabilityFilter, typeFilter, debouncedSearchQuery])
-
-  const { vehicles, isLoading, error, refetch } = useVehicles(apiParams)
-
-  const stats = useMemo(() => {
-    const total = vehicles.length
-    const byAvailability = vehicles.reduce(
-      (acc, v) => {
-        const key = (v.availability || '').toLowerCase().replace(/\s+/g, '_')
-        acc[key] = (acc[key] || 0) + 1
-        return acc
-      },
-      {} as Record<string, number>
-    )
-    return {
-      total,
-      available: byAvailability['available'] || 0,
-      rented: byAvailability['rented'] || 0,
-      pending_registration: byAvailability['pending_registration'] || 0,
-    }
-  }, [vehicles])
-
-  const statsItems = useMemo<StatItem[]>(() => [
-    { label: "Total", value: stats.total, icon: Car },
-    { label: "Available", value: stats.available, icon: CheckCircle },
-    { label: "Rented", value: stats.rented, icon: CarFront },
-    { label: "Pending Registration", value: stats.pending_registration, icon: FileClock },
-  ], [stats])
+  const {
+    vehicles,
+    statsItems,
+    isLoading,
+    showStatsLoading,
+    showTableLoading,
+    error,
+    searchQuery,
+    setSearchQuery,
+    availabilityFilter,
+    setAvailabilityFilter,
+    typeFilter,
+    setTypeFilter,
+    debouncedSearchQuery,
+    refetch,
+  } = useAdminVehicles()
 
   return (
     <div className="space-y-6">
@@ -91,7 +37,7 @@ export default function AdminVehiclesPage() {
       </div>
 
       {/* Stats */}
-      <AdminStatsCard stats={statsItems} loading={isLoading} />
+      <AdminStatsCard stats={statsItems} loading={showStatsLoading} />
 
       <Card>
         <CardContent>
@@ -123,12 +69,16 @@ export default function AdminVehiclesPage() {
           </div>
 
           {/* Vehicle Type Badge Filters */}
-          <div className={`flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-4 ${!isLoading && vehicles.length > 0 ? '' : 'border-b'}`}>
+          <div className={`flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-4 ${showTableLoading ? '' : (!isLoading && vehicles.length > 0 ? '' : 'border-b')}`}>
             {(Object.keys(vehicleTypeLabels) as VehicleTypeFilter[]).map((type) => (
               <button
                 key={type}
-                onClick={() => setTypeFilter(type)}
+                onClick={(e) => {
+                  e.preventDefault()
+                  setTypeFilter(type)
+                }}
                 className="focus:outline-none"
+                type="button"
               >
                 <Badge
                   className="rounded-sm px-3 py-1"
@@ -140,17 +90,80 @@ export default function AdminVehiclesPage() {
             ))}
           </div>
 
-          {isLoading ? (
-            <div className="space-y-4 p-6">
-              <Skeleton className="h-6 w-40" />
-              <Skeleton className="h-48 w-full" />
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-5 w-40" />
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-9 w-9 rounded" />
-                  <Skeleton className="h-9 w-9 rounded" />
-                  <Skeleton className="h-9 w-9 rounded" />
-                  <Skeleton className="h-9 w-9 rounded" />
+          {showTableLoading ? (
+            <div className="space-y-4">
+              <div className="bg-white border border-neutral-300">
+                <div className="overflow-x-auto">
+                  <table className="table-fixed min-w-[900px] w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="h-11 pl-4 text-left">
+                          <Skeleton className="h-4 w-20" />
+                        </th>
+                        <th className="h-11 px-4 text-left">
+                          <Skeleton className="h-4 w-12" />
+                        </th>
+                        <th className="h-11 px-4 text-left">
+                          <Skeleton className="h-4 w-16" />
+                        </th>
+                        <th className="h-11 px-4 text-left hidden sm:table-cell">
+                          <Skeleton className="h-4 w-12" />
+                        </th>
+                        <th className="h-11 px-4 text-left">
+                          <Skeleton className="h-4 w-24" />
+                        </th>
+                        <th className="h-11 px-4 text-left">
+                          <Skeleton className="h-4 w-28" />
+                        </th>
+                        <th className="h-11 px-4 text-left">
+                          <Skeleton className="h-4 w-16" />
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: 5 }).map((_, idx) => (
+                        <tr key={idx} className="border-b">
+                          <td className="pl-4 py-4">
+                            <Skeleton className="h-5 w-32 mb-1" />
+                            <Skeleton className="h-3 w-24" />
+                          </td>
+                          <td className="px-4 py-4">
+                            <Skeleton className="h-4 w-16" />
+                          </td>
+                          <td className="px-4 py-4">
+                            <Skeleton className="h-4 w-20" />
+                          </td>
+                          <td className="px-4 py-4 hidden sm:table-cell">
+                            <Skeleton className="h-4 w-12" />
+                          </td>
+                          <td className="px-4 py-4">
+                            <Skeleton className="h-5 w-20 rounded-full" />
+                          </td>
+                          <td className="px-4 py-4">
+                            <Skeleton className="h-4 w-24 mb-1" />
+                            <Skeleton className="h-3 w-20" />
+                          </td>
+                          <td className="px-4 py-4">
+                            <Skeleton className="h-8 w-8 rounded" />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-8">
+                <div />
+                <div className="text-muted-foreground flex grow justify-end text-sm whitespace-nowrap">
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-9 w-9 rounded" />
+                    <Skeleton className="h-9 w-9 rounded" />
+                    <Skeleton className="h-9 w-9 rounded" />
+                    <Skeleton className="h-9 w-9 rounded" />
+                  </div>
                 </div>
               </div>
             </div>

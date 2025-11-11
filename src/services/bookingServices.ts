@@ -547,6 +547,26 @@ export const bookingService = {
     return response.json();
   },
 
+  // Get overage payment URL/information
+  getOveragePayment: async (bookingId: number): Promise<{
+    checkout_url?: string;
+    expires_at?: number;
+    isNew?: boolean;
+    overage_amount?: number;
+    overage_mileage?: number;
+  }> => {
+    const response = await apiRequest(`${API_BASE_URL}/api/bookings/${bookingId}/overage-payment`, {
+      method: 'GET',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch overage payment information');
+    }
+
+    return response.json();
+  },
+
   // Utility functions
   utils: {
     // Check if booking can be cancelled

@@ -119,9 +119,9 @@ export default function CarsPage() {
         // Stats cards
       }
       <VehiclesStats 
-        vehiclesCount={vehicles.length} 
-        vehicles={vehicles} 
-        isLoading={isLoadingVehicles}
+        vehiclesCount={allVehicles.length} 
+        vehicles={allVehicles} 
+        isLoading={isLoadingAllVehicles}
       />
 
 
@@ -154,7 +154,6 @@ export default function CarsPage() {
                <Button 
                  onClick={() => setIsDialogOpen(true)}
                  disabled={!isStripeLoading && needsSetup}
-                 className="ml-auto"
                >
                  <Plus className="h-4 w-4 md:mr-2" />
                  <span className="hidden lg:inline">Add Vehicle</span>

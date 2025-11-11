@@ -3,26 +3,22 @@
 import { AdminStatsCard, type StatItem } from "@/components/admin/AdminStatsCard"
 import { FileCheck, Clock, CheckCircle, XCircle } from "lucide-react"
 
-type VerificationRequest = {
-  status: "pending" | "approved" | "rejected" | string
-}
-
 type VerificationRequestsStatsProps = {
-  totalItems: number
-  requests: VerificationRequest[]
+  overallStats: {
+    total: number
+    pending: number
+    approved: number
+    rejected: number
+  } | null
   loading?: boolean
 }
 
-export default function VerificationRequestsStats({ totalItems, requests, loading = false }: VerificationRequestsStatsProps) {
-  const pending = requests.filter(r => r.status === "pending").length
-  const approved = requests.filter(r => r.status === "approved").length
-  const rejected = requests.filter(r => r.status === "rejected").length
-
+export default function VerificationRequestsStats({ overallStats, loading = false }: VerificationRequestsStatsProps) {
   const stats: StatItem[] = [
-    { label: "Total Requests", value: totalItems, icon: FileCheck },
-    { label: "Pending", value: pending, icon: Clock },
-    { label: "Approved", value: approved, icon: CheckCircle },
-    { label: "Rejected", value: rejected, icon: XCircle },
+    { label: "Total Requests", value: overallStats?.total || 0, icon: FileCheck },
+    { label: "Pending", value: overallStats?.pending || 0, icon: Clock },
+    { label: "Approved", value: overallStats?.approved || 0, icon: CheckCircle },
+    { label: "Rejected", value: overallStats?.rejected || 0, icon: XCircle },
   ]
 
   return <AdminStatsCard stats={stats} loading={loading} />

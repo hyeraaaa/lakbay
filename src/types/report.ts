@@ -1,6 +1,14 @@
 export type Report = {
   report_id: number
   reporter_id: number
+  // Optional enriched reporter info when backend includes user details
+  reporter_name?: string | null
+  reporter?: {
+    first_name?: string | null
+    last_name?: string | null
+    email?: string | null
+    profile_picture?: string | null
+  } | null
   reported_entity_type: string
   reported_entity_id: number
   status: string

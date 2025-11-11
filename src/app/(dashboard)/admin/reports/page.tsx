@@ -40,11 +40,7 @@ export default function ReportsPage() {
     fetchReports,
   } = useReportsData()
   
-  const { statistics, fetchStatistics } = useReportStatistics({
-    status: statusFilter,
-    priority: priorityFilter,
-    entity_type: entityTypeFilter,
-  })
+  const { statistics, loading: statisticsLoading, fetchStatistics } = useReportStatistics()
   
   const {
     selectedReport,
@@ -74,7 +70,7 @@ export default function ReportsPage() {
   const handleApplyFilters = () => {
     setPage(1) // Reset to page 1 when applying filters
     fetchReports(1, error)
-    fetchStatistics()
+    // Don't refetch statistics when filters change - stats show overall data
   }
 
   const handlePageChange = (newPage: number) => {
@@ -108,7 +104,7 @@ export default function ReportsPage() {
         success('Report updated successfully')
         closeDialog()
         fetchReports(undefined, error)
-        fetchStatistics()
+        fetchStatistics() // Refetch stats after updating a report to reflect changes
       } else {
         error('Failed to update report')
       }
@@ -126,7 +122,7 @@ export default function ReportsPage() {
         <p className="text-muted-foreground text-pretty">Review, manage, and resolve user reports and complaints</p>
       </div>
       
-      <ReportStatisticsCards statistics={statistics} loading={loading} />
+      <ReportStatisticsCards statistics={statistics} loading={statisticsLoading} />
       <Card>
         <CardContent>
         <div className="space-y-4">

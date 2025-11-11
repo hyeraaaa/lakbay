@@ -111,7 +111,7 @@ export function OwnerBookingsDataTable({
         cell: ({ row }) => {
           const b = row.original
           return (
-            <div>
+            <div className="align-middle">
               <div className="font-medium">
                 {b.vehicle?.brand} {b.vehicle?.model}
               </div>
@@ -127,7 +127,7 @@ export function OwnerBookingsDataTable({
         cell: ({ row }) => {
           const u = row.original.users
           return (
-            <span>
+            <span className="align-middle">
               {u?.first_name} {u?.last_name}
             </span>
           )
@@ -140,7 +140,7 @@ export function OwnerBookingsDataTable({
         cell: ({ row }) => {
           const b = row.original
           return (
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap align-middle">
               {formatDate(b.start_date)} - {formatDate(b.end_date)}
             </span>
           )
@@ -152,11 +152,13 @@ export function OwnerBookingsDataTable({
         accessorKey: "payment_details",
         cell: ({ row }) => {
           const pd = row.original.payment_details?.[0]
-          if (!pd) return <span className="text-muted-foreground">N/A</span>
+          if (!pd) return <span className="text-muted-foreground align-middle">N/A</span>
           return (
-            <Badge className={cn("border px-2 py-0.5 text-[11px]", getPaymentStatusColor(pd.payment_status))}>
-              {bookingService.utils.getPaymentStatusDisplayText(pd.payment_status)}
-            </Badge>
+            <div className="align-middle">
+              <Badge className={cn("border px-2 py-0.5 text-[11px]", getPaymentStatusColor(pd.payment_status))}>
+                {bookingService.utils.getPaymentStatusDisplayText(pd.payment_status)}
+              </Badge>
+            </div>
           )
         },
         size: 180,
@@ -167,9 +169,11 @@ export function OwnerBookingsDataTable({
         cell: ({ row }) => {
           const currentStatus = optimisticStatusById[row.original.booking_id] ?? (row.original.status as BookingStatus)
           return (
-            <Badge className={cn("border px-2 py-0.5 text-[11px]", getBookingStatusColor(currentStatus))}>
-              {bookingService.utils.getStatusDisplayText(currentStatus)}
-            </Badge>
+            <div className="align-middle">
+              <Badge className={cn("border px-2 py-0.5 text-[11px]", getBookingStatusColor(currentStatus))}>
+                {bookingService.utils.getStatusDisplayText(currentStatus)}
+              </Badge>
+            </div>
           )
         },
         size: 170,
@@ -296,9 +300,13 @@ export function OwnerBookingsDataTable({
                           key={header.id}
                           style={{ width: `${header.getSize()}px` }}
                           className={cn(
-                            "h-11",
+                            "h-11 align-middle",
                             header.column.id === "actions" && "text-right pr-10",
-                            header.column.id === "vehicle" && "pl-10",
+                            header.column.id === "vehicle" && "pl-10 text-left",
+                            header.column.id === "users" && "text-left",
+                            header.column.id === "start_date" && "text-left",
+                            header.column.id === "payment_details" && "text-left",
+                            header.column.id === "status" && "text-left",
                           )}
                         >
                           {header.isPlaceholder ? null : header.column.getCanSort() ? (
@@ -323,7 +331,12 @@ export function OwnerBookingsDataTable({
                               }[header.column.getIsSorted() as string] ?? null}
                             </div>
                           ) : (
-                            flexRender(header.column.columnDef.header, header.getContext())
+                            <div className={cn(
+                              "flex h-full items-center",
+                              header.column.id === "actions" && "justify-end"
+                            )}>
+                              {flexRender(header.column.columnDef.header, header.getContext())}
+                            </div>
                           )}
                         </TableHead>
                       ))}
@@ -337,8 +350,13 @@ export function OwnerBookingsDataTable({
                         <TableCell
                           key={cell.id}
                           className={cn(
+                            "align-middle",
                             cell.column.id === "actions" && "pr-10 text-right",
-                            cell.column.id === "vehicle" && "pl-10",
+                            cell.column.id === "vehicle" && "pl-10 text-left",
+                            cell.column.id === "users" && "text-left",
+                            cell.column.id === "start_date" && "text-left",
+                            cell.column.id === "payment_details" && "text-left",
+                            cell.column.id === "status" && "text-left",
                           )}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}

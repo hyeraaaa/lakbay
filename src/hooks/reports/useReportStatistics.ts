@@ -15,8 +15,10 @@ type Filters = {
 
 export function useReportStatistics(filters?: Filters) {
   const [statistics, setStatistics] = useState<Statistics | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
 
   const fetchStatistics = useCallback(async () => {
+    setLoading(true)
     try {
       const filterParams: Filters = {}
       if (filters?.status && filters.status !== 'all') filterParams.status = filters.status
@@ -29,6 +31,8 @@ export function useReportStatistics(filters?: Filters) {
       }
     } catch (e) {
       console.error('Failed to fetch statistics:', e)
+    } finally {
+      setLoading(false)
     }
   }, [filters?.status, filters?.priority, filters?.entity_type])
 
@@ -36,6 +40,6 @@ export function useReportStatistics(filters?: Filters) {
     fetchStatistics()
   }, [fetchStatistics])
 
-  return { statistics, fetchStatistics }
+  return { statistics, loading, fetchStatistics }
 }
 

@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 const BookingsPage = () => {
   const {
     // auth
+    user,
     isAuthenticated,
     authLoading,
     // state
@@ -101,82 +102,53 @@ const BookingsPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          {isLoading ? (
-            <>
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-4 w-64 mt-2" />
-            </>
-          ) : (
-            <>
-              <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
-              <p className="text-gray-600 mt-1">Manage your vehicle rental bookings</p>
-            </>
-          )}
+          <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
+          <p className="text-gray-600 mt-1">Manage your vehicle rental bookings</p>
         </div>
-        {isLoading ? (
-          <Skeleton className="h-9 w-24" />
-        ) : (
-          <Button onClick={handleRefresh} disabled={isLoading} variant="outline">
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        )}
+        <Button onClick={handleRefresh} disabled={isLoading} variant="outline">
+          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
-      {isLoading ? (
-        <Skeleton className="h-36 w-full" />
-      ) : (
-        <SearchFiltersCard
-          searchQuery={searchQuery}
-          onSearch={handleSearch}
-          statusFilter={statusFilter}
-          onStatusChange={handleStatusFilter}
-          showFilters={showFilters}
-          setShowFilters={setShowFilters}
-          filters={filters}
-          updateFilters={updateFilters}
-          clearFilters={clearFilters}
-          statusOptions={statusOptions}
-        />
-      )}
+      <SearchFiltersCard
+        searchPlaceholder={
+          user?.user_type === 'customer'
+            ? 'Search owner, vehicle, or location...'
+            : user?.user_type === 'owner'
+            ? 'Search customer, vehicle, or location...'
+            : 'Search by name, vehicle, or location...'
+        }
+        searchQuery={searchQuery}
+        onSearch={handleSearch}
+        statusFilter={statusFilter}
+        onStatusChange={handleStatusFilter}
+        showFilters={showFilters}
+        setShowFilters={setShowFilters}
+        filters={filters}
+        updateFilters={updateFilters}
+        clearFilters={clearFilters}
+        statusOptions={statusOptions}
+      />
 
-      {isLoading ? (
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
-        </div>
-      ) : (
-        <BookingsList
-          isLoading={isLoading}
-          bookings={bookings}
-          searchQuery={searchQuery}
-          statusFilter={statusFilter}
-          onClearFilters={clearFilters}
-          onAction={handleBookingAction}
-          onAlert={handleAlert}
-        />
-      )}
+      <BookingsList
+        isLoading={isLoading}
+        bookings={bookings}
+        searchQuery={searchQuery}
+        statusFilter={statusFilter}
+        onClearFilters={clearFilters}
+        onAction={handleBookingAction}
+        onAlert={handleAlert}
+      />
 
-      {isLoading ? (
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-40" />
-        </div>
-      ) : (
-        <PaginationControls page={pagination.page} totalPages={pagination.totalPages} goToPage={goToPage} />
-      )}
+      <PaginationControls page={pagination.page} totalPages={pagination.totalPages} goToPage={goToPage} />
 
-      {isLoading ? (
-        <Skeleton className="h-4 w-40" />
-      ) : (
-        <ResultsSummary
-          count={bookings?.length || 0}
-          total={pagination.total}
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-        />
-      )}
+      <ResultsSummary
+        count={bookings?.length || 0}
+        total={pagination.total}
+        page={pagination.page}
+        totalPages={pagination.totalPages}
+      />
     </div>
   );
 };

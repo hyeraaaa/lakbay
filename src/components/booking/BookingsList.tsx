@@ -32,26 +32,75 @@ export const BookingsList: React.FC<Props> = ({
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i}>
-            <CardHeader>
-              <Skeleton className="h-6 w-1/3" />
-              <Skeleton className="h-4 w-1/4" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Skeleton className="h-32 w-full" />
-                <div className="grid grid-cols-2 gap-4">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className="w-full bg-white rounded-xl border border-border overflow-hidden"
+          >
+            {/* Desktop/Tablet skeleton: horizontal card */}
+            <div className="hidden sm:flex h-32">
+              {/* Image placeholder */}
+              <div className="w-40 flex-shrink-0 relative">
+                <Skeleton className="w-full h-full" />
+              </div>
+              {/* Right content */}
+              <div className="flex-1 p-4 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-56" />
+                    </div>
+                    <div className="text-right space-y-2">
+                      <Skeleton className="h-4 w-20 ml-auto" />
+                      <Skeleton className="h-3 w-12 ml-auto" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
+                    <Skeleton className="h-3 w-28" />
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Skeleton className="h-8 w-20" />
-                  <Skeleton className="h-8 w-24" />
+                <div className="flex items-center justify-between gap-3">
+                  <Skeleton className="h-3 w-24" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-7 w-28 rounded-md" />
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Mobile skeleton: vertical card */}
+            <div className="sm:hidden">
+              <div className="relative">
+                <Skeleton className="w-full h-48" />
+              </div>
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-44" />
+                    <Skeleton className="h-3 w-56" />
+                  </div>
+                  <div className="text-right ml-3 space-y-2">
+                    <Skeleton className="h-5 w-24 ml-auto" />
+                    <Skeleton className="h-3 w-14 ml-auto" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                  <Skeleton className="h-4 w-28" />
+                </div>
+                <div className="text-sm text-gray-600 mb-3">
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <Skeleton className="h-3 w-28" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-28 rounded-md" />
+                    <Skeleton className="h-6 w-24 rounded-md" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     );

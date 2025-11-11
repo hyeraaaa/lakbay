@@ -50,6 +50,13 @@ const formatCategory = (category: string | null | undefined) => {
   ).join(' ')
 }
 
+const formatValue = (value: string | null | undefined) => {
+  if (!value) return '-'
+  return value.split('_').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ')
+}
+
 const getCategoryColor = (category: string | null | undefined): ColorResult => {
   if (!category) {
     return { variant: 'outline', className: 'border-gray-200 bg-gray-50 text-gray-700' }
@@ -130,11 +137,30 @@ export function ReportsTable({ reports, loading, onViewEntity, onEditReport }: R
           : 'border-purple-200 bg-purple-50 text-purple-700'
         return (
           <Badge variant="outline" className={colorClass}>
-            {row.original.reported_entity_type}
+            {formatValue(row.original.reported_entity_type)}
           </Badge>
         )
       },
       size: 100,
+    },
+    {
+      header: "Reporter",
+      id: "reporter",
+      cell: ({ row }) => {
+        const rep = row.original
+        const nameFromObject = rep.reporter
+          ? `${(rep.reporter.first_name || '').trim()} ${(rep.reporter.last_name || '').trim()}`.trim()
+          : ''
+        const displayName = (rep.reporter_name && rep.reporter_name.trim().length > 0)
+          ? rep.reporter_name
+          : (nameFromObject.length > 0 ? nameFromObject : '-')
+        return (
+          <div className="max-w-[200px] truncate">
+            {displayName}
+          </div>
+        )
+      },
+      size: 160,
     },
     {
       header: "Status",
@@ -143,7 +169,7 @@ export function ReportsTable({ reports, loading, onViewEntity, onEditReport }: R
         const statusColor = getStatusColor(row.original.status)
         return (
           <Badge variant={statusColor.variant} className={statusColor.className}>
-            {row.original.status}
+            {formatValue(row.original.status)}
           </Badge>
         )
       },
@@ -156,7 +182,7 @@ export function ReportsTable({ reports, loading, onViewEntity, onEditReport }: R
         const priorityColor = getPriorityColor(row.original.priority)
         return (
           <Badge variant={priorityColor.variant} className={priorityColor.className}>
-            {row.original.priority}
+            {formatValue(row.original.priority)}
           </Badge>
         )
       },

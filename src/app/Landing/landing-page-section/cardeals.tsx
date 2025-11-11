@@ -4,8 +4,17 @@ import { Carousel } from "@/components/ui/apple-cards-carousel";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { vehicleService, type VehicleResponse } from "@/services/vehicleServices";
+import { getVehiclePrimaryImageUrl } from "@/lib/imageUtils";
+import { encodeId } from "@/lib/idCodec";
+import Link from "next/link";
+
+// Tiny 1x1 transparent GIF for lightweight blur placeholder
+const BLUR_DATA_URL =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 
 interface CarDeal {
+  id?: string;
   src: string;
   title: string;
   category: string;
@@ -90,23 +99,32 @@ const fallbackCarDeals: CarDeal[] = [
 // Mock API function - replace with your actual API endpoint
 const fetchCarDeals = async (page: number, limit: number = 5): Promise<CarDeal[]> => {
   try {
-    // Simulate API call with delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // For demo purposes, return paginated data from fallback
+    const vehicles: VehicleResponse[] = await vehicleService.getAllVehicles({
+      page,
+      limit,
+      maxRate: 5000,
+      availability: "available",
+      sort: "rate_asc",
+    });
+
+    // Map backend vehicles to CarDeal UI shape
+    const mapped: CarDeal[] = vehicles.map((v) => {
+      const src = getVehiclePrimaryImageUrl(v);
+      const title = [v.brand, v.model].filter(Boolean).join(" ");
+      const category = v.type ? v.type.charAt(0).toUpperCase() + v.type.slice(1) : "Vehicle";
+      const price = `₱${Number(v.rate_per_day).toLocaleString("en-PH")}/day`;
+      const location = v.garage_location_name || "Pickup location";
+      const id = encodeId(String(v.vehicle_id));
+      return { id, src, title, category, price, location };
+    });
+
+    return mapped;
+  } catch (error) {
+    console.error("Failed to fetch car deals from API:", error);
+    // Graceful fallback to local demo data (paged to match request)
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const paginatedData = fallbackCarDeals.slice(startIndex, endIndex);
-    
-    // Replace this with your actual API call:
-    // const response = await fetch(`/api/car-deals?page=${page}&limit=${limit}`);
-    // const data = await response.json();
-    // return data;
-    
-    return paginatedData;
-  } catch (error) {
-    console.error('Failed to fetch car deals:', error);
-    return [];
+    return fallbackCarDeals.slice(startIndex, endIndex);
   }
 };
 
@@ -127,8 +145,8 @@ const SkeletonCard = () => {
   );
 };
 
-const SimpleCard = ({ deal }: { deal: CarDeal }) => {
-  return (
+const SimpleCard = ({ deal, priority = false }: { deal: CarDeal; priority?: boolean }) => {
+  const content = (
     <motion.div 
       className="relative flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-96 md:w-64 dark:bg-neutral-900"
       initial={{ opacity: 0 }}
@@ -156,13 +174,22 @@ const SimpleCard = ({ deal }: { deal: CarDeal }) => {
         src={deal.src}
         alt={deal.title}
         fill
-        sizes="(max-width: 768px) 224px, 256px"
+        sizes="(max-width: 640px) 220px, (max-width: 1024px) 240px, 256px"
         className="absolute inset-0 z-10 object-cover"
-        priority={true}
-        loading="eager"
+        placeholder="blur"
+        blurDataURL={BLUR_DATA_URL}
+        quality={80}
+        style={{ objectPosition: "center 65%" }}
+        priority={priority}
+        loading={priority ? "eager" : "lazy"}
       />
     </motion.div>
   );
+  return deal.id ? (
+    <Link href={`/user/vehicle/${deal.id}`} className="block">
+      {content}
+    </Link>
+  ) : content;
 };
 
 const CarDeals = () => {
@@ -216,7 +243,7 @@ const CarDeals = () => {
 
   const renderCarouselItems = () => {
     const items = carDeals.map((deal, index) => (
-      <SimpleCard key={index} deal={deal} />
+      <SimpleCard key={index} deal={deal} priority={index === 0} />
     ));
 
     // Add skeleton cards while loading more (show 5 skeletons to match page size)

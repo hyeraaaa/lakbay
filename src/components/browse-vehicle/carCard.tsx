@@ -6,6 +6,15 @@ import { normalizeTransmissionLabel } from "@/lib/vehicleNormalizers"
 
 // using shared normalizer from lib
 
+const toTitleCase = (value?: string | null) => {
+  if (!value) return ""
+  return value
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+}
+
 interface CarCardProps {
   carName: string
   location: string
@@ -49,7 +58,7 @@ const CarCard: React.FC<CarCardProps> = ({
     return `Coding every ${pretty}`
   })()
   return (
-    <div className="bg-white rounded-sm hover:bg-gray-50 transition-all duration-200 overflow-hidden group border border-neutral-200 shadow-[0_2px_8px_rgba(0,0,0,0.05)]">
+    <div className="bg-white rounded-sm hover:bg-gray-50 transition-all duration-200 overflow-hidden border border-neutral-300">
       {/* Large and medium screens: horizontal layout */}
       <div className="hidden sm:flex h-32">
         <div className="w-40 flex-shrink-0 relative">
@@ -89,11 +98,11 @@ const CarCard: React.FC<CarCardProps> = ({
               </div>
               <div className="flex items-center gap-1">
                 <Fuel className="w-3 h-3" />
-                <span>{fuelType}</span>
+                <span>{toTitleCase(fuelType)}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Car className="w-3 h-3" />
-                <span>{carType}</span>
+                <span>{toTitleCase(carType)}</span>
               </div>
               {codingLabel && (
                 <span className="ms-auto inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium text-blue-700 bg-blue-50 border-blue-200">
@@ -145,7 +154,7 @@ const CarCard: React.FC<CarCardProps> = ({
           <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
             <div className="flex items-center gap-1">
               <Users className="w-4 h-4" />
-              <span>{seats} seats</span>
+              <span>{seats} Seats</span>
             </div>
             <div className="flex items-center gap-1">
               <Settings className="w-4 h-4" />
@@ -153,11 +162,11 @@ const CarCard: React.FC<CarCardProps> = ({
             </div>
             <div className="flex items-center gap-1">
               <Fuel className="w-4 h-4" />
-              <span>{fuelType}</span>
+              <span>{toTitleCase(fuelType)}</span>
             </div>
             <div className="flex items-center gap-1">
               <Car className="w-4 h-4" />
-              <span>{carType}</span>
+              <span>{toTitleCase(carType)}</span>
             </div>
           </div>
 

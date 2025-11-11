@@ -17,7 +17,8 @@ export default function BecomeHostPage() {
     useHostVerification()
 
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [pendingPermitFile, setPendingPermitFile] = useState<File | null>(null)
+  const [pendingInsuranceFile, setPendingInsuranceFile] = useState<File | null>(null)
   const [pendingGarage, setPendingGarage] = useState<string>("")
   const [pendingCoordinates, setPendingCoordinates] = useState<string | null>(null)
 
@@ -29,18 +30,20 @@ export default function BecomeHostPage() {
     }
   }, [error, showError, setError])
 
-  const handleFileSubmit = (file: File, garageLocationName: string, garageCoordinates?: string | null) => {
-    setPendingFile(file)
+  const handleFileSubmit = (permitFile: File, insuranceFile: File, garageLocationName: string, garageCoordinates?: string | null) => {
+    setPendingPermitFile(permitFile)
+    setPendingInsuranceFile(insuranceFile)
     setPendingGarage(garageLocationName)
     setPendingCoordinates(garageCoordinates || null)
     setConfirmOpen(true)
   }
 
   const handleConfirmSubmit = async () => {
-    if (!pendingFile || !pendingGarage) return
-    await submitBusinessPermit(pendingFile, pendingGarage, pendingCoordinates)
+    if (!pendingPermitFile || !pendingInsuranceFile || !pendingGarage) return
+    await submitBusinessPermit(pendingPermitFile, pendingInsuranceFile, pendingGarage, pendingCoordinates)
     setConfirmOpen(false)
-    setPendingFile(null)
+    setPendingPermitFile(null)
+    setPendingInsuranceFile(null)
     setPendingGarage("")
     setPendingCoordinates(null)
   }
@@ -108,12 +111,15 @@ export default function BecomeHostPage() {
           open={confirmOpen}
           onOpenChange={setConfirmOpen}
           title="Submit application?"
-          description="We'll review your business permit. You won't be able to edit while it's under review. Continue?"
+          description="We'll review your business permit and insurance document. You won't be able to edit while it's under review. Continue?"
           confirmText="Submit"
           cancelText="Cancel"
           variant="default"
           onConfirm={handleConfirmSubmit}
-          onCancel={() => setPendingFile(null)}
+          onCancel={() => {
+            setPendingPermitFile(null)
+            setPendingInsuranceFile(null)
+          }}
         />
       </div>
     </div>

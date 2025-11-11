@@ -46,22 +46,39 @@ const COLORS = [
   "var(--chart-5)",
 ]
 
+const formatValue = (value: string | null | undefined) => {
+  if (!value) return '-'
+  return value.split('_').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ')
+}
+
+const formatVehicleName = (name: string) => {
+  if (!name) return name
+  return name.split(' ').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  ).join(' ')
+}
+
 export function BookingCharts({ data }: BookingChartsProps) {
   if (!data) return null
 
   // Transform status data for pie chart
   const statusData =
     data.byStatus?.map((item: StatusItem) => ({
-      name: item.status,
+      name: formatValue(item.status),
       value: item._count.status,
     })) || []
 
   // Transform vehicle data for bar chart
   const vehicleData =
-    data.mostBookedVehicles?.map((item: VehicleItem) => ({
-      name: item.vehicle_name || (item.brand && item.model ? `${item.brand} ${item.model}` : `Vehicle ${item.vehicle_id}`),
-      bookings: item._count.vehicle_id,
-    })) || []
+    data.mostBookedVehicles?.map((item: VehicleItem) => {
+      const rawName = item.vehicle_name || (item.brand && item.model ? `${item.brand} ${item.model}` : `Vehicle ${item.vehicle_id}`)
+      return {
+        name: formatVehicleName(rawName),
+        bookings: item._count.vehicle_id,
+      }
+    }) || []
 
   // Transform customer data for bar chart
   const customerData =

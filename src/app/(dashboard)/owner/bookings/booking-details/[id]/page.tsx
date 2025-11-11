@@ -24,6 +24,7 @@ import {
 import OwnerBookingActionsCard from '@/components/booking/OwnerBookingActionsCard';
 import BookingRouteMap from '@/components/booking/BookingRouteMap';
 import { useBookingDetails } from '@/hooks/booking';
+import { BookingStatus } from '@/services/bookingServices';
 import { decodeId } from '@/lib/idCodec';
 
 export default function OwnerBookingDetailsPage() {
@@ -133,7 +134,9 @@ export default function OwnerBookingDetailsPage() {
         </div>
       </div>
 
-      <BookingRouteMap booking={booking} />
+      {booking.status !== BookingStatus.CANCELED && (
+        <BookingRouteMap booking={booking} />
+      )}
     </div>
   );
 }

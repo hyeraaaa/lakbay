@@ -1,11 +1,18 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ownerDashboardService, type OwnerDashboardOverview, type EarningsPoint, type OwnerVehicleWithRating } from '@/services/ownerDashboardService'
+import {
+  ownerDashboardService,
+  type OwnerDashboardOverview,
+  type EarningsPoint,
+  type OwnerVehicleWithRating,
+  type OwnerEarningsResponse,
+} from '@/services/ownerDashboardService'
 
 export interface UseOwnerDashboardReturn {
   overview: OwnerDashboardOverview | null
-  earnings: EarningsPoint[]
+  earnings: OwnerEarningsResponse | null
+  earningsPoints: EarningsPoint[]
   averageRating: number | null
   ratingCount: number
   weeklyCalendar: { day: string; rented: number; available: number }[]
@@ -16,7 +23,8 @@ export interface UseOwnerDashboardReturn {
 
 export function useOwnerDashboard(): UseOwnerDashboardReturn {
   const [overview, setOverview] = useState<OwnerDashboardOverview | null>(null)
-  const [earnings, setEarnings] = useState<EarningsPoint[]>([])
+  const [earnings, setEarnings] = useState<OwnerEarningsResponse | null>(null)
+  const [earningsPoints, setEarningsPoints] = useState<EarningsPoint[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string>('')
   const [averageRating, setAverageRating] = useState<number | null>(null)
@@ -47,7 +55,8 @@ export function useOwnerDashboard(): UseOwnerDashboardReturn {
         ownerDashboardService.getBookings({ start_date: startStr, end_date: endStr, limit: 100 })
       ])
       setOverview(ov)
-      setEarnings(Array.isArray(er) ? er : [])
+      setEarnings(er ?? null)
+      setEarningsPoints(Array.isArray(er?.monthlyPoints) ? er.monthlyPoints : [])
       // Compute aggregated owner rating across vehicles
       const ratings: { avg: number; count: number }[] = (vehicles as OwnerVehicleWithRating[])
         .map(v => ({ avg: v.rating?.average ?? 0, count: v.rating?.count ?? 0 }))
@@ -104,7 +113,7 @@ export function useOwnerDashboard(): UseOwnerDashboardReturn {
     fetchAll()
   }, [fetchAll])
 
-  return { overview, earnings, averageRating, ratingCount, weeklyCalendar, isLoading, error, refresh }
+  return { overview, earnings, earningsPoints, averageRating, ratingCount, weeklyCalendar, isLoading, error, refresh }
 }
 
 

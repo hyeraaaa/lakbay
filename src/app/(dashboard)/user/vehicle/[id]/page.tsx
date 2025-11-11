@@ -20,6 +20,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { transformVehicleData } from "@/lib/transformVehicleData"
+import { useJWT } from "@/contexts/JWTContext"
 
 
 export default function CarBookingInterface() {
@@ -27,6 +28,7 @@ export default function CarBookingInterface() {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
   const { vehicle, isLoading, reviews, reviewsError, tripCount } = useVehicleDetails()
+  const { isAuthenticated } = useJWT()
 
   const carImages = useMemo(() => {
     const urls = (vehicle?.vehicle_images || [])
@@ -85,7 +87,7 @@ export default function CarBookingInterface() {
                 rating={reviews && reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : null}
                 tripCount={tripCount}
               />
-              {vehicle && (
+              {vehicle && isAuthenticated && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -118,14 +120,13 @@ export default function CarBookingInterface() {
             />
           </div>
         </div>
-      </div>
-      )}
 
-
-      <div id="location" className="scroll-mt-24">
+        <div id="location" className="scroll-mt-24 mt-10">
+        <h3 className="font-semibold text-lg mb-5">Location</h3>
         <LocationSection vehicle={vehicle} />
       </div>
-
+      </div>
+      )}
       {vehicle && (
         <VehicleReportDialog
           vehicleId={vehicle.vehicle_id.toString()}

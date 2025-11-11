@@ -54,6 +54,11 @@ const VehicleMapInner: React.FC<VehicleMapProps> = ({ vehicles, isLoading, class
   const FitToVehicles: React.FC<{ coords: Array<[number, number]> }> = ({ coords }) => {
     const map = useMap();
     useEffect(() => {
+      // If explicit center/zoom are provided, don't auto-fit (user wants specific location)
+      if (center && zoom && Number.isFinite(center[0]) && Number.isFinite(center[1]) && Number.isFinite(zoom)) {
+        return;
+      }
+
       // Allow external interactions (like marker "View cars here") to skip auto-fit for a short window
       try {
         const globalAny = window as unknown as { __lakbaySkipNextAutoFit?: boolean; __lakbaySkipAutoFitUntil?: number };
@@ -82,16 +87,32 @@ const VehicleMapInner: React.FC<VehicleMapProps> = ({ vehicles, isLoading, class
         const bounds = L.latLngBounds(valid);
         map.fitBounds(bounds, { padding: [40, 40], animate: true, maxZoom: 17 });
       }
-    }, [coords, map]);
+    }, [coords, map, center, zoom]);
     return null;
   };
 
   // Imperatively set view to a geocoded center
+  // This has priority over auto-fit when explicit center/zoom are provided
   const SetViewToCenter: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
     const map = useMap();
     useEffect(() => {
       if (Number.isFinite(center[0]) && Number.isFinite(center[1]) && Number.isFinite(zoom)) {
-        map.setView(center, zoom, { animate: true });
+        // Check if map is already at the target location to avoid unnecessary updates
+        try {
+          const currentCenter = map.getCenter();
+          const currentZoom = map.getZoom();
+          const latDiff = Math.abs(currentCenter.lat - center[0]);
+          const lngDiff = Math.abs(currentCenter.lng - center[1]);
+          const zoomDiff = Math.abs(currentZoom - zoom);
+          // If already close to target (within 0.0001 degrees and 1 zoom level), skip update
+          if (latDiff < 0.0001 && lngDiff < 0.0001 && zoomDiff < 1) {
+            return;
+          }
+        } catch {}
+
+        // Use setView with animate: false to avoid conflicts with flyTo from VehicleMarkers
+        // The flyTo in VehicleMarkers will handle the animation
+        map.setView(center, zoom, { animate: false });
       }
     }, [center, zoom, map]);
     return null;
@@ -155,7 +176,8 @@ const VehicleMapInner: React.FC<VehicleMapProps> = ({ vehicles, isLoading, class
           noWrap={true}
         />
         {autoFitOnUpdate && validCoords.length > 0 && <FitToVehicles coords={validCoords} />}
-        {validCoords.length === 0 && !internalUserLocation && center && zoom && (
+        {/* Set view to explicit center/zoom when provided (e.g., from "View cars here") */}
+        {center && zoom && Number.isFinite(center[0]) && Number.isFinite(center[1]) && Number.isFinite(zoom) && (
           <SetViewToCenter center={center} zoom={zoom} />
         )}
         

@@ -155,7 +155,7 @@ const SearchbarSmContent = ({ className }: SearchbarSmProps) => {
       <div className={cn("lg:hidden w-full", className)}>
         <Popover open={isSearchPopoverOpen} onOpenChange={setIsSearchPopoverOpen}>
           <PopoverTrigger asChild>
-            <button className="w-full bg-[#fafafc] border border-gray-300 rounded-lg px-4 py-2 flex items-center gap-3 cursor-pointer">
+            <button className="w-full bg-[#fafafa] border border-gray-300 rounded-lg px-4 py-2 flex items-center gap-3 cursor-pointer">
               <div className="flex-1 text-left min-w-0">
                 <div className="text-sm font-medium text-gray-900 truncate">{locationText}</div>
                 <div className="text-xs text-gray-500 truncate">{dateText}</div>
@@ -187,7 +187,7 @@ const SearchbarSmContent = ({ className }: SearchbarSmProps) => {
                     }, 200)
                   }}
                   className={cn(
-                    "border border-gray-300 focus-visible:ring-1 h-10 shadow-none w-full rounded-md pr-9 bg-[#fafafc]",
+                    "border border-gray-300 focus-visible:ring-1 h-10 shadow-none w-full rounded-md pr-9 bg-[#fafafa]",
                     !isLocationValid && validationErrors.length > 0 && "border-red-500 focus-visible:ring-red-500",
                   )}
                   placeholder="From?"
@@ -304,7 +304,7 @@ const SearchbarSmContent = ({ className }: SearchbarSmProps) => {
                 }, 200)
               }}
               className={cn(
-                "border border-gray-300 focus-visible:ring-1 h-10 shadow-none w-full rounded-md pr-9 min-w-0 bg-[#fafafc]",
+                "border border-gray-300 focus-visible:ring-1 h-10 shadow-none w-full rounded-md pr-9 min-w-0 bg-[#fafafa]",
                 !isLocationValid && validationErrors.length > 0 && "border-red-500 focus-visible:ring-red-500",
               )}
               placeholder="From?"
@@ -458,7 +458,7 @@ const SearchbarSm = ({ className }: SearchbarSmProps) => {
   return (
     <Suspense fallback={
       <div className={cn("lg:hidden w-full", className)}>
-        <div className="w-full bg-[#fafafc] border border-gray-300 rounded-lg px-4 py-2 flex items-center gap-3">
+        <div className="w-full bg-[#fafafa] border border-gray-300 rounded-lg px-4 py-2 flex items-center gap-3">
           <div className="flex-1 text-left min-w-0">
             <div className="text-sm font-medium text-gray-900 truncate">Loading...</div>
             <div className="text-xs text-gray-500 truncate">Loading...</div>

@@ -30,6 +30,7 @@ const OwnerBookingsPage = () => {
     pagination,
     statusOptions,
     statusCounts,
+    isStatsLoading,
     // actions
     handleSearch,
     handleStatusFilter,
@@ -150,7 +151,20 @@ const OwnerBookingsPage = () => {
       </div>
 
       {/* Stats */}
-      <BookingStatsCards counts={statusCounts} />
+      {isStatsLoading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <Card key={`stats-skeleton-${idx}`}>
+              <CardContent className="p-4 space-y-3">
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-4 w-24" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <BookingStatsCards counts={statusCounts} />
+      )}
 
       <Card>
         <CardContent>

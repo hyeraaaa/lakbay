@@ -3,15 +3,18 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar } from 'lucide-react';
+import { Calendar, Flag } from 'lucide-react';
 import { Booking, BookingStatus } from '@/services/bookingServices';
 import { bookingService } from '@/services/bookingServices';
+import { Button } from '@/components/ui/button';
+import ReportDialog from '@/components/profile/ReportDialog';
+import { useJWT } from '@/contexts/JWTContext';
 
 interface BookingDetailsCardProps {
   booking: Booking;
 }
 
-const getStatusColor = (status: BookingStatus) => {
+const getStatusColor = (status: BookingStatus) => { 
   const statusColors = {
     [BookingStatus.PENDING_PAYMENT]: 'bg-yellow-100 text-yellow-800 border-yellow-200',
     [BookingStatus.AWAITING_OWNER_APPROVAL]: 'bg-blue-100 text-blue-800 border-blue-200',
@@ -25,6 +28,9 @@ const getStatusColor = (status: BookingStatus) => {
 
 
 export default function BookingDetailsCard({ booking }: BookingDetailsCardProps) {
+  const [isReportOpen, setIsReportOpen] = React.useState(false);
+  const { user, isAuthenticated } = useJWT();
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -60,6 +66,28 @@ export default function BookingDetailsCard({ booking }: BookingDetailsCardProps)
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-600">Booked By</label>
+                <p className="text-gray-900">
+                  {booking?.users?.first_name} {booking?.users?.last_name}
+                </p>
+              </div>
+              {isAuthenticated && user?.user_type === 'owner' && (
+                <div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsReportOpen(true)}
+                    aria-label="Report user"
+                    title="Report user"
+                  >
+                    <Flag className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
             <div>
               <label className="text-sm font-medium text-gray-600">Rental Period</label>
               <p className="text-gray-900">
@@ -129,6 +157,12 @@ export default function BookingDetailsCard({ booking }: BookingDetailsCardProps)
           </div>
         </div>
       </CardContent>
+      <ReportDialog
+        userId={String(booking.user_id)}
+        userName={`${booking?.users?.first_name} ${booking?.users?.last_name}`}
+        open={isReportOpen}
+        onOpenChange={setIsReportOpen}
+      />
     </Card>
   );
 }

@@ -109,32 +109,42 @@ export default function VehicleMarkers({
   }, [map, selected])
 
   const handleViewCars = () => {
-    if (!ownerInfo.oid) return
+    if (!selected) return
   
     // Smoothly fly the map to the selected marker's base position
-    if (selected) {
-      const target = selected.base
-      try {
-        // Signal the map to skip auto-fit during our animation window (match duration)
-        ;(window as unknown as { __lakbaySkipNextAutoFit?: boolean; __lakbaySkipAutoFitUntil?: number }).__lakbaySkipAutoFitUntil = Date.now() + 900
-        const currentZoom = map.getZoom?.() ?? 13
-        const targetZoom = Math.max(currentZoom, 15)
-        map.flyTo(target as unknown as L.LatLngExpression, targetZoom, { animate: true, duration: 0.6, easeLinearity: 0.6 })
-      } catch {}
-    }
+    const target = selected.base
+    try {
+      // Signal the map to skip auto-fit for a longer window to account for vehicle refetching
+      // Use 5 seconds to ensure vehicles have time to refetch and the map stays at the marker
+      ;(window as unknown as { __lakbaySkipNextAutoFit?: boolean; __lakbaySkipAutoFitUntil?: number }).__lakbaySkipAutoFitUntil = Date.now() + 5000
+      const currentZoom = map.getZoom?.() ?? 13
+      const targetZoom = Math.max(currentZoom, 15)
+      map.flyTo(target as unknown as L.LatLngExpression, targetZoom, { animate: true, duration: 0.6, easeLinearity: 0.6 })
+    } catch {}
 
     const params = new URLSearchParams(searchParams.toString())
-    params.set('oid', ownerInfo.oid)
-    params.set('filterOwner', '1')
+    
+    // Set garage location coordinates to filter vehicles at this specific location
+    params.set('garageLat', selected.base[0].toString())
+    params.set('garageLng', selected.base[1].toString())
+    params.set('filterGarage', '1')
+    
+    // Optionally filter by owner if there's a single owner at this location
+    if (ownerInfo.oid) {
+      params.set('oid', ownerInfo.oid)
+      params.set('filterOwner', '1')
+    } else {
+      // Remove owner filter if multiple owners at this location
+      params.delete('oid')
+      params.delete('filterOwner')
+    }
+    
     params.set('_', Date.now().toString())
   
     const newUrl = `/user?${params.toString()}`
-    const currentUrl = `${window.location.pathname}${window.location.search}`
   
-    // ✅ Update URL manually to avoid reload
-    if (newUrl !== currentUrl) {
-      window.history.replaceState(null, '', newUrl)
-    }
+    // Use router.replace to ensure Next.js properly updates searchParams
+    router.replace(newUrl, { scroll: false })
   
     setSelected(null)
   }

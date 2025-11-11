@@ -1,9 +1,16 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search } from "lucide-react"
+import { Search, Calendar as CalendarIcon } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
+import type { DateRange } from "react-day-picker"
+import { format } from "date-fns"
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected"
 type TypeFilter =
@@ -22,6 +29,8 @@ interface VerificationRequestsHeaderProps {
   setStatusFilter: (filter: StatusFilter) => void
   typeFilter: TypeFilter
   setTypeFilter: (filter: TypeFilter) => void
+  dateRange: DateRange | undefined
+  setDateRange: (range: DateRange | undefined) => void
 }
 
 export default function VerificationRequestsHeader({
@@ -31,7 +40,38 @@ export default function VerificationRequestsHeader({
   setStatusFilter,
   typeFilter,
   setTypeFilter,
+  dateRange,
+  setDateRange,
 }: VerificationRequestsHeaderProps) {
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
+  const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange)
+
+  // Sync temp range when dateRange prop changes
+  useEffect(() => {
+    setTempDateRange(dateRange)
+  }, [dateRange])
+
+  const handleApplyDates = () => {
+    setDateRange(tempDateRange)
+    setIsDatePickerOpen(false)
+  }
+
+  const handleClearDates = () => {
+    setTempDateRange(undefined)
+    setDateRange(undefined)
+    setIsDatePickerOpen(false)
+  }
+
+  const formatRangeLabel = (range: DateRange | undefined): string => {
+    if (range?.from && range?.to) {
+      return `${format(range.from, "MMM dd, yyyy")} - ${format(range.to, "MMM dd, yyyy")}`
+    }
+    if (range?.from) {
+      return `From ${format(range.from, "MMM dd, yyyy")}`
+    }
+    return "Date range"
+  }
+
   return (
     <header className="border-b border-border py-3">
       {/* Search and Status Filter */}
@@ -56,6 +96,53 @@ export default function VerificationRequestsHeader({
             <SelectItem value="rejected">Rejected Only</SelectItem>
           </SelectContent>
         </Select>
+        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "bg-white border-neutral-300 justify-start text-left font-normal whitespace-nowrap",
+                !dateRange && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateRange?.from || dateRange?.to ? (
+                formatRangeLabel(dateRange)
+              ) : (
+                <span>Date range</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="range"
+              selected={tempDateRange}
+              onSelect={setTempDateRange}
+              numberOfMonths={2}
+            />
+            <div className="p-3 border-t border-gray-200">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearDates}
+                  className="flex-1"
+                  disabled={!tempDateRange?.from && !tempDateRange?.to}
+                >
+                  Clear
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleApplyDates}
+                  className="flex-1"
+                  disabled={!tempDateRange?.from || !tempDateRange?.to}
+                >
+                  Apply
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Type Badge Filters */}

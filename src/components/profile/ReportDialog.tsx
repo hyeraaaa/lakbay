@@ -51,6 +51,7 @@ export default function ReportDialog({ userId, userName, open, onOpenChange }: R
   const [hasAlreadyReported, setHasAlreadyReported] = useState(false)
   const [checkingReport, setCheckingReport] = useState(false)
   const [lastReportedAt, setLastReportedAt] = useState<Date | null>(null)
+  const [evidenceText, setEvidenceText] = useState<string>("") // optional proof links
 
   const { user, isAuthenticated } = useJWT()
 
@@ -131,9 +132,17 @@ export default function ReportDialog({ userId, userName, open, onOpenChange }: R
         throw new Error("Invalid user ID")
       }
 
+      // Parse optional evidence URLs (comma or newline separated)
+      const evidence_urls = evidenceText
+        .split(/[\n,]/)
+        .map((u) => u.trim())
+        .filter((u) => u.length > 0)
+        .slice(0, 5)
+
       const result = await reportService.reportUser(numericUserId, {
         category,
         description: description.trim(),
+        evidence_urls: evidence_urls.length ? evidence_urls : undefined,
       })
 
       if (result.ok) {
@@ -152,6 +161,7 @@ export default function ReportDialog({ userId, userName, open, onOpenChange }: R
           onOpenChange(false)
           setCategory("")
           setDescription("")
+          setEvidenceText("")
         }, 2000)
       } else {
         throw new Error("Failed to submit report")
@@ -228,6 +238,21 @@ export default function ReportDialog({ userId, userName, open, onOpenChange }: R
               />
               <p className="text-xs text-muted-foreground">
                 Include specific details about what happened and why you&apos;re reporting this user.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="evidence">Proof (optional)</Label>
+              <Textarea
+                id="evidence"
+                placeholder="Paste links to screenshots or files (comma or newline separated, up to 5)"
+                value={evidenceText}
+                onChange={(e) => setEvidenceText(e.target.value)}
+                rows={3}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                You can add up to 5 links (images, videos, or documents) as proof.
               </p>
             </div>
           </div>

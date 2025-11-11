@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { MessageCircle, X, Minimize2, Search, ChevronDown, Send, Paperclip, Smile } from "lucide-react"
+import { MessageCircle, X, Minimize2, Search, ChevronDown, Send, Smile } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -248,7 +248,6 @@ export function GeneralChatWidget() {
                     </Avatar>
                     <div>
                       <h3 className="font-semibold text-sm">{ownerProfile ? `${ownerProfile.first_name} ${ownerProfile.last_name}` : isLoadingOwner ? 'Loading...' : 'User'}</h3>
-                      <p className="text-xs text-muted-foreground">Active now</p>
                     </div>
                   </div>
                 </div>
@@ -309,9 +308,6 @@ export function GeneralChatWidget() {
                 {/* Message Input */}
                 <div className="p-4 bg-card border-t border-border">
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
-                      <Paperclip className="h-5 w-5" />
-                    </Button>
                     <textarea
                       ref={textAreaRef}
                       value={inputValue}

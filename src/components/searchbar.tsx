@@ -293,7 +293,7 @@ const Searchbar = ({ className }: SearchbarProps) => {
                   <span>
                     {dateRange?.to
                       ? format(dateRange.to, "MMM dd, yyyy")
-                      : "Pick-up Date"}
+                      : "Return Date"}
                   </span>
                 </Button>
               </PopoverTrigger>

@@ -41,6 +41,13 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking, onAction, onA
     onAction?.('view', booking.booking_id);
   };
 
+  const hostName = (() => {
+    const first = booking.vehicle?.users?.first_name || '';
+    const last = booking.vehicle?.users?.last_name || '';
+    const full = `${first} ${last}`.trim();
+    return full || 'Unknown';
+  })();
+
   return (
     <div 
       className="w-full bg-white rounded-xl border border-border h-full cursor-pointer group overflow-hidden"
@@ -104,7 +111,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking, onAction, onA
 
           <div className="flex items-center justify-between gap-3">
             <div className="text-xs text-gray-600">
-              Host: <span className="font-medium text-gray-800">{booking.vehicle?.users?.first_name || 'Unknown'}</span>
+              Host: <span className="font-medium text-gray-800">{hostName}</span>
             </div>
             <div className="flex items-center gap-2">
               
@@ -187,7 +194,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking, onAction, onA
 
           <div className="flex items-center justify-between gap-3">
             <div className="text-sm text-gray-600">
-              Host: <span className="font-medium text-gray-800">{booking.vehicle?.users?.first_name || 'Unknown'}</span>
+              Host: <span className="font-medium text-gray-800">{hostName}</span>
             </div>
             <div className="flex items-center gap-2">
               {booking.status === BookingStatus.COMPLETED && (!booking.reviews || booking.reviews.length === 0) && (

@@ -20,6 +20,7 @@ export function SettingsTabs({ activeTab, onTabChange }: SettingsTabsProps) {
 
   const ownerTabs = [
     ...baseTabs,
+    { id: "garage", label: "Garage Location" },
     { id: "stripe", label: "Stripe Connect" },
   ]
 

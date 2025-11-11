@@ -132,6 +132,14 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
     }
   }
 
+  const formatAvailability = (availability: string) => {
+    return availability
+      .replace(/_/g, " ")
+      .split(" ")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ")
+  }
+
   const columns: ColumnDef<VehicleRow>[] = [
     {
       header: "Vehicle",
@@ -142,48 +150,48 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
           <div className="text-xs text-muted-foreground">{row.original.plate}</div>
         </div>
       ),
-      size: 100,
+      size: 200,
     },
     { 
       header: "Type", 
       accessorKey: "type", 
       size: 100,
       cell: ({ row }) => (
-        <div className="px-2 capitalize">{row.original.type}</div>
+        <div className="px-4 capitalize">{row.original.type}</div>
       ),
     },
     {
       header: "Rate/Day",
       accessorKey: "ratePerDay",
       cell: ({ row }) => (
-        <div className="px-2 font-medium">₱{row.original.ratePerDay.toLocaleString()}</div>
+        <div className="px-4 font-medium">₱{row.original.ratePerDay.toLocaleString()}</div>
       ),
-      size: 100,
+      size: 120,
     },
     { 
       header: "Fuel", 
       accessorKey: "fuel_type", 
       size: 100,
       cell: ({ row }) => (
-        <div className="px-2 capitalize">{row.original.fuel_type}</div>
+        <div className="px-4 capitalize">{row.original.fuel_type}</div>
       ),
     },
     {
       header: "Availability",
       accessorKey: "availability",
       cell: ({ row }) => (
-        <div className="px-2">
+        <div className="px-4">
           <Badge
             className={cn(
               "border px-2 py-0.5 text-[11px]",
               getAvailabilityBadgeColor(row.original.availability)
             )}
           >
-            {row.original.availability.replace(/_/g, " ")}
+            {formatAvailability(row.original.availability)}
           </Badge>
         </div>
       ),
-      size: 100,
+      size: 150,
     },
     {
       header: "Mileage Settings",
@@ -194,7 +202,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
         const fee = row.original.overage_fee_per_km
         
         return (
-          <div className="px-2">
+          <div className="px-4">
             {hasLimit ? (
               <div className="text-xs">
                 <div className="font-medium">{limit} km/day</div>
@@ -206,18 +214,19 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
           </div>
         )
       },
-      size: 120,
+      size: 150,
     },
     {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button className="ms-3" size="icon" variant="ghost" aria-label="Open actions menu">
-              <MoreHorizontal size={16} />
-            </Button>
-          </DropdownMenuTrigger>
+        <div className="px-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" aria-label="Open actions menu">
+                <MoreHorizontal size={16} />
+              </Button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-30">
             <DropdownMenuItem asChild>
               <Link href={`/owner/vehicle/vehicle-details/${encodeId(row.original.id.toString())}`}>
@@ -297,9 +306,10 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       ),
       enableSorting: false,
-      size: 30 ,
+      size: 80,
     },
   ]
 
@@ -465,7 +475,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
                       <div
                         className={cn(
                           header.column.getCanSort() && "flex h-full cursor-pointer items-center justify-between gap-2 select-none",
-                          header.column.id === "brand" ? "pl-4" : "px-2"
+                          header.column.id === "brand" ? "pl-4" : "px-4"
                         )}
                         onClick={header.column.getToggleSortingHandler()}
                         onKeyDown={(e) => {
@@ -483,7 +493,7 @@ export function VehiclesTable({ vehicles, onChange }: VehiclesTableProps) {
                         }[header.column.getIsSorted() as string] ?? null}
                       </div>
                     ) : (
-                      <div className={cn(header.column.id === "brand" ? "pl-4" : "px-2")}>
+                      <div className={cn(header.column.id === "brand" ? "pl-4" : "px-4")}>
                         {flexRender(header.column.columnDef.header, header.getContext())}
                       </div>
                     )}

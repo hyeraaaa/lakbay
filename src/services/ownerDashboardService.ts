@@ -20,7 +20,7 @@ export interface OwnerDashboardOverview {
     maintenance: number
     pending_registration: number
   }
-  recentBookings?: Record<string, unknown>[]
+  recentBookings?: OwnerDashboardRecentBooking[]
 }
 
 export interface EarningsPoint {
@@ -43,6 +43,31 @@ export interface OwnerVehicleWithRating {
   }
 }
 
+export interface OwnerDashboardRecentBooking {
+  booking_id: number | string
+  customer_name: string
+  vehicle_info: string
+  status: string
+  start_date?: string
+  end_date?: string
+  created_at?: string
+  dates?: {
+    start_date?: string
+    end_date?: string
+  }
+}
+
+export interface OwnerEarningsResponse {
+  summary: {
+    totalEarnings: number
+    pendingAmount: number
+    pendingCount: number
+    failedCount: number
+    totalPayouts: number
+  }
+  monthlyPoints: EarningsPoint[]
+}
+
 export const ownerDashboardService = {
   async getOverview(): Promise<OwnerDashboardOverview> {
     const res = await apiRequest(`${API_BASE_URL}/api/owner/dashboard/overview`, {
@@ -58,7 +83,7 @@ export const ownerDashboardService = {
     return body?.data as OwnerDashboardOverview
   },
 
-  async getEarnings(period: 'month' | 'year' | 'all' = 'month'): Promise<EarningsPoint[]> {
+  async getEarnings(period: 'month' | 'year' | 'all' = 'month'): Promise<OwnerEarningsResponse> {
     const url = new URL(`${API_BASE_URL}/api/owner/dashboard/earnings`)
     url.searchParams.set('period', period)
     const res = await apiRequest(url.toString(), {
@@ -71,23 +96,41 @@ export const ownerDashboardService = {
       throw new Error(data?.message || 'Failed to fetch earnings')
     }
     const body = await res.json()
-    // Normalize various backend shapes to a consistent points array
-    if (Array.isArray(body?.data)) {
-      return body.data as EarningsPoint[]
+    const data = body?.data ?? {}
+
+    const baseSummary = {
+      totalEarnings: Number(data?.summary?.totalEarnings ?? data?.totalEarnings ?? 0),
+      pendingAmount: Number(data?.summary?.pendingAmount ?? data?.pendingAmount ?? 0),
+      pendingCount: Number(data?.summary?.pendingCount ?? data?.pendingCount ?? 0),
+      failedCount: Number(data?.summary?.failedCount ?? data?.failedCount ?? 0),
+      totalPayouts: Number(data?.summary?.totalPayouts ?? data?.totalPayouts ?? 0),
     }
-    const data = body?.data
-    // Backend currently returns an object with monthlyBreakdown [{ monthName, amount, count }]
-    if (data?.monthlyBreakdown && Array.isArray(data.monthlyBreakdown)) {
-      // Densify to all 12 months of the current year with zeros for missing months
+
+    // Build monthly points from various possible backend shapes
+    let monthlyPoints: EarningsPoint[] = []
+
+    if (Array.isArray(data)) {
+      monthlyPoints = (data as EarningsPoint[]).map(p => ({
+        month: p.month ?? p.period,
+        earnings: Number(p.earnings ?? p.revenue ?? 0),
+        bookings: Number(p.bookings ?? 0),
+      }))
+    } else if (Array.isArray(data?.points)) {
+      monthlyPoints = (data.points as EarningsPoint[]).map(p => ({
+        month: p.month ?? p.period,
+        earnings: Number(p.earnings ?? p.revenue ?? 0),
+        bookings: Number(p.bookings ?? 0),
+      }))
+    } else if (Array.isArray(data?.monthlyBreakdown)) {
       const monthNames = [
         'January','February','March','April','May','June','July','August','September','October','November','December'
       ]
-      const map = new Map<number, { amount: number; count: number; name: string }>()
+      const map = new Map<number, { amount: number; count: number }>()
       for (const m of data.monthlyBreakdown) {
         const idx = typeof m.month === 'number' ? m.month : monthNames.indexOf(String(m.monthName))
-        if (idx >= 0) map.set(idx, { amount: Number(m.amount ?? 0), count: Number(m.count ?? 0), name: monthNames[idx] })
+        if (idx >= 0) map.set(idx, { amount: Number(m.amount ?? 0), count: Number(m.count ?? 0) })
       }
-      const points: EarningsPoint[] = monthNames.map((name, idx) => {
+      monthlyPoints = monthNames.map((name, idx) => {
         const v = map.get(idx)
         return {
           month: name,
@@ -95,13 +138,19 @@ export const ownerDashboardService = {
           bookings: v ? v.count : 0,
         }
       })
-      return points
     }
-    // Fallback to known key `points` if provided
-    if (Array.isArray(data?.points)) {
-      return data.points as EarningsPoint[]
+
+    // If totalEarnings missing, derive from monthly points
+    const totalFromPoints = monthlyPoints.reduce((s, p) => s + Number(p.earnings ?? 0), 0)
+    const summary = {
+      ...baseSummary,
+      totalEarnings: baseSummary.totalEarnings || totalFromPoints,
     }
-    return []
+
+    return {
+      summary,
+      monthlyPoints,
+    }
   },
 
   async getVehicles(): Promise<OwnerVehicleWithRating[]> {

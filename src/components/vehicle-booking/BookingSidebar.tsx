@@ -412,12 +412,6 @@ export default function BookingSidebar({ pricePerDay, vehicleId }: BookingSideba
             <p className="text-sm text-muted-foreground">Free cancellation before 24 hours of departure. View flexible options available at checkout.</p>
           </div>
 
-          <div>
-            <h4 className="font-medium text-foreground mb-2">Payment options</h4>
-            <p className="text-sm text-muted-foreground">Pay now when you reserve or pay later when you pick up the car. Flexible payment options at checkout.</p>
-          </div>
-
-
           {/* Mileage Settings */}
           {isLoadingVehicle ? (
             <div>

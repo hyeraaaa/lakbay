@@ -1,8 +1,7 @@
 "use client"
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React from 'react'
 import { UsersDataTable, AdminRegistrationDialog, UserStatsCards, UsersPagination } from '@/components/admin/account-management'
-import { adminUserService, type AdminUserSummary } from '@/services/adminUserService'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -15,98 +14,47 @@ import { Skeleton } from '@/components/ui/skeleton'
  
 import { encodeId } from '@/lib/idCodec'
 import { ConfirmationDialog } from '@/components/confirmation-dialog/confimationDialog'
-import { useNotification } from '@/components/NotificationProvider'
+import { useAccountManagement } from '@/hooks/account-management'
 
 export default function Page() {
-  const { success, error } = useNotification()
-  const [users, setUsers] = useState<AdminUserSummary[]>([])
-  const [page, setPage] = useState<number>(1)
-  const [limit] = useState<number>(10)
-  const [totalPages, setTotalPages] = useState<number>(1)
-  const [totalItems, setTotalItems] = useState<number>(0)
-  const [loading, setLoading] = useState<boolean>(false)
-  const [statsLoading, setStatsLoading] = useState<boolean>(false)
-  const [filteredCounts, setFilteredCounts] = useState<{ total: number; active: number; deactivated: number; banned: number }>({ total: 0, active: 0, deactivated: 0, banned: 0 })
-  const [search, setSearch] = useState<string>("")
-  const [debouncedSearch, setDebouncedSearch] = useState<string>("")
-  const [userType, setUserType] = useState<string>("all")
-  const [accountStatus, setAccountStatus] = useState<string>("all")
+  const {
+    // State
+    users,
+    page,
+    limit,
+    totalPages,
+    totalItems,
+    loading,
+    statsLoading,
+    initialLoading,
+    filteredCounts,
+    search,
+    userType,
+    accountStatus,
+    confirmOpen,
+    pendingAction,
+    deactivationReason,
+    registerDialogOpen,
+    
+    // Setters
+    setSearch,
+    setUserType,
+    setAccountStatus,
+    setPage,
+    setConfirmOpen,
+    setDeactivationReason,
+    setRegisterDialogOpen,
+    
+    // Handlers
+    handleAction,
+    handlePageChange,
+    handleConfirmAction,
+    handleCancelAction,
+    handleRegistrationSuccess,
+  } = useAccountManagement()
 
-  // Debounce search input
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search)
-      setPage(1) // Reset to first page when search changes
-    }, 500) // 500ms delay
-
-    return () => clearTimeout(timer)
-  }, [search])
-
-  // Reset page when filters change
-  useEffect(() => {
-    setPage(1)
-  }, [userType, accountStatus])
-
-  const fetchUsers = useCallback(async (nextPage?: number) => {
-    setLoading(true)
-    try {
-      const res = await adminUserService.listUsers({
-        page: nextPage ?? page,
-        limit,
-        search: debouncedSearch || undefined,
-        userType: userType !== 'all' ? userType : undefined,
-        accountStatus: accountStatus !== 'all' ? accountStatus : undefined,
-      })
-      setUsers(res.users)
-      setTotalPages(res.pagination.totalPages)
-      setTotalItems(res.pagination.total)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, limit, debouncedSearch, userType, accountStatus])
-
-  const fetchFilteredCounts = useCallback(async () => {
-    setStatsLoading(true)
-    try {
-      const filters: { search?: string; userType?: string } = {}
-      if (debouncedSearch) filters.search = debouncedSearch
-      if (userType !== 'all') filters.userType = userType
-      
-      const counts = await adminUserService.getFilteredUserCounts(filters)
-      setFilteredCounts(counts)
-    } finally {
-      setStatsLoading(false)
-    }
-  }, [debouncedSearch, userType])
-
-  useEffect(() => {
-    fetchUsers()
-    fetchFilteredCounts()
-  }, [fetchUsers, fetchFilteredCounts])
-
-  const [confirmOpen, setConfirmOpen] = useState<boolean>(false)
-  const [pendingAction, setPendingAction] = useState<{ action: 'activate' | 'deactivate' | 'ban'; userId: number } | null>(null)
-  const [deactivationReason, setDeactivationReason] = useState<string>("")
-  const [registerDialogOpen, setRegisterDialogOpen] = useState<boolean>(false)
-
-  const handleAction = async (action: "view" | "activate" | "deactivate" | "ban", userId: number) => {
-    if (action === 'view') {
-      // Navigate to encoded profile page
-      window.location.href = `/profile/${encodeId(String(userId))}`
-      return
-    }
-    setPendingAction({ action, userId })
-    setConfirmOpen(true)
-  }
-
-  const applyFilters = () => {
-    setPage(1)
-    fetchUsers(1)
-  }
-
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage)
-    fetchUsers(newPage)
+  const onAction = (action: "view" | "activate" | "deactivate" | "ban", userId: number) => {
+    handleAction(action, userId, encodeId)
   }
 
   return (
@@ -121,7 +69,7 @@ export default function Page() {
         active={filteredCounts.active}
         deactivated={filteredCounts.deactivated}
         banned={filteredCounts.banned}
-        loading={statsLoading}
+        loading={initialLoading || statsLoading}
       />
       
       <Card>
@@ -156,7 +104,7 @@ export default function Page() {
             </div>
 
             {/* User Type Badge Filters */}
-            <div className={`flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-4 ${!loading && users.length > 0 ? '' : 'border-b'}`}>
+            <div className={`flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-4 ${!initialLoading && !loading && users.length === 0 ? 'border-b' : ''}`}>
               <button 
                 onClick={() => {
                   setUserType("all")
@@ -190,75 +138,62 @@ export default function Page() {
                   Owner
                 </Badge>
               </button>
-              <button 
-                onClick={() => {
-                  setUserType("admin")
-                  setPage(1)
-                }} 
-                className="focus:outline-none"
-              >
-                <Badge className="rounded-sm px-3 py-1" variant={userType === "admin" ? "black" : "outline"}>
-                  Admin
-                </Badge>
-              </button>
             </div>
 
-      {loading ? (
-        <div className="space-y-4">
-          <div className="border border-neutral-300 bg-white">
-            <div className="overflow-x-auto">
-              <div className="min-w-[980px] p-4">
-                {/* Table header skeleton */}
-                <div className="grid grid-cols-7 gap-4 px-2 py-2 border-b">
-                  <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-5 w-48" />
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-5 w-24" />
-                  <Skeleton className="h-5 w-24" />
-                  <Skeleton className="h-5 w-28" />
-                  <Skeleton className="h-5 w-20" />
-                </div>
-                {/* Rows skeleton */}
-                <div className="space-y-3 mt-2">
-                  {Array.from({ length: 10 }).map((_, idx) => (
-                    <div key={idx} className="grid grid-cols-7 gap-4 items-center px-2 py-3 border-b last:border-0">
-                      <Skeleton className="h-4 w-40" />
-                      <Skeleton className="h-4 w-48" />
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-6 w-24 rounded-full" />
-                      <Skeleton className="h-6 w-24 rounded-full" />
-                      <Skeleton className="h-4 w-28" />
-                      <div className="flex justify-start">
-                        <Skeleton className="h-8 w-8 rounded" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+      {initialLoading || loading ? (
+        <div className="border border-neutral-300 bg-white">
+          <div className="overflow-x-auto">
+            <div className="min-w-[980px]">
+              {/* Table header skeleton */}
+              <div className="grid grid-cols-7 gap-4 px-4 py-2 border-b">
+                <Skeleton className="h-5 w-[200px]" />
+                <Skeleton className="h-5 w-[250px]" />
+                <Skeleton className="h-5 w-[150px]" />
+                <Skeleton className="h-5 w-[120px]" />
+                <Skeleton className="h-5 w-[120px]" />
+                <Skeleton className="h-5 w-[120px]" />
+                <Skeleton className="h-5 w-[80px]" />
               </div>
+              {/* Rows skeleton */}
+              {Array.from({ length: 10 }).map((_, idx) => (
+                <div key={idx} className="grid grid-cols-7 gap-4 items-center px-4 py-3 border-b last:border-0">
+                  <Skeleton className="h-4 w-[200px]" />
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[150px]" />
+                  <Skeleton className="h-6 w-[120px] rounded-full" />
+                  <Skeleton className="h-6 w-[120px] rounded-full" />
+                  <Skeleton className="h-4 w-[120px]" />
+                  <div className="flex justify-start">
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       ) : (
         <UsersDataTable
           users={users}
-          onAction={handleAction}
+          onAction={onAction}
           page={page}
           totalPages={totalPages}
           totalItems={totalItems}
           pageSize={limit}
-          onPageChange={(p) => { setPage(p); fetchUsers(p) }}
+          onPageChange={handlePageChange}
         />
       )}
 
-      {!loading && users.length > 0 && (
-        <UsersPagination
-          page={page}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          limit={limit}
-          loading={loading}
-          onPageChange={handlePageChange}
-        />
+      {!initialLoading && !loading && users.length > 0 && (
+        <div className="mt-4">
+          <UsersPagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            limit={limit}
+            loading={loading}
+            onPageChange={handlePageChange}
+          />
+        </div>
       )}
 
       <ConfirmationDialog
@@ -292,48 +227,14 @@ export default function Page() {
         }
         confirmText={pendingAction?.action === 'activate' ? 'Activate' : pendingAction?.action === 'deactivate' ? 'Deactivate' : 'Ban'}
         variant={pendingAction?.action === 'ban' ? 'destructive' : 'default'}
-        onConfirm={async () => {
-          if (!pendingAction) return
-          
-          // Validate reason for deactivation
-          if (pendingAction.action === 'deactivate' && !deactivationReason.trim()) {
-            error('Please provide a reason for deactivation')
-            return
-          }
-          
-          setLoading(true)
-          try {
-            if (pendingAction.action === 'activate') await adminUserService.activateUser(pendingAction.userId)
-            if (pendingAction.action === 'deactivate') await adminUserService.deactivateUser(pendingAction.userId, deactivationReason.trim())
-            if (pendingAction.action === 'ban') await adminUserService.banUser(pendingAction.userId)
-            const message = pendingAction.action === 'activate' ? 'User activated' : pendingAction.action === 'deactivate' ? 'User deactivated' : 'User banned'
-            success(message)
-            await fetchUsers()
-            // Refresh filtered counts after a state-changing action
-            await fetchFilteredCounts()
-          } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : 'Action failed'
-            error(message)
-          } finally {
-            setLoading(false)
-            setPendingAction(null)
-            setDeactivationReason("")
-          }
-        }}
-        onCancel={() => {
-          setPendingAction(null)
-          setDeactivationReason("")
-        }}
+        onConfirm={handleConfirmAction}
+        onCancel={handleCancelAction}
       />
 
       <AdminRegistrationDialog
         open={registerDialogOpen}
         onOpenChange={setRegisterDialogOpen}
-        onSuccess={() => {
-          fetchUsers()
-          // Refresh filtered counts after registration
-          fetchFilteredCounts()
-        }}
+        onSuccess={handleRegistrationSuccess}
       />
           </div>
         </CardContent>

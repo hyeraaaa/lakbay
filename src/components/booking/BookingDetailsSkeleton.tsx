@@ -17,7 +17,7 @@ export default function BookingDetailsSkeleton() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Vehicle Information Skeleton */}
-          <Card className="border-0 shadow-none">
+          <Card className="shadow-none">
             <CardHeader>
               <Skeleton className="h-6 w-40" />
             </CardHeader>
@@ -50,7 +50,7 @@ export default function BookingDetailsSkeleton() {
           </Card>
 
           {/* Booking Details Skeleton */}
-          <Card className="border-0 shadow-none">
+          <Card className="shadow-none">
             <CardHeader>
               <Skeleton className="h-6 w-32" />
             </CardHeader>

@@ -7,10 +7,10 @@ import { Navbar as CustomerNavbar } from "@/components/navbar"
 import { GeneralChatWidget } from "@/components/chat/generalChatwidget"
 
 export default function ProfileLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useJWT()
+  const { user, isAuthenticated } = useJWT()
   const userType = user?.user_type?.toLowerCase()
   const shouldUseSidebar = userType === "admin" || userType === "owner"
-    const showNavbar = userType === "customer"
+  const showNavbar = userType === "customer" || !isAuthenticated
 
   return (
     <ProtectedRoute requireAuth={false}>

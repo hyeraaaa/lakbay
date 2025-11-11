@@ -48,7 +48,7 @@ export default function RequestDetailPage() {
 
   if (!request) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-500">Verification request not found</div>
       </div>
     )

@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useEffect } from "react"
+import React, { useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,7 +13,7 @@ const InlineGarageMap = dynamic(() => import('./InlineGarageMap'), { ssr: false 
 import useBusinessPermit from "@/hooks/become-a-host/useBusinessPermit"
 
 interface BusinessPermitUploadProps {
-  onSubmit: (file: File, garageLocationName: string, garageCoordinates?: string | null) => void
+  onSubmit: (businessPermitFile: File, insuranceFile: File, garageLocationName: string, garageCoordinates?: string | null) => void
   isSubmitting?: boolean
 }
 
@@ -48,12 +46,40 @@ export const BusinessPermitUpload = ({ onSubmit, isSubmitting = false }: Busines
     getCoordinatesForSubmission,
   } = useBusinessPermit()
 
+  // Local state for insurance document (kept local to avoid expanding shared hook API)
+  const insuranceInputRef = React.useRef<HTMLInputElement | null>(null)
+  const [insuranceFile, setInsuranceFile] = React.useState<File | null>(null)
+  const [insuranceDragActive, setInsuranceDragActive] = React.useState(false)
+
+  const handleInsuranceFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) setInsuranceFile(file)
+  }
+  const removeInsuranceFile = () => setInsuranceFile(null)
+  const handleInsuranceDrag = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setInsuranceDragActive(true)
+    } else if (e.type === "dragleave") {
+      setInsuranceDragActive(false)
+    }
+  }
+  const handleInsuranceDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setInsuranceDragActive(false)
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setInsuranceFile(e.dataTransfer.files[0])
+    }
+  }
+
   const handleSubmit = () => {
-    if (!selectedFile) return
+    if (!selectedFile || !insuranceFile) return
     const locationString = getLocationForSubmission()
     if (!locationString) return
     const coordinates = getCoordinatesForSubmission()
-    onSubmit(selectedFile, locationString, coordinates)
+    onSubmit(selectedFile, insuranceFile, locationString, coordinates)
   }
 
 
@@ -68,9 +94,9 @@ export const BusinessPermitUpload = ({ onSubmit, isSubmitting = false }: Busines
       <CardHeader>
         <CardTitle className="flex items-center">
           <FileText className="h-5 w-5 mr-2" />
-          Upload Business Permit
+          Upload Business Permit & Insurance
         </CardTitle>
-        <CardDescription>Upload a clear photo of your valid business permit to become a host</CardDescription>
+        <CardDescription>Upload clear photos of your valid business permit and active insurance policy</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
@@ -119,6 +145,57 @@ export const BusinessPermitUpload = ({ onSubmit, isSubmitting = false }: Busines
                 <div>
                   <p className="font-medium">Click to upload or drag and drop</p>
                   <p className="text-sm text-muted-foreground">PNG, JPG, JPEG, or WEBP (max 10MB)</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="insurance-document">Insurance Policy Document</Label>
+          <div
+            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+              ${insuranceDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25"}
+              ${insuranceFile ? "bg-muted/50" : "hover:bg-muted/50"}
+            `}
+            onDragEnter={handleInsuranceDrag}
+            onDragLeave={handleInsuranceDrag}
+            onDragOver={handleInsuranceDrag}
+            onDrop={handleInsuranceDrop}
+            onClick={() => insuranceInputRef.current?.click()}
+          >
+            <Input
+              ref={insuranceInputRef}
+              id="insurance-document"
+              type="file"
+              accept="image/*,application/pdf"
+              onChange={handleInsuranceFileSelect}
+              className="hidden"
+            />
+
+            {insuranceFile ? (
+              <div className="flex items-center justify-center space-x-2">
+                <FileText className="h-8 w-8 text-primary" />
+                <div className="text-left">
+                  <p className="font-medium">{insuranceFile.name}</p>
+                  <p className="text-sm text-muted-foreground">{(insuranceFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    removeInsuranceFile()
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
+                <div>
+                  <p className="font-medium">Click to upload or drag and drop</p>
+                  <p className="text-sm text-muted-foreground">PNG, JPG, JPEG, WEBP, or PDF (max 10MB)</p>
                 </div>
               </div>
             )}
@@ -204,7 +281,7 @@ export const BusinessPermitUpload = ({ onSubmit, isSubmitting = false }: Busines
           </ul>
         </div>
 
-        <Button onClick={handleSubmit} disabled={!selectedFile || isSubmitting || !isLocationProvided} className="w-full">
+        <Button onClick={handleSubmit} disabled={!selectedFile || !insuranceFile || isSubmitting || !isLocationProvided} className="w-full">
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

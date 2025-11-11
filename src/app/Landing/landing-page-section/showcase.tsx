@@ -12,8 +12,8 @@ const showcaseItems = [
   },
   {
     icon: Calendar,
-    title: "Flexible Booking",
-    description: "Book your rental with flexible dates and easy modifications",
+    title: "Reliable Booking",
+    description: "Fixed schedules ensure conflict-free reservations; modifications are not allowed.",
     bgColor: "bg-orange-500/10",
     textColor: "text-orange-500",
   },

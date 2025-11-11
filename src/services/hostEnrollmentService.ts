@@ -35,10 +35,11 @@ class HostEnrollmentService {
     }
   }
 
-  async submitEnrollment(businessPermitFile: File, garageLocationName: string, garageCoordinates?: string | null): Promise<EnrollmentData> {
+  async submitEnrollment(businessPermitFile: File, insuranceFile: File, garageLocationName: string, garageCoordinates?: string | null): Promise<EnrollmentData> {
     try {
       const formData = new FormData()
       formData.append("business_permit", businessPermitFile)
+      formData.append("insurance_document", insuranceFile)
       formData.append("garage_location_name", garageLocationName)
       if (garageCoordinates) {
         formData.append("garage_coordinates", garageCoordinates)

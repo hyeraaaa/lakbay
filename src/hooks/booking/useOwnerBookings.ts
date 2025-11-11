@@ -4,6 +4,7 @@ import { bookingService, Booking, BookingFilters, BookingListResponse } from '@/
 interface UseOwnerBookingsReturn {
   bookings: Booking[] | null;
   isLoading: boolean;
+  isStatsLoading: boolean;
   error: string;
   filters: BookingFilters;
   pagination: {
@@ -25,6 +26,7 @@ export const useOwnerBookings = (): UseOwnerBookingsReturn => {
   const [bookings, setBookings] = useState<Booking[] | null>(null);
   const [allBookings, setAllBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState<BookingFilters>({
     page: 1,
@@ -62,6 +64,7 @@ export const useOwnerBookings = (): UseOwnerBookingsReturn => {
 
   const fetchAllBookings = useCallback(async () => {
     try {
+      setIsStatsLoading(true);
       // Fetch all bookings without any filters for stats
       const response: BookingListResponse = await bookingService.listBookings({
         page: 1,
@@ -71,6 +74,8 @@ export const useOwnerBookings = (): UseOwnerBookingsReturn => {
     } catch (err: unknown) {
       console.error('Error fetching all bookings for stats:', err);
       setAllBookings([]);
+    } finally {
+      setIsStatsLoading(false);
     }
   }, []);
 
@@ -138,6 +143,7 @@ export const useOwnerBookings = (): UseOwnerBookingsReturn => {
   return {
     bookings,
     isLoading,
+    isStatsLoading,
     error,
     filters,
     pagination,

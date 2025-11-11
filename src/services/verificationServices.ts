@@ -159,7 +159,7 @@ export interface VerificationRequest {
   doc_type: "driver_license" | "passport" | "id_card" | "business_license" | "vehicle_registration" | "payout_failed" | "refund_request" | "reactivation_request"
   doc_url: string
   doc_urls?: string[]
-  status: "pending" | "approved" | "rejected"
+  status: "pending" | "approved" | "rejected" | "completed" | "processing" | "failed" | "disputed"
   submitted_at: string
   reviewed_at?: string
   reviewed_by?: string

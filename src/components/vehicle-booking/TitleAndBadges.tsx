@@ -17,6 +17,15 @@ type TitleAndBadgesProps = {
 
 // using shared normalizer from lib
 
+const toTitleCase = (value?: string | null) => {
+  if (!value) return null
+  return value
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+}
+
 export default function TitleAndBadges({ title, seats, fuelType, transmission, carType, rating, tripCount, coding }: TitleAndBadgesProps) {
   const codingLabel = (() => {
     const v = (coding || "").trim()
@@ -38,11 +47,11 @@ export default function TitleAndBadges({ title, seats, fuelType, transmission, c
       <div className="flex flex-wrap gap-3">
         <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-white border-gray-300">
           <Users className="h-3 w-3" />
-          {seats ?? "-"} seats
+          {seats ?? "-"} Seats
         </Badge>
         <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-white border-gray-300">
           <Fuel className="h-3 w-3" />
-          {fuelType || "Gas (Regular)"}
+          {toTitleCase(fuelType) || "Gas (Regular)"}
         </Badge>
           <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-white border-gray-300">
           <Settings className="h-3 w-3" />
@@ -50,7 +59,7 @@ export default function TitleAndBadges({ title, seats, fuelType, transmission, c
         </Badge>
         <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-white border-gray-300">
           <Car className="h-3 w-3" />
-          {carType || "Unknown"}
+          {toTitleCase(carType) || "Unknown"}
         </Badge>
         {codingLabel && (
           <Badge variant="outline" className="flex items-center gap-1 px-3 py-1 bg-blue-50 border-blue-300 text-blue-700">

@@ -18,7 +18,7 @@ type VerificationRequest = {
     email?: string
   }
   doc_type: string
-  status: "pending" | "approved" | "rejected"
+  status: "pending" | "approved" | "rejected" | "completed" | "processing" | "failed" | "disputed"
   submitted_at: string
 }
 
@@ -26,7 +26,27 @@ type VerificationRequestsTableProps = {
   requests: VerificationRequest[]
 }
 
-const getStatusBadge = (status: VerificationRequest["status"]) => {
+const getStatusBadge = (status: VerificationRequest["status"], docType?: string) => {
+  // Handle refund-specific statuses
+  if (docType === "refund_request") {
+    switch (status) {
+      case "completed":
+        return { label: "Completed", className: "border-green-200 bg-green-50 text-green-700" }
+      case "processing":
+        return { label: "Processing", className: "border-blue-200 bg-blue-50 text-blue-700" }
+      case "failed":
+        return { label: "Failed", className: "border-red-200 bg-red-50 text-red-700" }
+      case "disputed":
+        return { label: "Disputed", className: "border-orange-200 bg-orange-50 text-orange-700" }
+      case "rejected":
+        return { label: "Rejected", className: "border-red-200 bg-red-50 text-red-700" }
+      case "pending":
+      default:
+        return { label: "Pending", className: "border-yellow-200 bg-yellow-50 text-yellow-700" }
+    }
+  }
+  
+  // Handle standard verification/registration statuses
   switch (status) {
     case "approved":
       return { label: "Approved", className: "border-green-200 bg-green-50 text-green-700" }
@@ -39,6 +59,12 @@ const getStatusBadge = (status: VerificationRequest["status"]) => {
 
 const getTypeLabel = (docType: string) => {
   switch (docType) {
+    case "driver_license":
+      return "Account Verification (Driver License)"
+    case "passport":
+      return "Account Verification (Passport)"
+    case "id_card":
+      return "Account Verification (National ID)"
     case "business_license":
       return "Business Permit"
     case "vehicle_registration":
@@ -80,7 +106,7 @@ export default function VerificationRequestsTable({ requests }: VerificationRequ
       header: "Status",
       accessorKey: "status",
       cell: ({ row }) => {
-        const b = getStatusBadge(row.original.status)
+        const b = getStatusBadge(row.original.status, row.original.doc_type)
         return (
           <Badge variant="outline" className={b.className}>
             {b.label}

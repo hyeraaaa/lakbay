@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
  
-import { MoreHorizontal, Eye, CheckCircle, XCircle, Ban } from 'lucide-react'
+import { MoreHorizontal, CheckCircle, XCircle, Ban } from 'lucide-react'
 import type { AdminUserSummary } from '@/services/adminUserService'
 
 type UsersDataTableProps = {
@@ -37,6 +37,10 @@ const getStatusColor = (status: string) => {
     case 'pending': return { className: 'border-yellow-200 bg-yellow-50 text-yellow-700' }
     default: return { className: 'border-gray-200 bg-gray-50 text-gray-700' }
   }
+}
+
+const capitalize = (str: string) => {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
 }
 
 export default function UsersDataTable({ users, onAction, page, totalPages, totalItems, pageSize, onPageChange }: UsersDataTableProps) {
@@ -74,7 +78,7 @@ export default function UsersDataTable({ users, onAction, page, totalPages, tota
         const colorClass = getUserTypeColor(row.original.user_type)
         return (
           <Badge variant="outline" className={colorClass}>
-            {row.original.user_type}
+            {capitalize(row.original.user_type)}
           </Badge>
         )
       },
@@ -87,7 +91,7 @@ export default function UsersDataTable({ users, onAction, page, totalPages, tota
         const statusColor = getStatusColor(row.original.account_status)
         return (
           <Badge variant="outline" className={statusColor.className}>
-            {row.original.account_status}
+            {capitalize(row.original.account_status)}
           </Badge>
         )
       },
@@ -114,10 +118,6 @@ export default function UsersDataTable({ users, onAction, page, totalPages, tota
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onAction('view', row.original.user_id)}>
-              <Eye className="mr-2 h-4 w-4" />
-              View Profile
-            </DropdownMenuItem>
             {row.original.account_status.toLowerCase() !== 'active' && (
               <DropdownMenuItem onClick={() => onAction('activate', row.original.user_id)}>
                 <CheckCircle className="mr-2 h-4 w-4" />

@@ -24,10 +24,14 @@ export default function DesktopMapPanel({ isLoading, error, vehicles, onRetry, c
   const mapCenter = center || defaultCenter
   const mapZoom = zoom || defaultZoom
 
+  // Only show loading state on initial load (when vehicles array is empty)
+  // During refetches, keep the map visible with existing vehicles
+  const showLoading = isLoading && vehicles.length === 0
+
   return (
     <div className={className ?? "hidden lg:block lg:w-[45%] xl:w-[50%] 2xl:w-[55%] overflow-hidden"}>
       <div className="bg-white border-l border-gray-200 h-full">
-        {isLoading ? (
+        {showLoading ? (
           <div className="h-full w-full flex items-center justify-center bg-gray-100">
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">

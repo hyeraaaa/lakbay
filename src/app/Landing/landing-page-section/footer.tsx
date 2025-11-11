@@ -52,30 +52,6 @@ const Footer = () => {
             <div className="flex flex-col md:flex-row gap-8">
               <div>
                 <h4 className="text-sm font-semibold text-black mb-3 uppercase tracking-wide">
-                  Company
-                </h4>
-                <ul className="space-y-2">
-                  <li>
-                    <Link
-                      href="/about"
-                      className="text-gray-600 hover:text-black transition-colors duration-200 text-sm"
-                    >
-                      About Us
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/contact"
-                      className="text-gray-600 hover:text-black transition-colors duration-200 text-sm"
-                    >
-                      Contact
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-semibold text-black mb-3 uppercase tracking-wide">
                   Legal
                 </h4>
                 <ul className="space-y-2">

@@ -5,9 +5,9 @@ import { ArrowLeft } from "lucide-react"
 
 export const VerificationRequestDetailSkeleton = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       {/* Header skeleton */}
-      <header className="border-b border-gray-200 bg-white px-6 py-3">
+      <header className="border-b border-gray-200 px-6 py-3">
         <div className="flex items-center gap-4">
           <div className="flex items-center">
             <ArrowLeft className="h-4 w-4 mr-2" />

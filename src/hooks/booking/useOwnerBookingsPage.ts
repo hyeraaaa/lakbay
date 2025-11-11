@@ -24,6 +24,7 @@ export const useOwnerBookingsPage = () => {
   const {
     bookings,
     isLoading,
+    isStatsLoading,
     error,
     filters,
     pagination,
@@ -139,7 +140,7 @@ export const useOwnerBookingsPage = () => {
 
   const statusOptions = useMemo(
     () => [
-      { value: "all" as const, label: "All Bookings" },
+      { value: "all" as const, label: "All" },
       { value: BookingStatus.PENDING_PAYMENT, label: "Pending Payment" },
       { value: BookingStatus.AWAITING_OWNER_APPROVAL, label: "Awaiting Approval" },
       { value: BookingStatus.CONFIRMED, label: "Confirmed" },
@@ -165,6 +166,7 @@ export const useOwnerBookingsPage = () => {
     // data
     bookings,
     isLoading,
+    isStatsLoading,
     error,
     filters,
     pagination,

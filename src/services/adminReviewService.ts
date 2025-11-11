@@ -22,6 +22,7 @@ interface RawVehicle {
 
 interface RawReviewItem {
   itemType?: string
+  item_type?: string
   registration_id?: string | number
   verification_id?: string | number
   request_id?: string | number
@@ -108,6 +109,11 @@ function mapItem(it: RawReviewItem): AdminReviewItem {
   // Handle different data structures based on itemType
   const itemType = it.itemType
   
+  // Log warning if itemType is missing (should not happen in normal operation)
+  if (!itemType) {
+    console.warn('⚠️ Item missing itemType:', it)
+  }
+  
   let userInfo: RawUser | undefined, reviewerInfo: RawUser | undefined, docType: string, docUrl: string, docUrls: string[] | undefined, vehicleInfo: RawVehicle | undefined, verificationId: string, userId: string, status: string, submittedAt: string, reviewedAt: string | undefined, reviewedBy: string | undefined, notes: string | undefined
 
   if (itemType === 'registration') {
@@ -145,7 +151,8 @@ function mapItem(it: RawReviewItem): AdminReviewItem {
     reviewerInfo = it.reviewer
     docType = "business_license"
     docUrl = it.permit_url || ''
-    docUrls = [it.permit_url].filter(Boolean) as string[]
+    docUrls = [it.permit_url, (it as unknown as { insurance_url?: string }).insurance_url]
+      .filter(Boolean) as string[]
     verificationId = `owner_${it.request_id || ''}`
     userId = String(it.user_id || '')
     status = it.status || 'pending'
@@ -197,13 +204,41 @@ function mapItem(it: RawReviewItem): AdminReviewItem {
     reviewedBy = it.reviewed_by || it.decided_by ? String(it.reviewed_by || it.decided_by) : undefined
     notes = it.reactivation_reason || it.notes
   } else {
-    // Fallback for unknown structure
+    // Fallback for unknown structure - try to infer type from data structure
     userInfo = it.user || it.users_verification_user_idTousers
     reviewerInfo = it.reviewed_by_user || it.reviewer || it.users_verification_reviewed_byTousers
-    docType = it.doc_type || "id_card"
+    
+    // Try to infer docType from available fields
+    // Check for reactivation-specific fields first
+    if (it.reactivation_id || it.reactivation_reason || it.deactivation_reason || it.decided_by_admin) {
+      // Has reactivation-specific fields
+      docType = "reactivation_request"
+    } else if (it.permit_url) {
+      // Has permit_url, likely business license
+      docType = "business_license"
+    } else if (it.original_receipt || it.certificate_of_registration) {
+      // Has vehicle registration documents
+      docType = "vehicle_registration"
+    } else if (it.refund_id || it.refund_reason || it.requested_by_user) {
+      // Has refund-specific fields
+      docType = "refund_request"
+    } else if (it.payout_id || it.failure_reason || it.error_message) {
+      // Has payout failure fields
+      docType = "payout_failed"
+    } else if (it.doc_type) {
+      // Use the doc_type from the item
+      docType = it.doc_type
+    } else {
+      // Default to id_card only if we have verification-related fields
+      docType = (it.verification_id || it.users_verification_user_idTousers) ? "id_card" : "business_license"
+    }
+    
     docUrl = it.doc_url || it.permit_url || ""
-    docUrls = normalizeDocUrls(it.doc_urls ?? it.doc_url ?? it.permit_url)
-    verificationId = String(it.verification_id ?? it.request_id ?? it.registration_id ?? it.id ?? '')
+    // Attempt to include insurance_url if present on unknown structure
+    const normalized = normalizeDocUrls(it.doc_urls ?? it.doc_url ?? it.permit_url) || []
+    const maybeInsurance = (it as unknown as { insurance_url?: string }).insurance_url
+    docUrls = [...normalized, ...(maybeInsurance ? [maybeInsurance] : [])]
+    verificationId = String(it.verification_id ?? it.request_id ?? it.registration_id ?? it.reactivation_id ?? it.id ?? '')
     userId = String(it.user_id ?? it.owner_id ?? userInfo?.user_id ?? "")
     status = it.status || "pending"
     submittedAt = it.submitted_at || it.created_at || new Date().toISOString()
@@ -263,12 +298,14 @@ export interface PaginationData {
 }
 
 export const adminReviewService = {
-  async getAll(page?: number, limit?: number, status?: string, typeFilter?: string, search?: string): Promise<{ items: AdminReviewItem[], pagination?: PaginationData }> {
+  async getAll(page?: number, limit?: number, status?: string, typeFilter?: string, search?: string, from?: string, to?: string): Promise<{ items: AdminReviewItem[], pagination?: PaginationData }> {
     const params = new URLSearchParams()
     if (page !== undefined) params.append('page', String(page))
     if (limit !== undefined) params.append('limit', String(limit))
     if (status && status !== 'all') params.append('status', status)
     if (search && search.trim().length > 0) params.append('search', search.trim())
+    if (from) params.append('from', from)
+    if (to) params.append('to', to)
     // Map UI type filter to backend 'type' param
     if (typeFilter && typeFilter !== 'all') {
       const t = String(typeFilter)
@@ -311,39 +348,102 @@ export const adminReviewService = {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(errorData.message || "Failed to fetch admin reviews")
     }
-    const data = await response.json().catch(() => ({} as { 
-      items?: RawReviewItem[]; 
-      reviews?: RawReviewItem[]; 
-      registrations?: RawReviewItem[];
-      verifications?: RawReviewItem[];
-      owner_enrollments?: RawReviewItem[];
-      failed_payouts?: RawReviewItem[];
-      refunds?: RawReviewItem[];
-      pagination?: PaginationData 
-    }))
+    type AdminReviewListResponse =
+      | {
+          type?: string
+          items?: RawReviewItem[]
+          reviews?: RawReviewItem[]
+          registrations?: RawReviewItem[]
+          verifications?: RawReviewItem[]
+          owner_enrollments?: RawReviewItem[]
+          failed_payouts?: RawReviewItem[]
+          refunds?: RawReviewItem[]
+          pagination?: PaginationData
+        }
+      | RawReviewItem[]
+    
+    const data: AdminReviewListResponse = await response.json().catch(
+      () =>
+        ({
+          items: [],
+        } as AdminReviewListResponse)
+    )
     
     // Debug logging to see what we're getting
     console.log("Admin reviews response:", data)
     
     // Backend returns different property names based on type filter
-    // Check all possible property names
-    const list: RawReviewItem[] = 
-      Array.isArray(data?.items) ? data.items :
-      Array.isArray(data?.registrations) ? data.registrations :
-      Array.isArray(data?.verifications) ? data.verifications :
-      Array.isArray(data?.owner_enrollments) ? data.owner_enrollments :
-      Array.isArray(data?.failed_payouts) ? data.failed_payouts :
-      Array.isArray(data?.refunds) ? data.refunds :
-      Array.isArray(data?.reviews) ? data.reviews :
-      Array.isArray(data) ? data : []
+    // Infer itemType from which property the items came from or from response type field
+    let inferredItemType: string | undefined
+    let list: RawReviewItem[] = []
+    
+    // Check if response has a type field (backend sets this)
+    const responseType = Array.isArray(data) ? undefined : data.type
+    
+    if (!Array.isArray(data)) {
+      if (Array.isArray(data.items)) {
+        list = data.items
+        // If response has a type field, use it to infer itemType
+        if (responseType) {
+          // Map backend response type to itemType
+          switch (responseType) {
+            case 'reactivation_requests':
+              inferredItemType = 'reactivation_request'
+              break
+            case 'refunds':
+              inferredItemType = 'refund'
+              break
+            case 'payouts':
+              inferredItemType = 'payout_failed'
+              break
+            case 'owner_enrollment':
+              inferredItemType = 'owner_enrollment'
+              break
+            case 'registration':
+              inferredItemType = 'registration'
+              break
+            case 'verification':
+              inferredItemType = 'verification'
+              break
+          }
+        }
+        // Items array might contain mixed types, check itemType on each
+      } else if (Array.isArray(data.registrations)) {
+        list = data.registrations
+        inferredItemType = 'registration'
+      } else if (Array.isArray(data.verifications)) {
+        list = data.verifications
+        inferredItemType = 'verification'
+      } else if (Array.isArray(data.owner_enrollments)) {
+        list = data.owner_enrollments
+        inferredItemType = 'owner_enrollment'
+      } else if (Array.isArray(data.failed_payouts)) {
+        list = data.failed_payouts
+        inferredItemType = 'payout_failed'
+      } else if (Array.isArray(data.refunds)) {
+        list = data.refunds
+        inferredItemType = 'refund'
+      } else if (Array.isArray(data.reviews)) {
+        list = data.reviews
+        // Reviews might be mixed, check itemType on each
+      }
+    } else {
+      list = data
+    }
+    
+    // Ensure all items have itemType set (infer from response property if missing)
+    const itemsWithType: RawReviewItem[] = list.map(item => ({
+      ...item,
+      itemType: item.itemType || item.item_type || inferredItemType
+    }))
     
     // Debug logging to see the mapped items
-    const mapped = list.map(mapItem)
+    const mapped = itemsWithType.map(mapItem)
     console.log("Mapped admin review items:", mapped)
     
     return {
       items: mapped,
-      pagination: data.pagination
+      pagination: Array.isArray(data) ? undefined : data.pagination
     }
   },
 

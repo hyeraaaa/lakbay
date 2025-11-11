@@ -23,7 +23,7 @@ export default function DocumentGallery({
       else return `Document ${idx + 1}`
     } else if (docType === "business_license") {
       if (idx === 0) return "Business Permit"
-      else if (idx === 1) return "Business Registration"
+      else if (idx === 1) return "Insurance Policy"
       else if (idx === 2) return "Additional Business Document"
       else return `Business Document ${idx + 1}`
     } else if (docType === "driver_license") {

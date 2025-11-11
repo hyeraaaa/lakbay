@@ -7,6 +7,7 @@ import { GeneralSettings } from "@/components/test-settings/generalSettings"
 import { PersonalSettings } from "@/components/test-settings/personalSettings"
 import { SecuritySettings } from "@/components/test-settings/securitySettings"
 import { StripeConnectSettings } from "@/components/test-settings/stripeConnectSettings"
+import { GarageLocationSettings } from "@/components/test-settings/garageLocationSettings"
 import { NotificationProvider } from "@/components/NotificationProvider"
 import { ProtectedRoute } from "@/components/protected-routes/ProtectedRoute"
 import { getCurrentUser } from "@/lib/jwt"
@@ -24,7 +25,7 @@ export default function SettingsPage() {
 
   // Redirect non-owners away from stripe tab
   useEffect(() => {
-    if (activeTab === "stripe" && !isOwner) {
+    if ((activeTab === "stripe" || activeTab === "garage") && !isOwner) {
       setActiveTab("general")
     }
   }, [activeTab, isOwner])
@@ -37,6 +38,8 @@ export default function SettingsPage() {
         return <PersonalSettings />
       case "security":
         return <SecuritySettings />
+      case "garage":
+        return isOwner ? <GarageLocationSettings /> : <GeneralSettings />
       case "stripe":
         return isOwner ? <StripeConnectSettings /> : <GeneralSettings />
       default:
@@ -52,7 +55,6 @@ export default function SettingsPage() {
           <div>
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-              <p className="text-muted-foreground">Manage your account settings and preferences</p>
             </div>
           </div>
 

@@ -93,4 +93,22 @@ export const profileService = {
     const result = await response.json().catch(() => ({}))
     return { ok: response.ok, data: result }
   },
+
+  updateGarageLocation: async (userId: string, data: { garage_location_name?: string; latitude: number; longitude: number }) => {
+    const coords = `${data.latitude}, ${data.longitude}`
+    const body = {
+      garage_location_name: data.garage_location_name ?? coords, // backend requires a name
+      garage_coordinates: coords,
+    }
+
+    const response = await apiRequest(`${API_BASE_URL}/api/users/${userId}/garage-location`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    })
+    const result = await response.json().catch(() => ({}))
+    return { ok: response.ok, data: result }
+  },
 }

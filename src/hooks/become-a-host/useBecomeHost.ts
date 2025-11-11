@@ -91,11 +91,11 @@ export function useHostVerification() {
     }
   }
 
-  const submitBusinessPermit = async (file: File, garageLocationName: string, garageCoordinates?: string | null) => {
+  const submitBusinessPermit = async (businessPermitFile: File, insuranceFile: File, garageLocationName: string, garageCoordinates?: string | null) => {
     setIsSubmitting(true)
     setError("")
     try {
-      await hostEnrollmentService.submitEnrollment(file, garageLocationName, garageCoordinates)
+      await hostEnrollmentService.submitEnrollment(businessPermitFile, insuranceFile, garageLocationName, garageCoordinates)
       await loadExistingEnrollment()
     } catch (error) {
       console.error("Submission failed:", error)

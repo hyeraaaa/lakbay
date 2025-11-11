@@ -49,36 +49,6 @@ export function FinancialCharts({ data }: FinancialChartsProps) {
 
   return (
     <div className="grid gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Revenue by Owner</CardTitle>
-          <CardDescription>Top 10 owners by total revenue generated</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer
-            config={{
-              revenue: {
-                label: "Revenue",
-                color: "var(--chart-1)",
-              },
-            }}
-            className="h-[420px] w-full"
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueData} layout="vertical">
-                <XAxis type="number" tickFormatter={formatCurrency} />
-                <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
-                <ChartTooltip
-                  content={<ChartTooltipContent />}
-                  formatter={(value: number | string) => formatCurrency(Number(value))}
-                />
-                <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-
       <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader>
@@ -142,6 +112,36 @@ export function FinancialCharts({ data }: FinancialChartsProps) {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Revenue by Owner</CardTitle>
+          <CardDescription>Top 10 owners by total revenue generated</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer
+            config={{
+              revenue: {
+                label: "Revenue",
+                color: "var(--chart-1)",
+              },
+            }}
+            className="h-[420px] w-full"
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueData} layout="vertical">
+                <XAxis type="number" tickFormatter={formatCurrency} />
+                <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
+                <ChartTooltip
+                  content={<ChartTooltipContent />}
+                  formatter={(value: number | string) => formatCurrency(Number(value))}
+                />
+                <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        </CardContent>
+      </Card>
     </div>
   )
 }
