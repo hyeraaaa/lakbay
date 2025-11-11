@@ -123,7 +123,7 @@ export default function BookingDetailsPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <PaymentSummaryCard booking={booking} />
+          <PaymentSummaryCard booking={booking} onAction={handleAction} />
           {booking.status === 'on_going' ? (
             <MileageTrackingCard 
               booking={booking} 

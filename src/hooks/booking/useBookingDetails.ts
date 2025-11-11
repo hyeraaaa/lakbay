@@ -70,6 +70,12 @@ export function useBookingDetails({ bookingId }: UseBookingDetailsProps): UseBoo
             window.location.href = paymentResponse.checkout_url;
           }
           break;
+        case 'pay-overage':
+          const overagePaymentResponse = await bookingService.getOveragePayment(booking.booking_id);
+          if (overagePaymentResponse.checkout_url) {
+            window.location.href = overagePaymentResponse.checkout_url;
+          }
+          break;
         case 'cancel':
           if (confirm('Are you sure you want to cancel this booking?')) {
             await bookingService.cancelBooking(booking.booking_id);

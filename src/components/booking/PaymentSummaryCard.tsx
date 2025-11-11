@@ -1,14 +1,16 @@
 "use client"
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CreditCard, AlertTriangle, Loader2 } from 'lucide-react';
 import { Booking, PaymentStatus } from '@/services/bookingServices';
 import { bookingService } from '@/services/bookingServices';
 
 interface PaymentSummaryCardProps {
   booking: Booking;
+  onAction?: (action: string) => Promise<void>;
 }
 
 const getPaymentStatusColor = (status: PaymentStatus) => {
@@ -23,7 +25,9 @@ const getPaymentStatusColor = (status: PaymentStatus) => {
   return statusColors[status] || 'bg-gray-100 text-gray-800';
 };
 
-export default function PaymentSummaryCard({ booking }: PaymentSummaryCardProps) {
+export default function PaymentSummaryCard({ booking, onAction }: PaymentSummaryCardProps) {
+  const [isPayingOverage, setIsPayingOverage] = useState(false);
+
   const calculateTotalAmount = () => {
     if (!booking?.payment_details || booking.payment_details.length === 0) return 0;
     const payment = booking.payment_details[0];
@@ -54,6 +58,21 @@ export default function PaymentSummaryCard({ booking }: PaymentSummaryCardProps)
 
   const overagePayment = getOveragePayment();
   const hasOverage = (booking.overage_amount || 0) > 0;
+  const isOveragePaid = overagePayment?.payment_status === PaymentStatus.COMPLETED;
+  const canPayOverage = hasOverage && !isOveragePaid;
+
+  const handlePayOverage = async () => {
+    if (!onAction || isPayingOverage) return;
+    
+    setIsPayingOverage(true);
+    try {
+      await onAction('pay-overage');
+    } catch (error) {
+      console.error('Failed to initiate overage payment:', error);
+    } finally {
+      setIsPayingOverage(false);
+    }
+  };
 
   if (!booking.payment_details || booking.payment_details.length === 0) {
     return null;
@@ -137,6 +156,22 @@ export default function PaymentSummaryCard({ booking }: PaymentSummaryCardProps)
                       Not Initiated
                     </Badge>
                   </div>
+                )}
+                {canPayOverage && (
+                  <Button
+                    onClick={handlePayOverage}
+                    disabled={isPayingOverage}
+                    className="w-full mt-3 bg-orange-600 hover:bg-orange-700 text-white"
+                  >
+                    {isPayingOverage ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Pay Overage Fee'
+                    )}
+                  </Button>
                 )}
               </div>
             </div>
