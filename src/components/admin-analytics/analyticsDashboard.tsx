@@ -20,7 +20,7 @@ export function AnalyticsDashboard() {
 
   const greeting = (() => {
     const hour = Number(
-      new Intl.DateTimeFormat('en-PH', {
+      new Intl.DateTimeFormat('en-PH', { 
         hour: 'numeric',
         hour12: false,
         timeZone: 'Asia/Manila',
@@ -172,7 +172,7 @@ export function AnalyticsDashboard() {
     <div className="container mx-auto space-y-6">
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight text-balance">{greeting} {firstName}</h1>
-        <p className="text-muted-foreground text-pretty">Oversee bookings and revenue with clear, real‑time trends</p>
+        <p className="text-muted-foreground text-pretty">Oversee bookings and revenue</p>
       </div>
       {error && (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 text-destructive px-4 py-3 text-sm">
