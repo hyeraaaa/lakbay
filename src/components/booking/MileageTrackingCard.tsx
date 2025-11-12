@@ -138,8 +138,18 @@ export default function MileageTrackingCard({ booking, onBookingUpdate }: Mileag
     calculated_currentMileage: currentMileage,
     hasMileageData
   });
-  const overageMileage = Number(currentBooking.overage_mileage || 0);
-  const overageAmount = Number(currentBooking.overage_amount || 0);
+  
+  // Calculate overage - use backend value if available, otherwise calculate on frontend
+  const calculatedOverageMileage = currentBooking.vehicle.daily_mileage_limit && currentMileage > allowedMileage 
+    ? currentMileage - allowedMileage 
+    : 0;
+  const overageMileage = Number(currentBooking.overage_mileage || 0) || calculatedOverageMileage;
+  
+  // Calculate overage amount - use backend value if available, otherwise calculate on frontend
+  const overageFeePerKm = currentBooking.vehicle.overage_fee_per_km || 5;
+  const calculatedOverageAmount = overageMileage > 0 ? overageMileage * overageFeePerKm : 0;
+  const overageAmount = Number(currentBooking.overage_amount || 0) || calculatedOverageAmount;
+  
   const usagePercentage = allowedMileage > 0 ? (currentMileage / allowedMileage) * 100 : 0;
 
   // Format timestamps
@@ -247,7 +257,7 @@ export default function MileageTrackingCard({ booking, onBookingUpdate }: Mileag
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
                         <span className="text-orange-700">Overage Distance:</span>
-                        <span className="font-medium text-orange-800">{overageMileage} km</span>
+                        <span className="font-medium text-orange-800">{overageMileage.toFixed(1)} km</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-orange-700">Overage Fee:</span>
@@ -255,7 +265,7 @@ export default function MileageTrackingCard({ booking, onBookingUpdate }: Mileag
                       </div>
                       <div className="flex justify-between">
                         <span className="text-orange-700">Rate:</span>
-                        <span className="font-medium text-orange-800">₱{currentBooking.vehicle.overage_fee_per_km || 5}/km</span>
+                        <span className="font-medium text-orange-800">₱{overageFeePerKm}/km</span>
                       </div>
                     </div>
                   </div>
