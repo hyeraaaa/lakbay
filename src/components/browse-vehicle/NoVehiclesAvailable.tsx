@@ -52,10 +52,10 @@ function NoVehiclesAvailableContent() {
         {/* Error Message */}
         <div className="mb-4 space-y-2">
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 text-balance">No vehicles found...</h2>
-          <p className="text-sm text-gray-700 dark:text-gray-300 text-pretty max-w-sm mx-auto">
+          {/* <p className="text-sm text-gray-700 dark:text-gray-300 text-pretty max-w-sm mx-auto">
             Looks like our gorilla friend here couldn&apos;t find any vehicles matching your search. 
             Maybe try adjusting your filters or check back later!
-          </p>
+          </p> */}
         </div>
 
         {/* Reset Filters Button */}

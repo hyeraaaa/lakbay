@@ -31,9 +31,9 @@ export default function NotFound() {
         {/* Error Message */}
         <div className="mb-8 space-y-4">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 text-balance">Well, this is awkward...</h2>
-          <p className="text-lg text-gray-700 dark:text-gray-300 text-pretty max-w-md mx-auto">
+          {/* <p className="text-lg text-gray-700 dark:text-gray-300 text-pretty max-w-md mx-auto">
             The page you&apos;re looking for seems to have gone bananas. Even our gorilla friend here is not impressed.
-          </p>
+          </p> */}
         </div>
 
         {/* Action Buttons */}

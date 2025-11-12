@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { MessageCircle, X, Minimize2, Search, ChevronDown, Send, Smile } from "lucide-react"
+import { MessageCircle, X, Search, ChevronDown, Send, Smile } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -120,14 +120,6 @@ export function GeneralChatWidget() {
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-lg font-semibold text-primary">Chat</h2>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              onClick={() => setIsOpen(false)}
-            >
-              <Minimize2 className="h-4 w-4" />
-            </Button>
             <Button
               variant="ghost"
               size="icon"
